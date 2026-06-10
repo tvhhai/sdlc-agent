@@ -10,6 +10,14 @@ const REAL_AGENTS = path.resolve(
 	fileURLToPath(import.meta.url),
 	"../../../../../agents",
 );
+const REAL_TEMPLATES = path.resolve(
+	fileURLToPath(import.meta.url),
+	"../../../../../templates",
+);
+const REAL_POLICIES = path.resolve(
+	fileURLToPath(import.meta.url),
+	"../../../../../policies",
+);
 
 function makeTempProject(): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sdlc-test-"));
@@ -18,11 +26,20 @@ function makeTempProject(): string {
 	for (const f of fs.readdirSync(REAL_AGENTS)) {
 		fs.copyFileSync(path.join(REAL_AGENTS, f), path.join(agentsDir, f));
 	}
+	copyDir(REAL_TEMPLATES, path.join(dir, "templates"));
+	copyDir(REAL_POLICIES, path.join(dir, "policies"));
 	fs.writeFileSync(
 		path.join(dir, "sdlc.config.yaml"),
 		stringifyYaml({ targets: ["universal", "claude-code"], variables: {} }),
 	);
 	return dir;
+}
+
+function copyDir(source: string, target: string): void {
+	fs.mkdirSync(target, { recursive: true });
+	for (const f of fs.readdirSync(source)) {
+		fs.copyFileSync(path.join(source, f), path.join(target, f));
+	}
 }
 
 describe("runBuild", () => {

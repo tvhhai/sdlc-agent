@@ -1068,3 +1068,72 @@ Neu can hieu project nhanh:
 5. `.sdlc/`, `.claude/`, `.github/prompts/`, `AGENTS.md` la ket qua generated.
 6. `templates/` va `policies/` la tai lieu tham chieu de agent tao output dung format va dung rule.
 
+## 21. Danh gia bo sung sau khi review SA design va codebase
+
+Phan nay duoc append de giu nguyen noi dung tai lieu goc phia tren. No tong hop cac danh gia va de xuat bo sung dua tren `docs/SA_DESIGN_Agentic_SDLC_Agents_Set.md` va code hien tai.
+
+### 21.1 Diem manh cua du an
+
+- Huong san pham dung pain point thuc te: cac team dang copy prompt/agent config theo tung tool, kho version, kho test va kho chuan hoa.
+- Kien truc canonical DSL -> build engine -> adapters la dung huong. `agents/*.yaml` dong vai tro source of truth, adapter chi lo dong goi sang tung tool.
+- Universal-first la quyet dinh tot. `AGENTS.md` va `.sdlc/agents/*.md` tao baseline portable cho Codex, Cursor, Windsurf, Gemini CLI va cac AI tool co the doc file repo.
+- Adapter pattern hien tai gon va de mo rong: moi adapter chi can implement `ToolAdapter.render()`.
+- Code da co nen test tot cho giai doan MVP: schema tests, loader tests, resolver tests, CLI build tests va adapter snapshot tests.
+- SA design da nhin dung cac rui ro dai han nhu prompt supply-chain, versioning, eval harness, policy layer va adapter compatibility.
+
+### 21.2 Diem yeu va rui ro can quan ly
+
+- Scope trong SA design dang kha rong. Registry, update mechanism, telemetry, eval harness, marketplace, imported community skills va multi-layer config deu co gia tri, nhung neu dua vao MVP qua som thi de lam loang delivery.
+- Code hien tai moi implement phan xong song cua design. Mot so field/ham nhu `imports`, `extends`, `mergeConfigs`, `BuildContext.templates`, `BuildContext.policies` da ton tai nhung chua duoc wire het vao behavior cuoi.
+- Template va policy hien chu yeu la reference cho AI agent. Build engine chua validate day du cross-reference va chua inline/render template body.
+- Can can than voi claim "support moi AI tool". Cach noi chinh xac hon la: universal output tao portable baseline cho moi tool co the doc repo instructions; native UX/auto-routing van can adapter rieng va compatibility test.
+- Generated outputs duoc commit vao repo la cach dung thuc te, nhung can co drift detection de biet file generated da bi sua tay hay chua duoc regenerate.
+
+### 21.3 Bo sung nen dua vao SA design
+
+1. Adapter contract
+   - Moi adapter nen document output paths, required metadata, generated footer, snapshot test va compatibility notes.
+   - Adapter moi phai co tests cho path contract va content contract co ban.
+
+2. Reference validation
+   - Build/validate nen fail neu `output_template` tro toi file khong ton tai.
+   - Build/validate nen fail neu `policies` tro toi policy khong ton tai.
+   - Build/validate nen fail neu co duplicate agent id.
+
+3. Generated output strategy
+   - Can quy dinh file nao la generated, co duoc sua tay khong, va build xu ly drift nhu the nao.
+   - Nen them generated marker/footer on dinh de sau nay co the detect drift.
+
+4. MVP exit criteria cu the hon
+   - `validate` bat schema errors, duplicate ids va missing template/policy refs.
+   - `build` deterministic.
+   - 3 adapters hien co co snapshot/contract tests.
+   - CI chay dung root project.
+   - README co quickstart ro: install -> validate -> build -> use agent.
+
+5. Eval nen tach sang phase sau
+   - Phase 1 nen tap trung static tests, schema validation va snapshots.
+   - Phase 2 moi them promptfoo/golden cases/model eval de tranh tang complexity som.
+
+6. Prompt supply-chain security
+   - Imported skills nen mac dinh disabled cho den khi co review.
+   - Can lockfile/manifest luu source, license, pin va hash.
+   - Khong nen auto-update skill tu branch/tag mutable.
+
+### 21.4 Uu tien ky thuat de xuat
+
+Thu tu uu tien nen lam:
+
+1. Sua CI workflow de chay tren root project hien tai.
+2. Dam bao Vitest include ro ca adapter tests.
+3. Them validation cho duplicate agent id va missing template/policy references.
+4. Them generated marker/drift detection co ban.
+5. Hoan thien README quickstart.
+6. Chuan hoa adapter contract trong docs.
+7. Sau do moi implement multi-layer config, imports, extends va eval harness.
+
+### 21.5 Ket luan danh gia
+
+Du an dang co nen tang tot va dang giai quyet dung van de: bien prompt/agent workflow thanh artifact co schema, version, build va test. Gia tri lon nhat khong nam o tung prompt rieng le, ma nam o viec chuan hoa cach team dong goi va phan phoi SDLC agents tren nhieu AI tools.
+
+Huong tiep theo nen giu MVP that gon: canonical agents, deterministic build, 3 adapters, validation chat va CI dung. Khi nen nay chac, cac phan lon hon nhu registry, import community skills, eval harness va update mechanism se de them hon nhieu.

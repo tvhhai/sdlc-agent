@@ -10,6 +10,7 @@ import {
 	resolveAgent,
 	type ToolAdapter,
 } from "@sdlc-agents/core";
+import { validateProjectContracts } from "./project-validation.js";
 
 const ADAPTERS: Record<string, ToolAdapter> = {
 	universal: new UniversalAdapter(),
@@ -22,6 +23,10 @@ export function runBuild(cwd: string): void {
 	const agentsDir = path.join(cwd, config.agentsDir);
 	const rawAgents = loadAgents(agentsDir);
 	const agents = rawAgents.map((a) => resolveAgent(a, config.variables));
+	const contractErrors = validateProjectContracts(agents, cwd);
+	if (contractErrors.length > 0) {
+		throw new Error(`Project validation failed:\n${contractErrors.join("\n")}`);
+	}
 
 	const ctx: BuildContext = {
 		config,
