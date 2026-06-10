@@ -1,0 +1,39 @@
+id: planner
+version: 1.0.0
+phase: planning
+description: >
+  Breaks down a PRD or feature spec into a concrete, time-boxed implementation
+  plan with tasks, dependencies, and effort estimates.
+model_hint: high-reasoning
+model_variants:
+  claude:
+    prompt_append: "Use extended thinking to identify hidden dependencies and risks."
+  gemini:
+    prompt_append: "State the executive summary first, then detailed tasks."
+
+tools_required:
+  - read_file
+  - list_files
+
+inputs:
+  - name: spec
+    description: PRD, feature description, or issue body
+    required: true
+  - name: stack
+    description: "Tech stack, e.g. 'React + Node.js + PostgreSQL'"
+    required: false
+  - name: team_size
+    description: Number of developers available
+    required: false
+
+workflow:
+  - step: Read the full spec and confirm understanding
+  - step: Identify ambiguities; list explicit assumptions for each
+  - step: Break the spec into independent tasks (target max 1 day each)
+  - step: Map dependencies between tasks (predecessor → successor)
+  - step: Assign rough effort estimate (S/M/L) to each task
+  - step: Flag top 3 risks with mitigation suggestion
+  - step: Output the plan using the plan template
+
+output_template: templates/plan.md
+policies: []

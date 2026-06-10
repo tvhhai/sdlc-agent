@@ -41,7 +41,13 @@ export const AgentSchema = z.object({
 	description: z.string().min(10),
 	model_hint: ModelHint.default("balanced"),
 	model_variants: z
-		.record(z.enum(["claude", "copilot", "gemini", "codex"]), ModelVariant)
+		.object({
+			claude: ModelVariant,
+			copilot: ModelVariant,
+			gemini: ModelVariant,
+			codex: ModelVariant,
+		})
+		.partial()
 		.optional(),
 	tools_required: z.array(z.string()).default([]),
 	inputs: z.array(InputDef).default([]),
