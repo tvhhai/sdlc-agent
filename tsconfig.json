@@ -1,17 +1,18 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "outDir": "dist",
-    "rootDir": ".",
-    "paths": {
-      "@sdlc-agents/core": ["./packages/core/src/index.ts"]
-    }
-  },
-  "include": ["packages/*/src/**/*", "spike/**/*"],
-  "exclude": ["node_modules", "dist", "spike/output"]
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"outDir": "dist",
+		"rootDir": ".",
+		"types": ["node"],
+		"paths": {
+			"@sdlc-agents/core": ["./packages/core/src/index.ts"]
+		}
+	},
+	"include": ["packages/*/src/**/*", "spike/**/*"],
+	"exclude": ["node_modules", "dist", "spike/output"]
 }

@@ -14,30 +14,47 @@ import { z } from "zod";
 // ── Schema (inline copy for spike; real code imports from @sdlc-agents/core) ──
 
 const AgentSchema = z.object({
-  id: z.string().regex(/^[a-z][a-z0-9-]*$/),
-  version: z.string().regex(/^\d+\.\d+\.\d+$/),
-  phase: z.string(),
-  description: z.string().min(10),
-  model_hint: z.enum(["fast", "balanced", "high-reasoning"]).default("balanced"),
-  model_variants: z.record(z.string(), z.object({
-    prompt_append: z.string().optional(),
-    prompt_prepend: z.string().optional(),
-  })).optional(),
-  tools_required: z.array(z.string()).default([]),
-  inputs: z.array(z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    required: z.boolean().default(false),
-  })).default([]),
-  workflow: z.array(z.object({ step: z.string(), ref: z.string().optional() })).min(1),
-  output_template: z.string().optional(),
-  policies: z.array(z.string()).default([]),
-  imports: z.array(z.object({
-    source: z.string(),
-    path: z.string(),
-    pin: z.string(),
-    license: z.string(),
-  })).optional(),
+	id: z.string().regex(/^[a-z][a-z0-9-]*$/),
+	version: z.string().regex(/^\d+\.\d+\.\d+$/),
+	phase: z.string(),
+	description: z.string().min(10),
+	model_hint: z
+		.enum(["fast", "balanced", "high-reasoning"])
+		.default("balanced"),
+	model_variants: z
+		.record(
+			z.string(),
+			z.object({
+				prompt_append: z.string().optional(),
+				prompt_prepend: z.string().optional(),
+			}),
+		)
+		.optional(),
+	tools_required: z.array(z.string()).default([]),
+	inputs: z
+		.array(
+			z.object({
+				name: z.string(),
+				description: z.string().optional(),
+				required: z.boolean().default(false),
+			}),
+		)
+		.default([]),
+	workflow: z
+		.array(z.object({ step: z.string(), ref: z.string().optional() }))
+		.min(1),
+	output_template: z.string().optional(),
+	policies: z.array(z.string()).default([]),
+	imports: z
+		.array(
+			z.object({
+				source: z.string(),
+				path: z.string(),
+				pin: z.string(),
+				license: z.string(),
+			}),
+		)
+		.optional(),
 });
 
 type AgentDef = z.infer<typeof AgentSchema>;
@@ -48,23 +65,23 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const OUT = path.join(ROOT, "spike", "output");
 
 function write(filePath: string, content: string) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, content, "utf8");
-  console.log(`  wrote  ${path.relative(ROOT, filePath)}`);
+	fs.mkdirSync(path.dirname(filePath), { recursive: true });
+	fs.writeFileSync(filePath, content, "utf8");
+	console.log(`  wrote  ${path.relative(ROOT, filePath)}`);
 }
 
 function loadAgent(file: string): AgentDef {
-  const raw = fs.readFileSync(file, "utf8");
-  const parsed = parse(raw);
-  const result = AgentSchema.safeParse(parsed);
-  if (!result.success) {
-    console.error(`\n  INVALID: ${path.basename(file)}`);
-    result.error.issues.forEach((i) =>
-      console.error(`    [${i.path.join(".")}] ${i.message}`)
-    );
-    process.exit(1);
-  }
-  return result.data;
+	const raw = fs.readFileSync(file, "utf8");
+	const parsed = parse(raw);
+	const result = AgentSchema.safeParse(parsed);
+	if (!result.success) {
+		console.error(`\n  INVALID: ${path.basename(file)}`);
+		result.error.issues.forEach((i) => {
+			console.error(`    [${i.path.join(".")}] ${i.message}`);
+		});
+		process.exit(1);
+	}
+	return result.data;
 }
 
 // ── Claude Code adapter ───────────────────────────────────────────────────────
@@ -72,47 +89,45 @@ function loadAgent(file: string): AgentDef {
 // Reference: https://docs.anthropic.com/en/docs/claude-code/sub-agents
 
 function modelHintToClaudeModel(hint: AgentDef["model_hint"]): string {
-  return {
-    fast: "claude-haiku-4-5-20251001",
-    balanced: "claude-sonnet-4-6",
-    "high-reasoning": "claude-opus-4-8",
-  }[hint];
+	return {
+		fast: "claude-haiku-4-5-20251001",
+		balanced: "claude-sonnet-4-6",
+		"high-reasoning": "claude-opus-4-8",
+	}[hint];
 }
 
 function renderClaudeCode(agent: AgentDef): string {
-  const claudeVariant = agent.model_variants?.claude;
+	const claudeVariant = agent.model_variants?.claude;
 
-  const toolsYaml = agent.tools_required.length
-    ? agent.tools_required.map((t) => `  - ${t}`).join("\n")
-    : "  []";
+	const toolsYaml = agent.tools_required.length
+		? agent.tools_required.map((t) => `  - ${t}`).join("\n")
+		: "  []";
 
-  const workflowMd = agent.workflow
-    .map((w, i) => {
-      const ref = w.ref ? `\n   > ref: \`${w.ref}\`` : "";
-      return `${i + 1}. ${w.step}${ref}`;
-    })
-    .join("\n");
+	const workflowMd = agent.workflow
+		.map((w, i) => {
+			const ref = w.ref ? `\n   > ref: \`${w.ref}\`` : "";
+			return `${i + 1}. ${w.step}${ref}`;
+		})
+		.join("\n");
 
-  const inputsMd = agent.inputs.length
-    ? agent.inputs
-        .map(
-          (inp) =>
-            `- **\`${inp.name}\`**${inp.required ? " _(required)_" : ""}: ${inp.description ?? ""}`
-        )
-        .join("\n")
-    : "_None_";
+	const inputsMd = agent.inputs.length
+		? agent.inputs
+				.map(
+					(inp) =>
+						`- **\`${inp.name}\`**${inp.required ? " _(required)_" : ""}: ${inp.description ?? ""}`,
+				)
+				.join("\n")
+		: "_None_";
 
-  const policiesMd = agent.policies.length
-    ? agent.policies
-        .map((p) => `- \`policies/${p}.md\``)
-        .join("\n")
-    : "_None_";
+	const policiesMd = agent.policies.length
+		? agent.policies.map((p) => `- \`policies/${p}.md\``).join("\n")
+		: "_None_";
 
-  const appendNote = claudeVariant?.prompt_append
-    ? `\n\n> **Claude-specific note:** ${claudeVariant.prompt_append}`
-    : "";
+	const appendNote = claudeVariant?.prompt_append
+		? `\n\n> **Claude-specific note:** ${claudeVariant.prompt_append}`
+		: "";
 
-  return `---
+	return `---
 name: ${agent.id}
 description: >-
   [SDLC phase: ${agent.phase}] ${agent.description.trim().replace(/\n/g, " ")}
@@ -146,14 +161,14 @@ _Generated by sdlc-agents build engine. Do not edit — run \`sdlc build\` to re
 // Tools that only read top-level AGENTS.md use the index to choose agent files manually.
 
 function renderUniversalIndex(agents: AgentDef[]): string {
-  const agentRows = agents
-    .map(
-      (a) =>
-        `| [\`${a.id}\`](.sdlc/agents/${a.id}.md) | ${a.phase} | ${a.description.trim().split("\n")[0]} |`
-    )
-    .join("\n");
+	const agentRows = agents
+		.map(
+			(a) =>
+				`| [\`${a.id}\`](.sdlc/agents/${a.id}.md) | ${a.phase} | ${a.description.trim().split("\n")[0]} |`,
+		)
+		.join("\n");
 
-  return `# SDLC Agents
+	return `# SDLC Agents
 
 This project uses the **Agentic SDLC Agents Set** — a portable set of AI agents
 covering the full software development lifecycle.
@@ -178,23 +193,23 @@ _Generated by sdlc-agents. Run \`sdlc build\` to regenerate._
 }
 
 function renderUniversalAgent(agent: AgentDef): string {
-  const workflowMd = agent.workflow
-    .map((w, i) => {
-      const ref = w.ref ? ` (see \`${w.ref}\`)` : "";
-      return `${i + 1}. ${w.step}${ref}`;
-    })
-    .join("\n");
+	const workflowMd = agent.workflow
+		.map((w, i) => {
+			const ref = w.ref ? ` (see \`${w.ref}\`)` : "";
+			return `${i + 1}. ${w.step}${ref}`;
+		})
+		.join("\n");
 
-  const inputsMd = agent.inputs.length
-    ? agent.inputs
-        .map(
-          (inp) =>
-            `- **${inp.name}**${inp.required ? " *(required)*" : ""}: ${inp.description ?? ""}`
-        )
-        .join("\n")
-    : "_None_";
+	const inputsMd = agent.inputs.length
+		? agent.inputs
+				.map(
+					(inp) =>
+						`- **${inp.name}**${inp.required ? " *(required)*" : ""}: ${inp.description ?? ""}`,
+				)
+				.join("\n")
+		: "_None_";
 
-  return `# ${agent.id}
+	return `# ${agent.id}
 
 **Phase:** ${agent.phase}
 **Version:** ${agent.version}
@@ -224,9 +239,9 @@ _Part of sdlc-agents v${agent.version}. Universal tier — works on any AI tool.
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const agentFiles = fs
-  .readdirSync(path.join(ROOT, "agents"))
-  .filter((f) => f.endsWith(".yaml"))
-  .map((f) => path.join(ROOT, "agents", f));
+	.readdirSync(path.join(ROOT, "agents"))
+	.filter((f) => f.endsWith(".yaml"))
+	.map((f) => path.join(ROOT, "agents", f));
 
 console.log(`\nLoading ${agentFiles.length} agent(s)...\n`);
 const agents = agentFiles.map(loadAgent);
@@ -235,16 +250,22 @@ console.log(`  All valid.\n`);
 // Claude Code output
 console.log("Rendering → Claude Code format:");
 for (const agent of agents) {
-  const dest = path.join(OUT, "claude-code", ".claude", "agents", `${agent.id}.md`);
-  write(dest, renderClaudeCode(agent));
+	const dest = path.join(
+		OUT,
+		"claude-code",
+		".claude",
+		"agents",
+		`${agent.id}.md`,
+	);
+	write(dest, renderClaudeCode(agent));
 }
 
 // Universal output
 console.log("\nRendering → Universal format (AGENTS.md + .sdlc/):");
 write(path.join(OUT, "universal", "AGENTS.md"), renderUniversalIndex(agents));
 for (const agent of agents) {
-  const dest = path.join(OUT, "universal", ".sdlc", "agents", `${agent.id}.md`);
-  write(dest, renderUniversalAgent(agent));
+	const dest = path.join(OUT, "universal", ".sdlc", "agents", `${agent.id}.md`);
+	write(dest, renderUniversalAgent(agent));
 }
 
 console.log("\nDone. Review spike/output/ to validate DSL design.\n");
