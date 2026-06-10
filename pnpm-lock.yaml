@@ -34,6 +34,42 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.2)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.28.0)(tsx@4.22.4)(yaml@2.9.0))
 
+  packages/adapters/claude-code:
+    dependencies:
+      '@sdlc-agents/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/adapters/copilot:
+    dependencies:
+      '@sdlc-agents/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/adapters/universal:
+    dependencies:
+      '@sdlc-agents/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/cli:
+    dependencies:
+      '@sdlc-agents/adapter-claude-code':
+        specifier: workspace:*
+        version: link:../adapters/claude-code
+      '@sdlc-agents/adapter-copilot':
+        specifier: workspace:*
+        version: link:../adapters/copilot
+      '@sdlc-agents/adapter-universal':
+        specifier: workspace:*
+        version: link:../adapters/universal
+      '@sdlc-agents/core':
+        specifier: workspace:*
+        version: link:../core
+      commander:
+        specifier: ^12.0.0
+        version: 12.1.0
+
   packages/core:
     dependencies:
       yaml:
@@ -420,6 +456,10 @@ packages:
 
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
+    engines: {node: '>=18'}
+
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
 
   convert-source-map@2.0.0:
@@ -957,6 +997,8 @@ snapshots:
   assertion-error@2.0.1: {}
 
   chai@6.2.2: {}
+
+  commander@12.1.0: {}
 
   convert-source-map@2.0.0: {}
 

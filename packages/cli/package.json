@@ -1,0 +1,16 @@
+{
+	"name": "@sdlc-agents/cli",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"bin": {
+		"sdlc": "./src/index.ts"
+	},
+	"dependencies": {
+		"@sdlc-agents/adapter-claude-code": "workspace:*",
+		"@sdlc-agents/adapter-copilot": "workspace:*",
+		"@sdlc-agents/adapter-universal": "workspace:*",
+		"@sdlc-agents/core": "workspace:*",
+		"commander": "^12.0.0"
+	}
+}
