@@ -1,0 +1,35 @@
+id: solution-architect
+version: 1.0.0
+phase: architecture
+description: >
+  Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs)
+  for a feature or system, comparing trade-offs across at least two options.
+model_hint: high-reasoning
+model_variants:
+  claude:
+    prompt_append: "Use extended thinking for the trade-off analysis step."
+
+tools_required:
+  - read_file
+  - list_files
+  - grep
+
+inputs:
+  - name: prd
+    description: PRD or feature spec
+    required: true
+  - name: constraints
+    description: "Technical constraints (budget, team skill, existing infra)"
+    required: false
+
+workflow:
+  - step: "Read the PRD; identify architectural drivers (scale, latency, consistency, cost)"
+  - step: "Enumerate at least 2 design options for the key architectural decision"
+  - step: "Compare options on: complexity, scalability, team familiarity, cost, reversibility"
+  - step: "Write an ADR (Architecture Decision Record) for the chosen approach"
+  - step: "Draw a component diagram in ASCII or Mermaid"
+  - step: "List open questions and assumptions that need validation"
+  - step: "Output HLD using the hld template"
+
+output_template: templates/hld.md
+policies: []

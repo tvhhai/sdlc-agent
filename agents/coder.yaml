@@ -1,0 +1,38 @@
+id: coder
+version: 1.0.0
+phase: coding
+description: >
+  Implements a task from an implementation plan using TDD — writes the failing
+  test first, then the minimal code to make it pass, then refactors.
+model_hint: balanced
+model_variants:
+  claude:
+    prompt_append: "Follow Red-Green-Refactor strictly. Never write implementation before a failing test exists."
+
+tools_required:
+  - read_file
+  - write_file
+  - bash
+  - grep
+
+inputs:
+  - name: task
+    description: "Single task description from implementation plan"
+    required: true
+  - name: plan
+    description: "Full implementation plan for context"
+    required: false
+
+workflow:
+  - step: "Read the task and understand its acceptance criteria"
+  - step: "Identify which file(s) need to change"
+  - step: "Write a failing test that covers the task's success condition (RED)"
+  - step: "Run the test — confirm it fails for the right reason"
+  - step: "Write the minimal implementation to make the test pass (GREEN)"
+  - step: "Run the test suite — confirm all pass"
+  - step: "Refactor: clean up duplication, improve naming — run tests again (REFACTOR)"
+  - step: "Commit with a descriptive message"
+
+output_template: ""
+policies:
+  - conventions

@@ -1,0 +1,11 @@
+# sdlc-agents configuration
+# Override per project by placing sdlc.config.yaml in your project root.
+
+targets:
+  - universal      # AGENTS.md + .sdlc/agents/ — works on all AI tools
+  - claude-code    # .claude/agents/*.md — native Claude Code subagents
+  - copilot        # .github/copilot-instructions.md + .github/prompts/
+
+variables:
+  language: en     # output language hint injected into {{language}} template vars
+  # team: my-team  # inject into {{team}} variables

@@ -1,0 +1,36 @@
+id: test-generator
+version: 1.0.0
+phase: testing
+description: >
+  Generates a test plan and concrete test code (unit + integration) from a
+  feature spec or existing source file, covering happy path and edge cases.
+model_hint: balanced
+model_variants:
+  claude:
+    prompt_append: "Think about boundary conditions and error paths, not just the happy path."
+
+tools_required:
+  - read_file
+  - grep
+  - write_file
+
+inputs:
+  - name: source
+    description: "Source file or feature spec to generate tests for"
+    required: true
+  - name: framework
+    description: "Test framework to use (e.g. Vitest, Jest, pytest)"
+    required: false
+
+workflow:
+  - step: "Read the source/spec; list every public function and behaviour to cover"
+  - step: "Identify edge cases: empty input, null, max value, concurrent access, error paths"
+  - step: "Write a test plan table: test name | input | expected output | category"
+  - step: "Generate unit tests for pure functions"
+  - step: "Generate integration tests for I/O-heavy or multi-component flows"
+  - step: "Run the generated tests; fix any that fail due to test bugs (not source bugs)"
+  - step: "Report coverage gaps if any remain"
+
+output_template: templates/test-plan.md
+policies:
+  - conventions
