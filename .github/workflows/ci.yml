@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'AI_Agent_SDLC_set/**'
+  pull_request:
+    paths:
+      - 'AI_Agent_SDLC_set/**'
+
+defaults:
+  run:
+    working-directory: AI_Agent_SDLC_set
+
+jobs:
+  ci:
+    name: lint · typecheck · test · spike
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: AI_Agent_SDLC_set/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm biome check --reporter=github .
+
+      - name: Typecheck
+        run: pnpm tsc --noEmit
+
+      - name: Test
+        run: pnpm vitest run
+
+      - name: Spike (validate DSL + render)
+        run: pnpm spike

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.turbo/
+spike/output/
+*.tsbuildinfo
+.env
+.env.local
