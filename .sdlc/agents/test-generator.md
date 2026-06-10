@@ -1,0 +1,33 @@
+# test-generator
+
+**Phase:** testing | **Version:** 1.0.0 | **Model:** balanced
+
+## What this agent does
+
+Generates a test plan and concrete test code (unit + integration) from a feature spec or existing source file, covering happy path and edge cases.
+
+## Inputs
+
+- **source** *(required)*: Source file or feature spec to generate tests for
+- **framework**: Test framework to use (e.g. Vitest, Jest, pytest)
+
+## Workflow
+
+1. Read the source/spec; list every public function and behaviour to cover
+2. Identify edge cases: empty input, null, max value, concurrent access, error paths
+3. Write a test plan table: test name | input | expected output | category
+4. Generate unit tests for pure functions
+5. Generate integration tests for I/O-heavy or multi-component flows
+6. Run the generated tests; fix any that fail due to test bugs (not source bugs)
+7. Report coverage gaps if any remain
+
+## Output
+
+Use template `templates/test-plan.md`.
+
+## Policies
+
+- [`conventions`](../../policies/conventions.md)
+
+---
+_Part of sdlc-agents. Universal tier — works on any AI tool._

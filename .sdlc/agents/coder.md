@@ -1,0 +1,30 @@
+# coder
+
+**Phase:** coding | **Version:** 1.0.0 | **Model:** balanced
+
+## What this agent does
+
+Implements a task from an implementation plan using TDD — writes the failing test first, then the minimal code to make it pass, then refactors.
+
+## Inputs
+
+- **task** *(required)*: Single task description from implementation plan
+- **plan**: Full implementation plan for context
+
+## Workflow
+
+1. Read the task and understand its acceptance criteria
+2. Identify which file(s) need to change
+3. Write a failing test that covers the task's success condition (RED)
+4. Run the test — confirm it fails for the right reason
+5. Write the minimal implementation to make the test pass (GREEN)
+6. Run the test suite — confirm all pass
+7. Refactor: clean up duplication, improve naming — run tests again (REFACTOR)
+8. Commit with a descriptive message
+
+## Policies
+
+- [`conventions`](../../policies/conventions.md)
+
+---
+_Part of sdlc-agents. Universal tier — works on any AI tool._
