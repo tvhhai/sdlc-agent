@@ -13,14 +13,38 @@
 
 ## 1. Executive Summary
 
-**Agentic SDLC Agents Set** là một **thư viện các AI Agent được đặc tả sẵn** (agent definitions, prompts, workflows, skills) cho từng giai đoạn của vòng đời phát triển phần mềm (SDLC), được đóng gói theo cách **tool-agnostic**: cùng một agent có thể chạy trên **mọi AI agent/IDE agent hiện nay** — Claude Code, GitHub Copilot, OpenAI Codex, Cursor, Windsurf, Gemini CLI, Google Antigravity, Zed, Cline… — mà không phải viết lại. Cơ chế: **ưu tiên 1 chuẩn mở universal (AGENTS.md)** mà mọi tool đều đọc được, cộng thêm **native adapter** cho tool nào có format riêng mạnh hơn.
+**Agentic SDLC Agents Set** là một **bộ AI Agent được đặc tả sẵn** (agent definitions, prompts, workflows, skills) cho từng giai đoạn của vòng đời phát triển phần mềm (SDLC), được đóng gói theo chiến lược **Hybrid**:
+
+1. **Builder core:** giữ một nguồn chuẩn trong `agents/*.yaml`, validate bằng schema, rồi build ra nhiều format qua adapter.
+2. **Installer UX:** cung cấp trải nghiệm cài đặt tương tự `npx skills` / `create-vue`: hỏi người dùng đang dùng tool nào, muốn bật agents nào, scope project hay user, language/team variables là gì, sau đó tự generate config và output.
+
+Cơ chế runtime vẫn là **universal-first**: luôn build `AGENTS.md` + `.sdlc/agents/` để mọi AI tool đọc được, cộng thêm **native adapter** cho tool nào có format riêng mạnh hơn như Claude Code hoặc GitHub Copilot.
 
 **Giá trị cốt lõi:**
 - Team mới chỉ cần `install` bộ agents là có ngay quy trình SDLC chuẩn có AI hỗ trợ — không phải tự viết prompt/agent từ đầu.
 - Chuẩn hoá chất lượng output AI giữa các team (cùng coding convention, cùng template tài liệu, cùng quy trình review).
 - Một nguồn maintain duy nhất (single source of truth) → build ra nhiều format cho từng tool.
 
-**Analogy:** giống như "Terraform modules" nhưng cho AI agents — viết một lần, deploy lên nhiều "provider" (AI tools).
+**Analogy:** giống như "Terraform modules" + "`npx create-*` wizard" cho AI agents — viết một lần, validate/test được, rồi cài đặt/generate thân thiện theo tool người dùng đang có.
+
+### 1.1 Định hướng Hybrid so với Agent Skills CLI
+
+Agent Skills CLI (`npx skills`, `gh skill`) giải rất tốt bài toán **discover/install**: chọn skill, detect agent host, rồi copy vào `.claude/skills/`, `.cursor/skills/`, `.github/skills/`... Dự án này không nên thay thế hoàn toàn bằng mô hình đó, vì bài toán chính rộng hơn một skill đơn lẻ: chuẩn hóa một **agent catalog SDLC có phase, template, policy, adapter contract, generated manifest và test suite**.
+
+Định hướng chốt:
+
+- Không pivot khỏi canonical YAML/build engine.
+- Thêm wizard installer để onboarding ngắn như Agent Skills CLI.
+- Có thể thêm output target dạng Agent Skills (`SKILL.md`) trong Phase 2 để tương thích ecosystem, nhưng vẫn giữ `agents/*.yaml` là source of truth.
+- Tách rõ command cho user cuối (`npx sdlc-agents init`) và command cho maintainer (`pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sdlc validate`, `pnpm sdlc build`).
+
+Trade-off:
+
+| Hướng | Ưu | Nhược |
+|---|---|---|
+| Build engine hiện tại | Deterministic, test được, source of truth rõ, adapter output đồng nhất | UX cài đặt dài, giống dev tool hơn consumer tool |
+| Agent Skills CLI thuần | UX cực ngắn, hợp ecosystem, detect host tốt | Khó biểu diễn đầy đủ SDLC catalog + template/policy/build contract nếu chỉ copy skill files |
+| Hybrid | Giữ nền kỹ thuật chắc và có UX cài đặt tốt | Cần thêm wizard, host detection, install scope, update/pin flow |
 
 ---
 
@@ -49,7 +73,7 @@
 |---|------|----------|
 | G1 | Bộ agent phủ tối thiểu 6 phase SDLC (Requirement → Maintain) | ≥ 12 agents hoạt động được |
 | G2 | **Universal-first**: build ra chuẩn mở AGENTS.md chạy được trên MỌI AI agent (Codex, Cursor, Windsurf, Gemini, Antigravity, Zed, Cline...) + native adapter cho tool có format riêng mạnh hơn (Claude Code, Copilot...) | Tầng Universal phủ 100% tools; thêm native adapter mới < 1 tuần |
-| G3 | Cài đặt 1 lệnh (CLI installer) | `npx sdlc-agents init` xong < 2 phút |
+| G3 | Cài đặt 1 lệnh qua interactive wizard | `npx sdlc-agents init` xong < 2 phút; người dùng không phải nhớ `validate`/`build` |
 | G4 | Cho phép customize ở mọi cấp độ (override prompt, workflow, template, thêm agent riêng) mà không fork toàn bộ | Customization model 4 cấp (mục 7) |
 | G5 | Versioning + changelog + update mechanism | Semantic versioning, `update` command |
 
@@ -191,6 +215,13 @@ policies: [security-checklist, conventions]
 - Render ra format từng tool qua adapter.
 - Lint prompt (độ dài, từ cấm, placeholder chưa resolve).
 
+**2b. Installer / Wizard UX** — trách nhiệm:
+- Detect hoặc hỏi người dùng đang dùng AI host nào: Claude Code, Cursor, Copilot, Codex, Windsurf, Gemini...
+- Cho chọn preset agents: full SDLC, planning+coding, review+testing, hoặc custom.
+- Cho chọn scope: project-local generated files hay user-global skills/prompts nếu host hỗ trợ.
+- Sinh `sdlc.config.yaml`, chạy validation và build lần đầu.
+- Giữ các lệnh dev (`validate`, `build`, `test`, `typecheck`, `lint`) cho maintainer, không bắt user cuối chạy từng lệnh.
+
 **3. Adapters — chiến lược 2 tầng: Universal baseline + Progressive enhancement**
 
 > **Nguyên tắc:** mọi tool đều dùng được ngay qua tầng Universal; tool nào có format native mạnh hơn thì adapter riêng "nâng cấp" trải nghiệm. Tool mới ra mắt → tự động được hỗ trợ ở tầng Universal mà không cần code thêm.
@@ -245,16 +276,17 @@ sdlc-agents.config.yaml      # tại root project của team
 ```
 
 **5. Distribution:**
-- npm package (`npx @org/sdlc-agents init|build|update`) — hoặc Git template repo cho team không dùng Node.
+- npm package (`npx sdlc-agents init|build|update`) — hoặc Git template repo cho team không dùng Node.
+- Interactive wizard là entrypoint mặc định cho user cuối; non-interactive flags vẫn cần cho CI/automation.
 - Claude Code plugin marketplace format (bonus cho Claude users).
 - Registry nội bộ (Git repo + tags) cho enterprise.
 
 ### 6.3 Luồng sử dụng (Developer Journey)
 
 ```
-1. npx @org/sdlc-agents init
-   → wizard hỏi: tool nào? team nào? stack gì?
-   → sinh sdlc-agents.config.yaml + build lần đầu
+1. npx sdlc-agents init
+   → wizard hỏi: tool nào? agents nào? project-local hay user-global? language/team variables?
+   → sinh sdlc.config.yaml + build lần đầu
 
 2. Files được generate vào repo (.claude/, .github/, ...)
    → commit vào git như code bình thường
@@ -264,7 +296,7 @@ sdlc-agents.config.yaml      # tại root project của team
    Copilot:      @workspace /review-pr      → code-reviewer prompt
 
 4. Org cập nhật bộ agents (vd: checklist security mới)
-   → npx @org/sdlc-agents update → re-build → PR tự động
+   → npx sdlc-agents update → re-build → PR tự động
 ```
 
 ---
@@ -404,7 +436,7 @@ hooks:
 | FR-01 | Định nghĩa agent bằng DSL chuẩn (YAML + Markdown), có JSON Schema validate | Must |
 | FR-02 | **Universal adapter (AGENTS.md + `.sdlc/`)** — output chuẩn mở dùng được trên mọi AI agent | Must |
 | FR-02b | Native adapters đợt đầu: Claude Code, Copilot | Must |
-| FR-03 | CLI: `init`, `build`, `update`, `list`, `validate`, `doctor`, `eject`, `reset` | Must |
+| FR-03 | CLI + Hybrid installer UX: interactive `init`, `build`, `update`, `list`, `validate`, `doctor`, `eject`, `reset`; non-interactive flags cho CI | Must |
 | FR-04 | Config override nhiều lớp (base → org → team → project → local), deep-merge có thứ tự ưu tiên | Must |
 | FR-05 | Bộ 6 agents MVP hoạt động end-to-end | Must |
 | FR-06 | Patch-based override: `replace`/`append`/`insert_after` từng phần agent (prompt, workflow step, template) | Must |
@@ -445,7 +477,7 @@ hooks:
 | **Eval (v1.1)** | promptfoo hoặc tự build harness gọi Claude API chấm điểm output | Đo chất lượng agent khi sửa prompt |
 | **CI/CD** | GitHub Actions: lint → test → build → publish npm | Chuẩn industry |
 | **Docs site (v1.2)** | VitePress / Docusaurus | Catalog agents, hướng dẫn |
-| **Distribution** | npm (public/private registry) + Git tags | Versioning sẵn có |
+| **Distribution** | npm (public/private registry) + Git tags | `npx sdlc-agents init` cho user cuối, versioning/update qua npm tags |
 
 > **Lưu ý:** sản phẩm này **không cần backend/database** ở MVP. Toàn bộ là static files + CLI. Đây là lợi thế lớn: chi phí vận hành ≈ 0.
 

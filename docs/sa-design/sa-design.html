@@ -62,13 +62,13 @@
         <span class="doc-badge doc-badge-warning">Đang review</span>
       </div>
       <h1>Agentic SDLC Agents Set</h1>
-      <p class="doc-subtitle">Solution Architecture Document — bộ AI agent definitions tái sử dụng, tool-agnostic, phủ toàn bộ vòng đời phát triển phần mềm từ Requirement → Maintain.</p>
+      <p class="doc-subtitle">Solution Architecture Document — bộ AI agent definitions tái sử dụng theo hướng Hybrid: Builder core deterministic + Installer UX một lệnh cho toàn bộ vòng đời SDLC.</p>
 
       <!-- 1. Executive Summary -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s1">1. Executive Summary</h2>
-        <p><strong>Agentic SDLC Agents Set</strong> là một <strong>thư viện các AI Agent được đặc tả sẵn</strong> (agent definitions, prompts, workflows, skills) cho từng giai đoạn của vòng đời phát triển phần mềm (SDLC), được đóng gói theo cách <strong>tool-agnostic</strong>: cùng một agent có thể chạy trên <strong>mọi AI agent/IDE agent hiện nay</strong> — Claude Code, GitHub Copilot, OpenAI Codex, Cursor, Windsurf, Gemini CLI, Zed, Cline… — mà không phải viết lại.</p>
-        <p>Cơ chế: <strong>ưu tiên 1 chuẩn mở universal (AGENTS.md)</strong> mà mọi tool đều đọc được, cộng thêm <strong>native adapter</strong> cho tool nào có format riêng mạnh hơn.</p>
+        <p><strong>Agentic SDLC Agents Set</strong> là một <strong>bộ AI Agent được đặc tả sẵn</strong> cho từng giai đoạn SDLC, được đóng gói theo chiến lược <strong>Hybrid</strong>: giữ một Builder core deterministic để validate/build từ canonical YAML, đồng thời cung cấp Installer UX ngắn như <code>npx sdlc-agents init</code> cho người dùng cuối.</p>
+        <p>Cơ chế runtime vẫn là <strong>universal-first</strong>: luôn build <code>AGENTS.md</code> + <code>.sdlc/agents/</code> để mọi AI tool đọc được, cộng thêm <strong>native adapter</strong> cho tool nào có format riêng mạnh hơn như Claude Code hoặc GitHub Copilot.</p>
 
         <div class="grid grid-3" style="margin-top: 20px;">
           <doc-card title="Zero-to-productive" badge="Core Value" badge-type="success">
@@ -78,9 +78,33 @@
             Cùng coding convention, cùng template tài liệu, cùng quy trình review giữa các team.
           </doc-card>
           <doc-card title="Single source of truth" badge="Core Value" badge-type="success">
-            Một nguồn maintain duy nhất → build ra nhiều format cho từng tool. Giống <em>Terraform modules</em> nhưng cho AI agents.
+            Một nguồn maintain duy nhất → build ra nhiều format cho từng tool. Giống <em>Terraform modules</em> + <code>npx create-*</code> wizard nhưng cho AI agents.
           </doc-card>
         </div>
+      </section>
+
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s1-hybrid">1.1 Định hướng Hybrid so với Agent Skills CLI</h2>
+        <p>Agent Skills CLI như <code>npx skills</code> hoặc <code>gh skill</code> giải tốt bài toán discover/install: chọn skill, chọn agent host, rồi sinh file đúng nơi như <code>.claude/</code>, <code>.cursor/</code> hoặc <code>.github/</code>. Dự án này không pivot hoàn toàn sang mô hình đó vì bài toán chính rộng hơn một skill đơn lẻ: chuẩn hóa cả agent catalog SDLC có phase, template, policy, adapter contract, generated manifest và test suite.</p>
+        <div class="grid grid-3" style="margin-top: 16px;">
+          <doc-card title="Builder core" badge="Keep" badge-type="success">
+            Giữ <code>agents/*.yaml</code> là source of truth, validate bằng schema, render deterministic qua adapters, có tests và drift detection.
+          </doc-card>
+          <doc-card title="Installer UX" badge="Add" badge-type="info">
+            Thêm wizard hỏi tool nào, agents nào, scope project hay user, language/team variables, rồi tự tạo config và build lần đầu.
+          </doc-card>
+          <doc-card title="Agent Skills target" badge="Phase 2" badge-type="warning">
+            Có thể thêm output target dạng <code>SKILL.md</code> để tương thích ecosystem, nhưng vẫn render từ canonical YAML.
+          </doc-card>
+        </div>
+        <table style="margin-top: 16px;">
+          <thead><tr><th>Hướng</th><th>Ưu</th><th>Nhược</th></tr></thead>
+          <tbody>
+            <tr><td>Build engine hiện tại</td><td>Deterministic, test được, source of truth rõ</td><td>UX cài đặt dài, giống dev tool hơn consumer tool</td></tr>
+            <tr><td>Agent Skills CLI thuần</td><td>UX ngắn, hợp ecosystem, detect host tốt</td><td>Khó biểu diễn đầy đủ SDLC catalog + template/policy/build contract nếu chỉ copy skill files</td></tr>
+            <tr><td><strong>Hybrid</strong></td><td>Giữ nền kỹ thuật chắc và có UX cài đặt tốt</td><td>Cần thêm wizard, host detection, install scope, update/pin flow</td></tr>
+          </tbody>
+        </table>
       </section>
 
       <!-- 2. Problem Statement -->
@@ -109,7 +133,7 @@
           <tbody>
             <tr><td><span class="pill acc">G1</span></td><td>Bộ agent phủ tối thiểu 6 phase SDLC (Requirement → Maintain)</td><td>≥ 12 agents hoạt động được</td></tr>
             <tr><td><span class="pill acc">G2</span></td><td><strong>Universal-first:</strong> build ra chuẩn mở AGENTS.md chạy được trên MỌI AI agent + native adapter cho tool có format riêng mạnh hơn</td><td>Tầng Universal phủ 100% tools; thêm native adapter mới &lt; 1 tuần</td></tr>
-            <tr><td><span class="pill acc">G3</span></td><td>Cài đặt 1 lệnh (CLI installer)</td><td><code>npx sdlc-agents init</code> xong &lt; 2 phút</td></tr>
+            <tr><td><span class="pill acc">G3</span></td><td>Cài đặt 1 lệnh qua interactive wizard</td><td><code>npx sdlc-agents init</code> xong &lt; 2 phút; user không phải nhớ <code>validate</code>/<code>build</code></td></tr>
             <tr><td><span class="pill acc">G4</span></td><td>Customize ở mọi cấp độ mà không fork toàn bộ</td><td>Customization model 4 cấp (mục 7)</td></tr>
             <tr><td><span class="pill acc">G5</span></td><td>Versioning + changelog + update mechanism</td><td>Semantic versioning, <code>update</code> command</td></tr>
           </tbody>
@@ -225,6 +249,16 @@
 └──────────────────────┘   │ windsurf     gemini   cline/roo  │
                            └──────────────────────────────────┘</pre>
 
+        <h3 style="margin-top: 24px;">6.1b Hybrid layer responsibilities</h3>
+        <div class="grid grid-2" style="margin-top: 12px;">
+          <doc-card title="Builder core" badge="Deterministic" badge-type="success">
+            Validate schema, resolve variables, check references, call adapters, write generated files and build manifest. Đây là luồng maintainer dùng qua <code>pnpm sdlc validate</code> / <code>pnpm sdlc build</code>.
+          </doc-card>
+          <doc-card title="Installer / Wizard UX" badge="Interactive" badge-type="info">
+            Hỏi hoặc detect AI host, agent preset, install scope và variables; tạo <code>sdlc.config.yaml</code>, rồi gọi Builder core để user cuối chỉ cần <code>npx sdlc-agents init</code>.
+          </doc-card>
+        </div>
+
         <h3 style="margin-top: 24px;">6.2 Adapter Strategy — 2 tầng</h3>
         <div class="grid grid-2" style="margin-top: 12px;">
           <doc-card title="Tầng 0 — Universal" badge="Always build" badge-type="success">
@@ -250,10 +284,10 @@
 
         <h3 style="margin-top: 24px;">6.3 Developer Journey</h3>
         <div class="timeline">
-          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">1. <code>npx @org/sdlc-agents init</code></div><div class="tl-detail">Wizard hỏi: tool nào? team nào? stack gì? → sinh <code>sdlc-agents.config.yaml</code> + build lần đầu</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">1. <code>npx sdlc-agents init</code></div><div class="tl-detail">Wizard hỏi: tool nào? agents nào? scope project hay user? language/team variables? → sinh <code>sdlc.config.yaml</code> + build lần đầu</div></div>
           <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">2. Commit generated files</div><div class="tl-detail">Files được generate vào repo (<code>.claude/</code>, <code>.github/</code>, …) → commit vào git như code bình thường</div></div>
           <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">3. Dev dùng agent trong tool quen thuộc</div><div class="tl-detail">Claude Code: <code>/plan "thêm tính năng X"</code> → planner agent<br>Copilot: <code>@workspace /review-pr</code> → code-reviewer prompt</div></div>
-          <div class="tl-item"><div class="tl-dot tl-dot-medium"></div><div class="tl-title">4. Org cập nhật bộ agents</div><div class="tl-detail"><code>npx @org/sdlc-agents update</code> → re-build → PR tự động</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-medium"></div><div class="tl-title">4. Org cập nhật bộ agents</div><div class="tl-detail"><code>npx sdlc-agents update</code> → re-build → PR tự động</div></div>
         </div>
       </section>
 
@@ -316,7 +350,7 @@
             <tr><td><code>FR-01</code></td><td>Định nghĩa agent bằng DSL chuẩn (YAML + Markdown), có JSON Schema validate</td><td><span class="pill acc">Must</span></td></tr>
             <tr><td><code>FR-02</code></td><td><strong>Universal adapter</strong> (AGENTS.md + <code>.sdlc/</code>) — chuẩn mở dùng được trên mọi AI agent</td><td><span class="pill acc">Must</span></td></tr>
             <tr><td><code>FR-02b</code></td><td>Native adapters đợt đầu: Claude Code, Copilot</td><td><span class="pill acc">Must</span></td></tr>
-            <tr><td><code>FR-03</code></td><td>CLI: <code>init</code>, <code>build</code>, <code>update</code>, <code>list</code>, <code>validate</code>, <code>doctor</code>, <code>eject</code>, <code>reset</code></td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-03</code></td><td>CLI + Hybrid installer UX: interactive <code>init</code>, <code>build</code>, <code>update</code>, <code>list</code>, <code>validate</code>, <code>doctor</code>, <code>eject</code>, <code>reset</code>; non-interactive flags cho CI</td><td><span class="pill acc">Must</span></td></tr>
             <tr><td><code>FR-04</code></td><td>Config override nhiều lớp (base → org → team → project → local), deep-merge có thứ tự ưu tiên</td><td><span class="pill acc">Must</span></td></tr>
             <tr><td><code>FR-05</code></td><td>Bộ 6 agents MVP hoạt động end-to-end</td><td><span class="pill acc">Must</span></td></tr>
             <tr><td><code>FR-06</code></td><td>Patch-based override: <code>replace</code>/<code>append</code>/<code>insert_after</code> từng phần agent</td><td><span class="pill acc">Must</span></td></tr>
@@ -363,7 +397,7 @@
             <tr><td>Lint + Format</td><td><strong>Biome</strong></td><td>Thay ESLint+Prettier, 1 tool, nhanh</td></tr>
             <tr><td>Config merge</td><td><code>deepmerge-ts</code> / custom</td><td>Kiểm soát thứ tự ưu tiên + array strategy</td></tr>
             <tr><td>Eval (Phase 2)</td><td>promptfoo + Langfuse</td><td>Eval harness + trace regression chất lượng</td></tr>
-            <tr><td>Distribution</td><td>npm + git tags</td><td>Versioning sẵn có</td></tr>
+            <tr><td>Distribution</td><td>npm + git tags</td><td><code>npx sdlc-agents init</code> cho user cuối, versioning/update qua npm tags</td></tr>
           </tbody>
         </table>
         <doc-alert type="success" title="Zero backend">

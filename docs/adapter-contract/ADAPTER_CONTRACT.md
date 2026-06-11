@@ -26,6 +26,22 @@ Rules:
 - An adapter must not write files itself — the build engine owns all filesystem writes
   and records each file's hash in `.sdlc/build-manifest.json` for drift detection.
 
+## Render adapters vs host installers
+
+The Hybrid product direction adds an installer/wizard experience (`npx sdlc-agents init`),
+but that does **not** change the adapter boundary.
+
+- **Render adapter:** pure function from canonical agents + build context to `OutputFile[]`.
+  It decides file paths and content for one target format.
+- **Host installer / wizard:** interactive orchestration layer. It detects or asks which
+  AI hosts the user wants, chooses targets and presets, writes `sdlc.config.yaml`, then
+  invokes the build engine.
+- Installer logic must not live inside `adapter.render()`. Adapters must stay deterministic
+  so tests, snapshots, rebuilds, and drift detection remain reliable.
+- Future targets such as Agent Skills (`SKILL.md`) can be implemented as normal render
+  adapters if their output is deterministic. Host-specific install scope decisions still
+  belong to the installer/wizard layer.
+
 ## Required output properties
 
 Every generated file must:
@@ -64,6 +80,8 @@ Each adapter package must contain, under `src/__tests__/`:
 4. Add the target name to `sdlc.config.yaml` docs and the README.
 5. Add a row to the table above, including compatibility notes (which tool versions
    were verified, any format caveats).
+6. If the target also needs special installer behavior, document that behavior in the
+   CLI/wizard docs rather than making the adapter read host state or write files itself.
 
 > Phase 2 (per SA design FR-11) will replace the hardcoded `ADAPTERS` map with a plugin
 > interface (`adapters: ["@org/sdlc-adapter-x"]` in config). Until then, adapters live

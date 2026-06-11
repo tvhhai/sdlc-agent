@@ -87,6 +87,23 @@
         </div>
       </section>
 
+      <!-- Render Adapters vs Host Installers -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="render-vs-installer">Render adapters vs host installers</h2>
+        <p>Định hướng Hybrid thêm trải nghiệm installer/wizard qua <code>npx sdlc-agents init</code>, nhưng không đổi ranh giới trách nhiệm của adapter.</p>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <doc-card title="Render adapter" badge="Pure" badge-type="success">
+            Là hàm thuần từ canonical agents + build context sang <code>OutputFile[]</code>. Adapter quyết định path và content cho một target format, nhưng không đọc host state và không tự ghi file.
+          </doc-card>
+          <doc-card title="Host installer / wizard" badge="Interactive" badge-type="info">
+            Hỏi hoặc detect AI host, chọn targets/presets/scope, ghi <code>sdlc.config.yaml</code>, rồi gọi build engine để render output lần đầu.
+          </doc-card>
+        </div>
+        <doc-alert type="warning" title="Không trộn trách nhiệm">
+          Logic installer không được nằm trong <code>adapter.render()</code>. Ngay cả target tương lai như Agent Skills (<code>SKILL.md</code>) cũng nên là render adapter deterministic; quyết định project-local hay user-global thuộc về wizard.
+        </doc-alert>
+      </section>
+
       <!-- Required Output Properties -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="required-output">Thuộc tính đầu ra bắt buộc</h2>
@@ -164,6 +181,7 @@
           <li><span class="step-text">Đăng ký adapter mới trong đối tượng <code>ADAPTERS</code> tại tệp <code>packages/cli/src/commands/build.ts</code>.</span></li>
           <li><span class="step-text">Khai báo thêm tên target vào tài liệu cấu hình <code>sdlc.config.yaml</code> và tệp <code>README.md</code> ở thư mục gốc.</span></li>
           <li><span class="step-text">Bổ sung một hàng vào bảng Danh sách Adapter đã đăng ký ở trên, nêu rõ phiên bản công cụ đã được xác thực và các lưu ý về định dạng file.</span></li>
+          <li><span class="step-text">Nếu target cần hành vi installer riêng, ghi rõ trong tài liệu CLI/wizard thay vì để adapter đọc trạng thái host hoặc tự ghi file.</span></li>
         </ol>
       </section>
 

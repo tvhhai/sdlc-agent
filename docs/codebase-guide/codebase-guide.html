@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../docs-layout.css" />
   <style>
     .flow-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: #cbd5e1; overflow-x: auto; margin: 14px 0; }
-    .pkg-row { display: grid; grid-template-columns: 200px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+    .pkg-row { display: grid; grid-template-columns: 220px 1fr; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: start; }
     .pkg-row:last-child { border-bottom: none; }
     .pkg-name { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 700; }
-    .pkg-desc { font-size: 13px; color: #cbd5e1; line-height: 1.55; }
+    .pkg-desc { font-size: 13.5px; color: #cbd5e1; line-height: 1.6; }
     .status-done { color: var(--green); font-weight: 700; }
     .status-partial { color: var(--yellow); font-weight: 700; }
     .status-todo { color: var(--muted); }
@@ -19,6 +19,16 @@
     .fr-partial { color: var(--yellow); }
     .fr-todo { color: var(--muted); }
     .update-badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 4px; margin-left: 8px; background: rgba(52,211,153,0.15); color: var(--green); border: 1px solid rgba(52,211,153,0.3); vertical-align: middle; }
+    
+    /* Mermaid diagram container style */
+    .mermaid-container {
+      background: #0f111a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body class="page-doc" data-doc="codebase-guide">
@@ -32,16 +42,16 @@
     <aside class="doc-nav-sidebar">
       <a class="doc-nav-brand" href="../sa-design/sa-design.html">
         <div class="doc-nav-brand-title">sdlc-agent</div>
-        <div class="doc-nav-brand-sub">Documentation</div>
+        <div class="doc-nav-brand-sub">Tài liệu hướng dẫn</div>
       </a>
       <nav class="doc-nav-group">
-        <div class="doc-nav-group-label">Architecture</div>
+        <div class="doc-nav-group-label">Kiến trúc</div>
         <a class="doc-nav-link" href="../sa-design/sa-design.html" data-doc="sa-design">
           <span class="doc-nav-link-icon">🏗</span> SA Design
         </a>
       </nav>
       <nav class="doc-nav-group">
-        <div class="doc-nav-group-label">Reference</div>
+        <div class="doc-nav-group-label">Tham chiếu</div>
         <a class="doc-nav-link" href="codebase-guide.html" data-doc="codebase-guide">
           <span class="doc-nav-link-icon">📁</span> Codebase Guide
         </a>
@@ -56,269 +66,521 @@
 
       <div class="doc-badges">
         <span class="doc-badge doc-badge-default">2026-06-11</span>
-        <span class="doc-badge doc-badge-default">Codebase · Architecture</span>
-        <span class="doc-badge doc-badge-success">Updated</span>
+        <span class="doc-badge doc-badge-default">Mã nguồn · Kiến trúc</span>
+        <span class="doc-badge doc-badge-success">Đã cập nhật</span>
       </div>
-      <h1>Codebase Folder Guide</h1>
-      <p class="doc-subtitle">Hướng dẫn đầy đủ về cấu trúc repo <code>sdlc-agent</code> — từng folder, từng package, và đánh giá đối chiếu SA design với code thực tế (mục 21).</p>
+      <h1>Hướng dẫn thư mục Codebase (Codebase Folder Guide)</h1>
+      <p class="doc-subtitle">Hướng dẫn đầy đủ về cấu trúc repo <code>sdlc-agent</code> theo hướng Hybrid — từng folder, từng package, phần nào là source, phần nào generated, và đánh giá đối chiếu SA design với code thực tế.</p>
+
+      <!-- 0. Product overview -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s0">0. Dự án này làm gì và dùng như thế nào</h2>
+        <p><code>sdlc-agent</code> là một monorepo TypeScript để định nghĩa, validate, build và phân phối một bộ AI agents cho các giai đoạn SDLC: requirement, planning, architecture, coding, review và testing. Thay vì copy/paste prompt riêng cho từng tool, project giữ một nguồn chuẩn trong <code>agents/*.yaml</code>, sau đó render ra format phù hợp cho nhiều AI tools.</p>
+        
+        <p>Định hướng sản phẩm hiện tại là <strong>Hybrid</strong>:</p>
+        <ul>
+          <li><strong>Builder core:</strong> schema, validation, adapter render, drift detection và test suite vẫn là nền kỹ thuật chính.</li>
+          <li><strong>Installer UX:</strong> user cuối không cần nhớ chuỗi lệnh dài; <code>npx sdlc-agents init</code> sẽ hỏi đang dùng AI host nào, muốn bật agents nào, scope project hay user, các biến ngôn ngữ/đội ngũ, rồi tự tạo cấu hình và chạy build lần đầu.</li>
+        </ul>
+
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <doc-card title="Mục đích theo SA design" badge="Ý tưởng" badge-type="success">
+            <ul>
+              <li>Chuẩn hóa workflow AI agent cho đội ngũ phát triển.</li>
+              <li>Quản lý version, schema, test cho các định nghĩa agent.</li>
+              <li>Build một lần ra nhiều target: Universal (<code>AGENTS.md</code>), Claude Code, và Copilot.</li>
+              <li>Cho phép tùy chỉnh bằng config, policy, template, tránh sửa tay file generated.</li>
+            </ul>
+          </doc-card>
+          <doc-card title="Trạng thái hiện tại" badge="Phase 1 MVP" badge-type="info">
+            Đã hoàn thành 6 agents cơ bản, CLI tích hợp <code>init</code> / <code>validate</code> / <code>build</code>, 3 adapters, cơ chế validate liên kết và phát hiện drift. Các tính năng nâng cao như merge config nhiều lớp, inheritance (<code>extends</code>), vendoring (<code>imports</code>) và hệ thống test tự động (eval harness) sẽ được triển khai ở Phase 2+.
+          </doc-card>
+        </div>
+
+        <h3 class="doc-section-subtitle" id="s0-usage">Cách dùng nhanh cho consumer project</h3>
+        <p>Để khởi tạo nhanh dự án tiêu dùng, hãy chạy lệnh:</p>
+        <pre class="flow">npx sdlc-agents init</pre>
+        <p>Wizard sẽ hướng dẫn chọn AI host, agent preset, phạm vi cài đặt và các biến môi trường, sau đó tạo tệp <code>sdlc.config.yaml</code> và tự động kết xuất đầu ra lần đầu. Các lệnh phát triển trong repo này như <code>pnpm sdlc validate</code>, <code>pnpm sdlc build</code>, hay <code>pnpm test</code> dành riêng cho duy trì và đóng gói hệ thống.</p>
+      </section>
+
+      <!-- 0.1 Overview folder -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s0-folder-overview">0.1 Overview nhanh theo folder</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Folder/File</th>
+              <th>Sửa tay?</th>
+              <th>Generated sau lệnh?</th>
+              <th>Ý nghĩa nhanh</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>agents/</code></td><td>Có</td><td>Không</td><td>Source of truth của agent catalog. Sửa khi thêm agent, đổi workflow, input, model hint, policy/template reference.</td></tr>
+            <tr><td><code>templates/</code></td><td>Có</td><td>Không</td><td>Mẫu tài liệu/kết quả đầu ra của các agent (PRD, HLD, plan, review report, test plan).</td></tr>
+            <tr><td><code>policies/</code></td><td>Có</td><td>Không</td><td>Quy chuẩn và checklist được agent tham chiếu (coding conventions, security).</td></tr>
+            <tr><td><code>sdlc.config.yaml</code></td><td>Có</td><td>Không</td><td>Cấu hình targets render (<code>universal</code>, <code>claude-code</code>, <code>copilot</code>) và các biến toàn cục.</td></tr>
+            <tr><td><code>packages/core/</code></td><td>Có</td><td>Không</td><td>Nhân xử lý: schema, config loader, YAML parser, variable resolver, merge config.</td></tr>
+            <tr><td><code>packages/cli/</code></td><td>Có</td><td>Không</td><td>Giao diện dòng lệnh <code>init</code>, <code>validate</code>, <code>build</code>. Phase 2 sẽ mở rộng thành wizard đầy đủ.</td></tr>
+            <tr><td><code>packages/adapters/</code></td><td>Có</td><td>Không</td><td>Các bộ chuyển đổi render nội dung sang định dạng riêng của từng công cụ AI.</td></tr>
+            <tr><td><code>docs/</code></td><td>Có</td><td>Không</td><td>Source of truth của tài liệu hướng dẫn và thiết kế (Markdown + HTML).</td></tr>
+            <tr><td><code>AGENTS.md</code></td><td>Không</td><td>Có, bởi <code>sdlc build</code></td><td>Chỉ mục Universal chính để các IDE/AI agent đọc hướng dẫn toàn dự án.</td></tr>
+            <tr><td><code>.sdlc/agents/*.md</code></td><td>Không</td><td>Có, bởi <code>sdlc build</code></td><td>File chi tiết agent theo chuẩn Markdown Universal.</td></tr>
+            <tr><td><code>.sdlc/build-manifest.json</code></td><td>Không</td><td>Có, bởi <code>sdlc build</code></td><td>Manifest lưu mã SHA-256 dùng để phát hiện drift (sửa tay tệp generated).</td></tr>
+            <tr><td><code>.claude/agents/*.md</code></td><td>Không</td><td>Có, bởi <code>sdlc build</code></td><td>Các subagents cấu hình riêng cho Claude Code.</td></tr>
+            <tr><td><code>.github/copilot-instructions.md</code></td><td>Không</td><td>Có, bởi <code>sdlc build</code></td><td>File cấu hình hướng dẫn chung của GitHub Copilot.</td></tr>
+            <tr><td><code>.github/prompts/*.prompt.md</code></td><td>Không</td><td>Có, bởi <code>sdlc build</code></td><td>File prompt riêng của từng agent dành cho GitHub Copilot.</td></tr>
+            <tr><td><code>.github/workflows/</code></td><td>Có</td><td>Không</td><td>Cấu hình CI/CD tự động chạy test, lint và typecheck.</td></tr>
+            <tr><td><code>spike/</code></td><td>Ít khi</td><td>Không</td><td>Bản prototype Phase 0 để tham khảo cấu trúc, không chạy runtime.</td></tr>
+          </tbody>
+        </table>
+      </section>
 
       <!-- 1. Architecture overview -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s1">1. Tổng quan kiến trúc</h2>
-        <p>Mục tiêu: duy trì bộ định nghĩa AI agent theo mô hình <strong>"write once, render everywhere"</strong>: agent được viết một lần ở dạng canonical YAML, sau đó build engine render ra các format nhiều AI tools có thể đọc được.</p>
+        <p>Hệ thống được tổ chức thành 4 lớp chính như sơ đồ Solution Architecture:</p>
+        <ol>
+          <li><strong>Canonical layer:</strong> Chứa mã nguồn chuẩn của agents (YAML), templates, policies và config.</li>
+          <li><strong>Build engine:</strong> Nhân xử lý nạp config, đọc agents, validate Zod schema, resolve biến và phân phối cho các adapter.</li>
+          <li><strong>Installer / Wizard UX:</strong> Giao diện cài đặt tương tác thân thiện qua CLI (Phase 2).</li>
+          <li><strong>Tool adapters:</strong> Render nội dung chuẩn ra các định dạng đích cụ thể.</li>
+        </ol>
 
-        <div class="grid grid-3" style="margin-top: 16px;">
-          <doc-card title="Canonical Layer" badge="Source of truth" badge-type="success">
-            <code>agents/*.yaml</code>, <code>templates/*.md</code>, <code>policies/*.md</code>, <code>sdlc.config.yaml</code>
-          </doc-card>
-          <doc-card title="Build Engine" badge="Core + CLI" badge-type="info">
-            <code>packages/core/</code> (schema, loader, resolver, merger) + <code>packages/cli/</code> (init, build, validate)
-          </doc-card>
-          <doc-card title="Adapters" badge="3 adapters" badge-type="info">
-            <code>packages/adapters/universal</code>, <code>claude-code</code>, <code>copilot</code>
-          </doc-card>
+        <h3 class="doc-section-subtitle" id="s1-build-flow">Luồng xử lý (Build Flow)</h3>
+        <div class="mermaid-container">
+          <pre class="mermaid">
+flowchart LR
+  A["sdlc.config.yaml"] --> B["packages/cli runBuild"]
+  C["agents/*.yaml"] --> D["packages/core loadAgents"]
+  D --> E["AgentSchema validation"]
+  B --> F["resolveAgent variables"]
+  G["templates/*.md"] --> H["BuildContext"]
+  I["policies/*.md"] --> H
+  F --> J["ToolAdapter.render"]
+  H --> J
+  J --> K["AGENTS.md and .sdlc/"]
+  J --> L[".claude/agents/"]
+  J --> M[".github/copilot-instructions.md and .github/prompts/"]
+          </pre>
         </div>
-
-        <h3 class="doc-section-subtitle" id="s1-build-flow">Build flow</h3>
-        <div class="flow-box">sdlc.config.yaml ──► packages/cli runBuild()
-agents/*.yaml   ──► packages/core loadAgents() ──► AgentSchema validation
-                                                ──► resolveAgent(variables)
-templates/*.md  ──►  BuildContext
-policies/*.md   ──►  BuildContext
-                         │
-                    ToolAdapter.render()
-                    │              │               │
-                    ▼              ▼               ▼
-             AGENTS.md      .claude/agents/  .github/prompts/
-             .sdlc/agents/                   .github/copilot-instructions.md</div>
       </section>
 
-      <!-- 2. Root Files -->
+      <!-- 2. Root folder và root files -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="s2">2. Root Files</h2>
+        <h2 class="doc-section-title" id="s2">2. Root folder và root files</h2>
+        <p>Các tệp tin cấu hình và tài liệu chính tại thư mục gốc của monorepo:</p>
+        
         <div class="pkg-row">
           <span class="pkg-name">package.json</span>
-          <span class="pkg-desc">Root monorepo. Scripts: <code>pnpm sdlc</code> (CLI via tsx), <code>pnpm test</code> (vitest), <code>pnpm typecheck</code> (tsc --noEmit), <code>pnpm lint</code> (biome). Runtime deps: <code>yaml</code>, <code>zod</code>.</span>
+          <span class="pkg-desc">Khai báo cấu hình monorepo, quy định package manager <code>pnpm@9.15.0</code>. Chứa các scripts điều phối: <code>pnpm sdlc</code> (chạy CLI), <code>pnpm test</code> (vitest), <code>pnpm typecheck</code> (tsc), <code>pnpm lint</code> (biome check). Khai báo các dependencies chung (zod, yaml, tsx).</span>
         </div>
         <div class="pkg-row">
           <span class="pkg-name">pnpm-workspace.yaml</span>
-          <span class="pkg-desc">Định nghĩa workspace packages: <code>packages/*</code> và <code>packages/adapters/*</code>. Nhờ file này các package depend nhau qua <code>workspace:*</code>.</span>
+          <span class="pkg-desc">Định nghĩa các workspace con trong monorepo: <code>packages/*</code> và <code>packages/adapters/*</code>, cho phép liên kết thư viện nội bộ qua cú pháp <code>workspace:*</code>.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">pnpm-lock.yaml</span>
+          <span class="pkg-desc">Khóa phiên bản các package dependencies và liên kết trực tiếp các package nội bộ trong workspace.</span>
         </div>
         <div class="pkg-row">
           <span class="pkg-name">tsconfig.json</span>
-          <span class="pkg-desc">TypeScript strict mode, target ES2022, moduleResolution bundler. Alias <code>@sdlc-agents/core</code> → <code>./packages/core/src/index.ts</code>. Include: <code>packages/*/src/**</code>, <code>spike/**</code>.</span>
+          <span class="pkg-desc">Cấu hình TypeScript dùng chung. Target <code>ES2022</code>, module resolution dạng <code>bundler</code>, bật chế độ kiểm tra nghiêm ngặt (<code>strict: true</code>). Khai báo alias <code>@sdlc-agents/core</code> trỏ về source code thực tế.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">vitest.config.ts</span>
+          <span class="pkg-desc">Cấu hình Vitest runner. Sử dụng pattern bao gồm cả file tests ở adapter: <code>packages/*/src/**/*.test.ts</code> và <code>packages/adapters/*/src/**/*.test.ts</code> để đảm bảo test suite chạy đầy đủ.</span>
         </div>
         <div class="pkg-row">
           <span class="pkg-name">sdlc.config.yaml</span>
-          <span class="pkg-desc">Config runtime của build engine. Khai báo targets (<code>universal</code>, <code>claude-code</code>, <code>copilot</code>) và variables (<code>language: en</code>). Nếu không có file, core dùng defaults.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">biome.json</span>
-          <span class="pkg-desc">Lint + format config. Excludes: <code>docs</code>, <code>spike/output</code>, <code>.sdlc</code>, <code>.claude</code>, <code>.github/prompts</code>, <code>__snapshots__</code>. Override: <code>noNonNullAssertion</code> off cho <code>__tests__</code>.</span>
+          <span class="pkg-desc">Cấu hình kết xuất của dự án. Khai báo danh sách các adapter mục tiêu cần render (<code>universal</code>, <code>claude-code</code>, <code>copilot</code>) và các biến thay thế toàn cục (<code>language: en</code>).</span>
         </div>
         <div class="pkg-row">
           <span class="pkg-name">AGENTS.md</span>
-          <span class="pkg-desc">Generated output của universal adapter. Entry point theo convention AGENTS.md. <strong>Không sửa tay</strong> — regenerate bằng <code>pnpm sdlc build</code>.</span>
+          <span class="pkg-desc">Tệp đầu ra tự động được tạo bởi universal adapter. Đóng vai trò chỉ mục và hướng dẫn kích hoạt agent trên các công cụ AI hỗ trợ đọc tài liệu. Không sửa tay file này.</span>
         </div>
         <div class="pkg-row">
-          <span class="pkg-name">README.md</span>
-          <span class="pkg-desc">Quickstart: install → validate → build → use agent. Bảng 6 agents, repo layout, configuration, validation rules, dev commands.</span>
+          <span class="pkg-name">.gitignore</span>
+          <span class="pkg-desc">Loại trừ các thư mục build, caches, node_modules, log, và đầu ra thử nghiệm của thư mục <code>spike/output/</code>.</span>
         </div>
       </section>
 
-      <!-- 3. agents/ -->
+      <!-- 3. agents/ - canonical agent definitions -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s3">3. agents/ — Canonical Agent Definitions</h2>
-        <p>Source of truth quan trọng nhất. Mỗi file YAML là một agent theo schema trong <code>packages/core/src/schema.ts</code>.</p>
+        <p>Nguồn chuẩn xác định hành vi của từng agent. Được viết dưới dạng YAML và validate nghiêm ngặt qua Zod schema.</p>
 
         <table>
-          <thead><tr><th>File</th><th>Agent</th><th>Phase</th><th>Chức năng</th></tr></thead>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Agent ID</th>
+              <th>Phase</th>
+              <th>Hành vi chuẩn</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr><td><code>requirement-analyst.yaml</code></td><td><code>requirement-analyst</code></td><td>requirement</td><td>Làm rõ yêu cầu mơ hồ, tạo PRD, user stories, acceptance criteria</td></tr>
-            <tr><td><code>solution-architect.yaml</code></td><td><code>solution-architect</code></td><td>architecture</td><td>Tạo HLD/ADR, so sánh trade-off, diagram, open questions</td></tr>
-            <tr><td><code>planner.yaml</code></td><td><code>planner</code></td><td>planning</td><td>Biến PRD/spec thành implementation plan, tasks, dependencies</td></tr>
-            <tr><td><code>coder.yaml</code></td><td><code>coder</code></td><td>coding</td><td>Implement task theo TDD: red → green → refactor → commit</td></tr>
-            <tr><td><code>test-generator.yaml</code></td><td><code>test-generator</code></td><td>testing</td><td>Sinh test plan và test code từ spec/source, happy path + edge cases</td></tr>
-            <tr><td><code>code-reviewer.yaml</code></td><td><code>code-reviewer</code></td><td>review</td><td>Review PR diff theo checklist security, performance, convention</td></tr>
+            <tr><td><code>requirement-analyst.yaml</code></td><td><code>requirement-analyst</code></td><td>requirement</td><td>Làm rõ yêu cầu mơ hồ, tạo tài liệu PRD, viết các user stories kèm acceptance criteria (Gherkin) và thiết lập danh sách out-of-scope.</td></tr>
+            <tr><td><code>solution-architect.yaml</code></td><td><code>solution-architect</code></td><td>architecture</td><td>Đưa ra tài liệu thiết kế High-Level Design (HLD) và các hồ sơ quyết định kiến trúc (ADR), so sánh trade-off kỹ thuật.</td></tr>
+            <tr><td><code>planner.yaml</code></td><td><code>planner</code></td><td>planning</td><td>Chi tiết hóa spec/PRD thành kế hoạch thực thi (implementation plan) chia nhỏ theo ngày, xác định dependencies và đánh giá rủi ro.</td></tr>
+            <tr><td><code>coder.yaml</code></td><td><code>coder</code></td><td>coding</td><td>Phát triển mã nguồn theo quy trình TDD (Red-Green-Refactor) và thực hiện tự động tạo commits kèm thông điệp chuẩn hóa.</td></tr>
+            <tr><td><code>test-generator.yaml</code></td><td><code>test-generator</code></td><td>testing</td><td>Tự động phân tích spec và code hiện tại để viết mã test (Unit & Integration) bao phủ cả happy path và edge cases.</td></tr>
+            <tr><td><code>code-reviewer.yaml</code></td><td><code>code-reviewer</code></td><td>review</td><td>Đánh giá PR diff dựa trên các checklists chuẩn mực về bảo mật, hiệu năng và quy ước viết code.</td></tr>
           </tbody>
         </table>
 
-        <doc-accordion title="Cấu trúc YAML agent — các field chính">
-<table><thead><tr><th>Field</th><th>Type</th><th>Ghi chú</th></tr></thead><tbody>
-  <tr><td><code>id</code></td><td>string kebab-case</td><td>Registry key; phải unique</td></tr>
-  <tr><td><code>version</code></td><td>semver x.y.z</td><td>Schema validation strict</td></tr>
-  <tr><td><code>phase</code></td><td>enum</td><td>requirement, architecture, planning, coding, testing, review</td></tr>
-  <tr><td><code>description</code></td><td>string ≥ 10 chars</td><td>Dùng cho auto-routing trong Claude Code</td></tr>
-  <tr><td><code>model_hint</code></td><td>fast | balanced | high-reasoning</td><td>Adapter map sang model của từng tool</td></tr>
-  <tr><td><code>model_variants</code></td><td>object</td><td>prompt_append/prepend riêng cho claude, copilot, gemini, codex</td></tr>
-  <tr><td><code>tools_required</code></td><td>string[]</td><td>Tool kỳ vọng agent được cấp</td></tr>
-  <tr><td><code>inputs</code></td><td>InputDef[]</td><td>Input agent cần, có required flag</td></tr>
-  <tr><td><code>workflow</code></td><td>WorkflowStep[]</td><td>Bắt buộc ≥ 1 step; có optional ref</td></tr>
-  <tr><td><code>output_template</code></td><td>string path</td><td>Validate exists trong <code>templates/</code></td></tr>
-  <tr><td><code>policies</code></td><td>string[]</td><td>Validate exists trong <code>policies/</code></td></tr>
-  <tr><td><code>extends</code>, <code>imports</code></td><td>—</td><td>Schema accept nhưng build/validate <strong>fail rõ ràng</strong> — Phase 2</td></tr>
-</tbody></table>
+        <doc-accordion title="Xem chi tiết các trường cấu hình chính trong YAML Schema">
+          <table>
+            <thead>
+              <tr>
+                <th>Trường (Key)</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Quy định và Validation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>string</td><td>Kebab-case bắt buộc. Phải duy nhất trong toàn hệ thống.</td></tr>
+              <tr><td><code>version</code></td><td>string</td><td>Quy chuẩn SemVer nghiêm ngặt (dạng <code>x.y.z</code>).</td></tr>
+              <tr><td><code>phase</code></td><td>enum</td><td>Bắt buộc là một trong các phase: <code>requirement</code>, <code>architecture</code>, <code>planning</code>, <code>coding</code>, <code>testing</code>, <code>review</code>.</td></tr>
+              <tr><td><code>description</code></td><td>string</td><td>Tối thiểu 10 ký tự. Dùng làm mô tả cho IDE hoặc trigger auto-routing.</td></tr>
+              <tr><td><code>model_hint</code></td><td>enum</td><td>Gợi ý phân khúc mô hình: <code>fast</code>, <code>balanced</code>, hoặc <code>high-reasoning</code>.</td></tr>
+              <tr><td><code>model_variants</code></td><td>object</td><td>Chứa các prompt mở rộng riêng cho từng tool (<code>claude</code>, <code>copilot</code>, <code>gemini</code>, <code>codex</code>).</td></tr>
+              <tr><td><code>tools_required</code></td><td>string[]</td><td>Danh sách các công cụ IDE/CLI cần thiết được cấp cho agent.</td></tr>
+              <tr><td><code>inputs</code></td><td>array</td><td>Định nghĩa các tham số đầu vào cần thiết cho agent thực thi.</td></tr>
+              <tr><td><code>workflow</code></td><td>array</td><td>Quy trình các bước (ít nhất 1 bước) agent phải tuân thủ.</td></tr>
+              <tr><td><code>output_template</code></td><td>string</td><td>Đường dẫn trỏ đến tệp markdown trong <code>templates/</code>. Phải tồn tại.</td></tr>
+              <tr><td><code>policies</code></td><td>string[]</td><td>Danh sách các policy tương ứng trong <code>policies/</code>. Phải tồn tại.</td></tr>
+            </tbody>
+          </table>
         </doc-accordion>
       </section>
 
-      <!-- 4. templates & policies -->
+      <!-- 4. templates/ -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="s4">4. templates/ &amp; policies/</h2>
-        <div class="grid grid-2">
-          <div>
-            <h3>templates/</h3>
-            <p>Mẫu tài liệu mà agents dùng khi sinh output:</p>
-            <ul>
-              <li><code>plan.md</code> — implementation plan cho planner</li>
-              <li><code>review-report.md</code> — review report cho code-reviewer</li>
-              <li><code>prd.md</code> — PRD cho requirement-analyst</li>
-              <li><code>hld.md</code> — HLD/ADR cho solution-architect</li>
-              <li><code>test-plan.md</code> — test plan cho test-generator</li>
-            </ul>
-            <p><small>Build engine load vào <code>BuildContext.templates</code>. Adapter hiện render <em>reference</em> đến template, chưa inline body. Đây là artifact hướng dẫn cho AI agent.</small></p>
-          </div>
-          <div>
-            <h3>policies/</h3>
-            <p>Guideline và checklist dùng bởi agent:</p>
-            <ul>
-              <li><code>conventions.md</code> — naming, function length, error handling, testing, TypeScript rules</li>
-              <li><code>security-checklist.md</code> — input validation, auth/authz, secrets, dependency review, logging/PII</li>
-            </ul>
-            <p><small>Tương tự templates — load vào <code>BuildContext.policies</code>. Universal adapter render link tương đối; Claude adapter render path string; Copilot chưa render policies section rõ ràng.</small></p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 6. packages/core -->
-      <section class="doc-section">
-        <h2 class="doc-section-title" id="s6">6. packages/core/</h2>
-        <p>Library core <code>@sdlc-agents/core</code> — không phụ thuộc CLI UI. Cung cấp schema, loader, config, resolver, merger và shared types.</p>
-
-        <div class="pkg-row">
-          <span class="pkg-name">schema.ts</span>
-          <span class="pkg-desc">Zod schema cho canonical agent. Components: <code>ModelHint</code>, <code>WorkflowStep</code>, <code>ImportEntry</code>, <code>InputDef</code>, <code>ModelVariant</code>, <code>AgentSchema</code>. Validation: id kebab-case, version semver, phase enum, description ≥ 10 chars, workflow ≥ 1 step, import license whitelist.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">types.ts</span>
-          <span class="pkg-desc">Shared interfaces: <code>OutputFile</code> (path + content), <code>Diagnostic</code> (severity + message), <code>ResolvedConfig</code> (targets, rootDir, variables, agentsDir), <code>BuildContext</code> (config + templates map + policies map), <code>ToolAdapter</code> (name + render + optional validate).</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">config.ts</span>
-          <span class="pkg-desc">Đọc <code>sdlc.config.yaml</code>. Default: targets <code>["universal","claude-code"]</code>, variables <code>&#123;language:"en"&#125;</code>, agentsDir <code>"agents"</code>. Parse với <code>ConfigFileSchema</code> rồi deep-merge lên default.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">loader.ts</span>
-          <span class="pkg-desc">Load agent YAML từ folder. Sort file deterministic → parse YAML → validate với <code>AgentSchema.parse</code> → trả <code>AgentDef[]</code>. Throw ZodError khi invalid.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">resolver.ts</span>
-          <span class="pkg-desc"><code>resolveVariables(text, vars)</code>: thay <code>&#123;&#123;key&#125;&#125;</code> bằng vars[key], giữ nguyên nếu key không tồn tại. <code>resolveAgent(agent, vars)</code>: serialize → resolve → parse lại. Không mutate original.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">merger.ts</span>
-          <span class="pkg-desc"><code>mergeConfigs(base, ...overrides)</code>: scalar fields last-wins, deep-merge variables, không mutate base. Nền móng cho config multi-layer (chưa wire vào CLI).</span>
-        </div>
-      </section>
-
-      <!-- 7. packages/cli -->
-      <section class="doc-section">
-        <h2 class="doc-section-title" id="s7">7. packages/cli/</h2>
-        <p>CLI package <code>@sdlc-agents/cli</code>. Entry: <code>src/index.ts</code> dùng <code>commander</code>.</p>
-
-        <div class="pkg-row">
-          <span class="pkg-name">commands/build.ts</span>
-          <span class="pkg-desc"><code>runBuild(cwd)</code>: load config → load agents → validate contracts → render via adapters → write files → write manifest. <br><strong>Drift detection:</strong> SHA-256 hash mỗi file generated vào <code>.sdlc/build-manifest.json</code>; cảnh báo "Drift detected" nếu file bị sửa tay.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">commands/validate.ts</span>
-          <span class="pkg-desc"><code>runValidate(agentsDir)</code>: load agents → <code>validateProjectContracts()</code> → log errors → trả boolean.</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">commands/project-validation.ts</span>
-          <span class="pkg-desc"><code>validateProjectContracts(agents, projectRoot)</code>: fail nếu duplicate id, missing <code>output_template</code>, missing policy file, agent dùng <code>extends</code> hoặc <code>imports</code> (unsupported — tránh silent no-op).</span>
-        </div>
-        <div class="pkg-row">
-          <span class="pkg-name">commands/init.ts</span>
-          <span class="pkg-desc">Tạo <code>sdlc.config.yaml</code> mặc định nếu chưa có. Hiện scaffold đơn giản; interactive wizard (clack) là Phase 2.</span>
-        </div>
-
-        <doc-alert type="warning" title="Drift detection">
-          Build ghi SHA-256 hash vào <code>.sdlc/build-manifest.json</code>. Lần build sau, file nào bị sửa tay sẽ được cảnh báo "Drift detected — N files were manually edited" rồi regenerate từ canonical sources.
+        <h2 class="doc-section-title" id="s4">4. templates/ — Output Templates</h2>
+        <p>Mẫu định dạng tài liệu mà các AI agent sử dụng khi kết xuất kết quả đầu ra (artifacts):</p>
+        <ul>
+          <li><code>plan.md</code> — Bản mẫu kế hoạch triển khai chi tiết cho <code>planner</code>.</li>
+          <li><code>review-report.md</code> — Bản mẫu báo cáo đánh giá mã nguồn cho <code>code-reviewer</code>.</li>
+          <li><code>prd.md</code> — Bản mẫu tài liệu đặc tả yêu cầu sản phẩm cho <code>requirement-analyst</code>.</li>
+          <li><code>hld.md</code> — Bản mẫu thiết kế kiến trúc cao cấp và các quyết định kỹ thuật (HLD/ADR) cho <code>solution-architect</code>.</li>
+          <li><code>test-plan.md</code> — Bản mẫu kế hoạch kiểm thử tự động cho <code>test-generator</code>.</li>
+        </ul>
+        <doc-alert type="info" title="Cách hoạt động của templates">
+          Build engine tải các template này và truyền vào <code>BuildContext.templates</code>. Hiện tại, adapters render liên kết tương đối để hướng dẫn AI agent mở tệp template tham chiếu thay vì inline trực tiếp toàn bộ nội dung tệp template vào prompt.
         </doc-alert>
       </section>
 
-      <!-- 8. packages/adapters -->
+      <!-- 5. policies/ -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="s8">8. packages/adapters/</h2>
+        <h2 class="doc-section-title" id="s5">5. policies/ — Checklist và Coding Policy</h2>
+        <p>Các tài liệu quy chuẩn, danh sách kiểm tra (checklists) bắt buộc áp dụng khi các agent thực hiện công việc:</p>
+        <ul>
+          <li><code>conventions.md</code> — Quy tắc đặt tên, hướng dẫn giới hạn độ dài hàm, xử lý lỗi (error handling), kỳ vọng viết test và quy tắc TypeScript nghiêm ngặt.</li>
+          <li><code>security-checklist.md</code> — Hướng dẫn kiểm tra dữ liệu đầu vào (input validation), phân quyền (auth/authz), quản lý secrets, đánh giá dependencies và chính sách ghi logs/bảo vệ thông tin PII.</li>
+        </ul>
+        <doc-alert type="info" title="Hỗ trợ hiển thị trên các adapter">
+          Tương tự templates, policies được đưa vào context để adapter render đường dẫn tham chiếu. Universal adapter liên kết trực tiếp bằng link tương đối; Claude adapter liệt kê chuỗi path; Copilot adapter hiện chưa hỗ trợ kết xuất phần này (ngầm áp dụng qua workflow).
+        </doc-alert>
+      </section>
 
+      <!-- 6. packages/core/ -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s6">6. packages/core/ — Build Engine Core</h2>
+        <p>Thư viện xử lý lõi của build engine (<code>@sdlc-agents/core</code>), được viết hoàn toàn độc lập với giao diện CLI hay bất kỳ adapter cụ thể nào.</p>
+
+        <div class="pkg-row">
+          <span class="pkg-name">package.json</span>
+          <span class="pkg-desc">Khai báo package ESM nội bộ. Export các API thông qua entrypoint <code>src/index.ts</code>. Đăng ký dependencies cần thiết như <code>zod</code> và <code>yaml</code>.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/schema.ts</span>
+          <span class="pkg-desc">Định nghĩa Zod schema và kiểu dữ liệu (TypeScript types) cho cấu trúc của Agent (<code>AgentDef</code>). Bao gồm validation nghiêm ngặt: kiểm tra semver, kebab-case id, độ dài tối thiểu của mô tả, danh sách whitelist các loại license cho việc import skill (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause).</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/types.ts</span>
+          <span class="pkg-desc">Chứa các định nghĩa interfaces dùng chung cho toàn dự án: <code>OutputFile</code> (lưu path relative và content text), <code>Diagnostic</code> (cảnh báo lỗi), <code>ResolvedConfig</code>, <code>BuildContext</code>, và <code>ToolAdapter</code> interface.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/config.ts</span>
+          <span class="pkg-desc">Đảm nhiệm đọc tệp <code>sdlc.config.yaml</code> từ project root. Trả về cấu hình mặc định (default config) nếu không tìm thấy tệp cấu hình, thực hiện validate Zod schema trước khi trả ra config hoàn chỉnh.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/loader.ts</span>
+          <span class="pkg-desc">Quét toàn bộ thư mục <code>agents/</code> để tìm các tệp <code>.yaml</code>, sắp xếp tên tệp theo thứ tự bảng chữ cái để đảm bảo tính bất biến (deterministic execution), sau đó giải mã YAML và validate schema.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/merger.ts</span>
+          <span class="pkg-desc">Hiện thực hóa <code>mergeConfigs(base, ...overrides)</code> để gộp các cấu hình nhiều lớp (đè biến, đè mảng targets) mà không gây biến đổi cấu hình gốc (mutating base).</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/resolver.ts</span>
+          <span class="pkg-desc">Chứa logic phân tích và thay thế biến động trong văn bản <code>{{variable}}</code>. Thực hiện đệ quy sâu (deep recursive traversal) trên đối tượng agent giúp giữ nguyên kiểu dữ liệu và cấu hình nguyên bản, tránh làm hỏng cấu trúc chuỗi JSON.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/__tests__/</span>
+          <span class="pkg-desc">Thư mục unit tests toàn diện của core. Bao phủ toàn bộ các module: validate schema (các trường hợp fail cấu hình), loader (bỏ qua file lạ), merger (ưu tiên đè biến cấu hình sau), resolver (giữ nguyên khi biến trống, xử lý nhiều biến cùng lúc).</span>
+        </div>
+      </section>
+
+      <!-- 7. packages/cli/ -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s7">7. packages/cli/ — Command Line Interface</h2>
+        <p>Giao diện dòng lệnh chính thức (<code>@sdlc-agents/cli</code>) điều phối luồng làm việc của build engine.</p>
+
+        <div class="pkg-row">
+          <span class="pkg-name">package.json</span>
+          <span class="pkg-desc">Khai báo lệnh nhị phân <code>sdlc</code> trỏ vào entrypoint. Chứa khai báo dependencies bao gồm core, 3 adapters và thư viện xử lý lệnh <code>commander</code>.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/index.ts</span>
+          <span class="pkg-desc">Khởi tạo giao diện dòng lệnh <code>commander</code>, khai báo các lệnh: <code>sdlc init</code> (khởi tạo cấu hình), <code>sdlc validate</code> (kiểm tra DSL), <code>sdlc build</code> (kết xuất file).</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/commands/build.ts</span>
+          <span class="pkg-desc">Luồng build chính: load config ➔ load agents ➔ validate toàn diện liên kết chéo ➔ duyệt mảng targets active ➔ render qua các adapter tương ứng ➔ ghi tệp tin ra đĩa. <br><strong>Drift Detection:</strong> Tính toán mã băm SHA-256 của toàn bộ tệp đầu ra và ghi vào <code>.sdlc/build-manifest.json</code>. Khi chạy build lần sau, nếu phát hiện tệp đã bị người dùng chỉnh sửa thủ công, engine sẽ đưa ra cảnh báo "Drift detected" trước khi ghi đè.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/commands/validate.ts</span>
+          <span class="pkg-desc">Thực hiện tải các agents và chạy validate liên kết dự án, báo lỗi Zod định dạng chi tiết khi phát hiện file YAML sai quy định.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/commands/project-validation.ts</span>
+          <span class="pkg-desc">Chứa hàm <code>validateProjectContracts</code>. Báo lỗi và dừng chương trình khi: trùng lặp agent id, thiếu tệp template tham chiếu, thiếu tệp policy, hoặc agent cố sử dụng các trường nâng cao chưa được hỗ trợ (<code>extends</code>, <code>imports</code>).</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">src/commands/init.ts</span>
+          <span class="pkg-desc">Tạo tệp <code>sdlc.config.yaml</code> mặc định (bật cả 3 targets) nếu tệp cấu hình chưa tồn tại.</span>
+        </div>
+      </section>
+
+      <!-- 8. packages/adapters/ -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s8">8. packages/adapters/ — Render Targets</h2>
+        <p>Các package adapters thực hiện chuyển đổi định dạng trung gian thành prompt config cụ thể cho từng IDE agent:</p>
+        
         <doc-tabs>
-          <div label="Universal">
-            <p><strong>Output:</strong> <code>AGENTS.md</code> + <code>.sdlc/agents/&lt;id&gt;.md</code> (1 file per agent)</p>
-            <p><code>renderIndex()</code>: tạo AGENTS.md với heading, hướng dẫn kích hoạt, danh sách agent với link đến <code>.sdlc/agents/</code>.</p>
-            <p><code>renderAgent()</code>: per-agent Markdown với phase/version/model, description, inputs, workflow, template ref, policy links, generated footer.</p>
-            <p>Footer chuẩn: <em>"Generated by sdlc-agents. Universal tier — works on any AI tool. Run <code>sdlc build</code> to regenerate."</em></p>
+          <div label="Universal (universal)">
+            <p><strong>Mục tiêu:</strong> Tạo baseline portable hoạt động trên mọi công cụ AI hỗ trợ đọc file trong repo (Codex, Cursor, Windsurf, Gemini, Zed...).</p>
+            <p><strong>Kết quả đầu ra:</strong> Tệp mục lục <code>AGENTS.md</code> ở root và các file Markdown chi tiết của từng agent tại <code>.sdlc/agents/&lt;id&gt;.md</code>.</p>
+            <p><strong>Đặc điểm:</strong> Sắp xếp cấu trúc gọn gàng, hiển thị rõ ràng danh sách tham số đầu vào và quy trình thực hiện kèm theo các liên kết tương đối trỏ về thư mục policies.</p>
           </div>
-          <div label="Claude Code">
-            <p><strong>Output:</strong> <code>.claude/agents/&lt;id&gt;.md</code> (1 file per agent)</p>
-            <p>YAML frontmatter: <code>name</code>, <code>description</code> (prefixed <code>[SDLC:&lt;phase&gt;]</code> — drives auto-routing), <code>model</code> (fast→haiku, balanced→sonnet, high-reasoning→opus), <code>tools</code>.</p>
-            <p>Body: workflow, optional Claude-specific note từ <code>model_variants.claude.prompt_append</code>.</p>
+          <div label="Claude Code (claude-code)">
+            <p><strong>Mục tiêu:</strong> Tạo subagents tự động định tuyến cấu hình riêng cho Claude Code CLI.</p>
+            <p><strong>Kết quả đầu ra:</strong> Các tệp Markdown tương ứng tại thư mục <code>.claude/agents/&lt;id&gt;.md</code>.</p>
+            <p><strong>Đặc điểm:</strong> Thêm định dạng YAML frontmatter chuẩn (gồm <code>name</code>, <code>description</code> mang mã phase dạng <code>[SDLC:&lt;phase&gt;]</code> để Claude tự định tuyến, model, tools). Tự động ánh xạ model thích hợp dựa trên model_hint (Haiku cho fast, Sonnet cho balanced, Opus cho high-reasoning) và chèn cấu hình tùy biến riêng <code>model_variants.claude.prompt_append</code>.</p>
           </div>
-          <div label="Copilot">
-            <p><strong>Output:</strong> <code>.github/copilot-instructions.md</code> + <code>.github/prompts/&lt;id&gt;.prompt.md</code> per agent</p>
-            <p>YAML frontmatter: <code>mode: agent</code>, <code>description</code>.</p>
-            <p>Body: title/phase, description, optional Copilot note từ <code>model_variants.copilot.prompt_append</code>, inputs, workflow, template ref, footer.</p>
-            <p><small>Note: Copilot adapter hiện không render policies section — chỉ thể hiện qua workflow steps nếu agent mention đến policy.</small></p>
+          <div label="GitHub Copilot (copilot)">
+            <p><strong>Mục tiêu:</strong> Tạo prompts tùy chỉnh định tuyến cho GitHub Copilot Chat.</p>
+            <p><strong>Kết quả đầu ra:</strong> Cấu hình chung <code>.github/copilot-instructions.md</code> và các tệp prompt chi tiết tại <code>.github/prompts/&lt;id&gt;.prompt.md</code>.</p>
+            <p><strong>Đặc điểm:</strong> Sử dụng định dạng YAML frontmatter với <code>mode: agent</code> và chèn cấu hình prompt bổ sung <code>model_variants.copilot.prompt_append</code>.</p>
           </div>
         </doc-tabs>
-
-        <h3 style="margin-top: 20px;">Required tests (mỗi adapter)</h3>
+        
+        <h3 class="doc-section-subtitle" id="s8-tests" style="margin-top: 24px;">Yêu cầu bắt buộc về kiểm thử cho mọi Adapter</h3>
         <ul>
-          <li><strong>Path contract test</strong> — exact output paths</li>
-          <li><strong>Content contract test</strong> — id, phase, workflow steps</li>
-          <li><strong>Snapshot test</strong> — full rendered file</li>
+          <li><strong>Path contract test:</strong> Bảo đảm tệp tin đầu ra được đặt đúng vị trí thư mục quy định của IDE target.</li>
+          <li><strong>Content contract test:</strong> Bảo đảm chứa đủ thông tin định danh và các bước workflow của agent trong prompt.</li>
+          <li><strong>Snapshot test:</strong> Dùng <code>toMatchSnapshot()</code> trên toàn bộ nội dung tệp đầu ra nhằm phát hiện lập tức bất kỳ sự lệch định dạng nào khi sửa đổi code adapter.</li>
         </ul>
       </section>
 
       <!-- 9. Generated outputs -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s9">9. Generated Outputs</h2>
-        <doc-alert type="danger" title="Do not edit by hand">
-          Các folder dưới đây là output generated. Nếu cần thay đổi, sửa canonical sources (<code>agents/</code>, <code>templates/</code>, <code>policies/</code>) rồi chạy <code>pnpm sdlc build</code>. Build sẽ cảnh báo nếu phát hiện drift.
+        <doc-alert type="danger" title="Không sửa tay các file đầu ra">
+          Tất cả các thư mục dưới đây đều do build engine tạo tự động. Mọi thay đổi thủ công sẽ bị cảnh báo ghi đè (drift detection) ở lần chạy build sau. Hãy thực hiện chỉnh sửa tại thư mục nguồn tương ứng (<code>agents/</code>, <code>templates/</code>, <code>policies/</code>).
         </doc-alert>
 
         <table>
-          <thead><tr><th>Path</th><th>Adapter</th><th>Nội dung</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Đường dẫn tệp/thư mục</th>
+              <th>Adapter tạo ra</th>
+              <th>Nội dung và ý nghĩa</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr><td><code>AGENTS.md</code></td><td>universal</td><td>Entry point chuẩn mở — chỉ mục + hướng dẫn kích hoạt agent trên mọi tool</td></tr>
-            <tr><td><code>.sdlc/agents/*.md</code></td><td>universal</td><td>Per-agent Markdown portable: phase, version, workflow, policy links</td></tr>
-            <tr><td><code>.sdlc/build-manifest.json</code></td><td>build engine</td><td>SHA-256 hash mỗi file generated — dùng cho drift detection</td></tr>
-            <tr><td><code>.claude/agents/*.md</code></td><td>claude-code</td><td>YAML frontmatter phù hợp Claude Code subagent; auto-routing qua description</td></tr>
-            <tr><td><code>.github/copilot-instructions.md</code></td><td>copilot</td><td>Repo instructions cho GitHub Copilot</td></tr>
-            <tr><td><code>.github/prompts/*.prompt.md</code></td><td>copilot</td><td>Per-agent prompt files với mode: agent frontmatter</td></tr>
+            <tr><td><code>AGENTS.md</code></td><td>universal</td><td>Danh sách tổng hợp và hướng dẫn kích hoạt agent dùng chung cho mọi công cụ AI.</td></tr>
+            <tr><td><code>.sdlc/agents/*.md</code></td><td>universal</td><td>Tập tin prompt Markdown chuẩn cho từng agent (kèm thông tin inputs, workflow, policies).</td></tr>
+            <tr><td><code>.sdlc/build-manifest.json</code></td><td>build engine</td><td>Manifest lưu trữ chữ ký hash SHA-256 phục vụ drift detection.</td></tr>
+            <tr><td><code>.claude/agents/*.md</code></td><td>claude-code</td><td>Tập tin subagent đặc thù kèm frontmatter điều phối tự động của Claude Code.</td></tr>
+            <tr><td><code>.github/copilot-instructions.md</code></td><td>copilot</td><td>Tập tin hướng dẫn hoạt động chung cho GitHub Copilot.</td></tr>
+            <tr><td><code>.github/prompts/*.prompt.md</code></td><td>copilot</td><td>Các tệp prompt tác vụ riêng của từng agent cho Copilot Agent Mode.</td></tr>
           </tbody>
         </table>
+      </section>
+
+      <!-- 10. docs/ - design và planning docs -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s10">10. docs/ — Design &amp; Planning Docs</h2>
+        <p>Thư mục lưu trữ tài liệu thiết kế kiến trúc hệ thống và các kế hoạch triển khai kỹ thuật:</p>
+        
+        <div class="pkg-row">
+          <span class="pkg-name">docs/sa-design/SA_DESIGN_Agentic_SDLC_Agents_Set.md</span>
+          <span class="pkg-desc">Tài liệu Solution Architecture (SA design) gốc của dự án. Đặc tả tầm nhìn sản phẩm, sơ đồ kiến trúc các lớp dữ liệu, catalog agents, roadmap thực hiện và các phân tích rủi ro dài hạn.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">docs/superpowers/plans/2026-06-10-phase1-build-engine.md</span>
+          <span class="pkg-desc">Kế hoạch triển khai chi tiết cho Phase 1 Build Engine, lưu trữ các phân tích kỹ thuật, phân chia packages và tiêu chí nghiệm thu của MVP.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">docs/codebase-guide/CODEBASE_FOLDER_GUIDE.md</span>
+          <span class="pkg-desc">Chính là tệp tài liệu hướng dẫn cấu trúc codebase hiện tại của dự án.</span>
+        </div>
+      </section>
+
+      <!-- 11. spike/ - prototype phase 0 -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s11">11. spike/ — Prototype Phase 0</h2>
+        <p>Thư mục chứa tệp tin thử nghiệm <code>spike/render.ts</code> là bản prototype độc lập từ Phase 0:</p>
+        <ul>
+          <li>Định nghĩa schema Zod nội bộ độc lập, không sử dụng import từ các package core.</li>
+          <li>Đọc trực tiếp các tệp YAML trong thư mục <code>agents/</code> và xuất file thử nghiệm ra <code>spike/output/</code>.</li>
+          <li>Giúp kiểm chứng nhanh tính khả thi của mô hình kết xuất prompt trước khi tách mã nguồn thành monorepo chính thức.</li>
+        </ul>
+        <doc-alert type="info" title="Lưu ý thiết kế">
+          Mã nguồn của spike không được sử dụng ở runtime chính. Toàn bộ mã nguồn chính thức nằm tại <code>packages/</code>.
+        </doc-alert>
+      </section>
+
+      <!-- 12. examples/ - placeholder -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s12">12. examples/ — Thư mục ví dụ (Placeholder)</h2>
+        <p>Thư mục hiện tại đang được để trống. Theo kế hoạch thiết kế giải pháp (SA design), thư mục này dự kiến sẽ chứa các repo mẫu (demo consumer projects) tích hợp sẵn các tệp generated tương ứng của các công cụ để minh họa cách kích hoạt đầu ra thực tế cho nhà phát triển.</p>
+      </section>
+
+      <!-- 13. skills/ - placeholder -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s13">13. skills/ — Kỹ năng bổ sung (Placeholder)</h2>
+        <p>Thư mục <code>skills/</code> hiện tại đang để trống. Theo thiết kế kiến trúc, đây sẽ là nơi lưu trữ các bộ kỹ năng chi tiết (workflows, scripts) hỗ trợ tích hợp hoặc đóng gói sâu cho các IDE agents dưới dạng local hoặc vendored skills.</p>
+        <doc-alert type="warning" title="Chưa hỗ trợ logic runtime">
+          Mặc dù Schema đã cho phép khai báo trường <code>imports</code>, build engine hiện tại vẫn chưa triển khai logic kết nạp hay kiểm tra giấy phép cho các skill ngoại vi này (đã lên kế hoạch ở Phase 2).
+        </doc-alert>
+      </section>
+
+      <!-- 14. Mối quan hệ giữa policies, templates, và agents -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s14">14. Mối quan hệ giữa policies, templates, và agents</h2>
+        <p>Ba thành phần này tạo nên lớp dữ liệu chuẩn hóa của dự án, hỗ trợ cung cấp bối cảnh và quy chuẩn định dạng cho AI:</p>
+        
+        <div class="mermaid-container">
+          <pre class="mermaid">
+flowchart TD
+  A["agents/*.yaml"] --> B["output_template: templates/*.md"]
+  A --> C["policies: policies/*.md"]
+  B --> D["AI agent follows output format"]
+  C --> E["AI agent follows checklist/convention"]
+          </pre>
+        </div>
+
+        <doc-alert type="success" title="Đã có cơ chế validate chặt chẽ">
+          Build engine của dự án đã bổ sung cơ chế xác thực liên kết. Nếu một tệp YAML agent tham chiếu đến file template hoặc policy không tồn tại, chương trình build sẽ ngay lập tức báo lỗi và dừng thực thi để tránh tạo ra prompt lỗi.
+        </doc-alert>
+      </section>
+
+      <!-- 15. Test strategy hiện tại -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15">15. Chiến lược kiểm thử hiện tại</h2>
+        <p>Hệ thống tập trung kiểm tra tính đúng đắn ở mức biên dịch tĩnh (static correctness) và tính bất biến của kết quả đầu ra:</p>
+        <ul>
+          <li><strong>Schema Correctness:</strong> Bảo đảm các định nghĩa agent YAML viết đúng cú pháp.</li>
+          <li><strong>YAML Loading &amp; Config Merge:</strong> Kiểm tra tính chính xác của cơ chế gộp cấu hình.</li>
+          <li><strong>Variable Resolution:</strong> Bảo đảm việc giải biến <code>{{variable}}</code> hoạt động đúng mà không làm hỏng cấu trúc.</li>
+          <li><strong>CLI Build &amp; Validate:</strong> Thử nghiệm thực thi các lệnh CLI thực tế.</li>
+          <li><strong>Adapter Snapshots:</strong> So khớp chính xác nội dung kết xuất để tránh thay đổi ngoài ý muốn khi sửa code adapter.</li>
+        </ul>
+        <p>Lệnh chạy toàn bộ test suite:</p>
+        <pre class="flow">pnpm test&#10;pnpm typecheck</pre>
+      </section>
+
+      <!-- 16. Cách thêm một agent mới -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s16">16. Quy trình thêm một Agent mới</h2>
+        <p>Để thêm một agent mới vào catalog, hãy thực hiện theo các bước sau:</p>
+        <ol class="step-list">
+          <li><span class="step-text">Tạo file định nghĩa agent mới dưới dạng YAML tại <code>agents/&lt;new-agent-id&gt;.yaml</code>.</span></li>
+          <li><span class="step-text">Thiết lập các trường bắt buộc (<code>id</code> tuân thủ kebab-case, <code>version</code> dạng semver, chọn đúng <code>phase</code> trong enum, mô tả <code>description</code> &ge; 10 ký tự).</span></li>
+          <li><span class="step-text">Xác định các tham số <code>inputs</code>, các bước <code>workflow</code> và các công cụ cần thiết ở <code>tools_required</code>.</span></li>
+          <li><span class="step-text">Nếu cần quy định định dạng đầu ra, tạo tệp Markdown tương ứng trong <code>templates/</code>. Nếu cần quy chuẩn kiểm tra, tạo tệp trong <code>policies/</code>, sau đó tham chiếu tương ứng trong file YAML.</span></li>
+          <li><span class="step-text">Chạy lệnh kiểm tra tính hợp lệ: <code>pnpm sdlc validate</code>.</span></li>
+          <li><span class="step-text">Nếu không có lỗi, chạy build để xuất các file cấu hình tương ứng cho các adapter: <code>pnpm sdlc build</code>.</span></li>
+          <li><span class="step-text">Chạy bộ unit test để đảm bảo không có lỗi TypeScript hoặc kiểm thử snapshot bị lệch: <code>pnpm test</code> và <code>pnpm typecheck</code>.</span></li>
+        </ol>
+      </section>
+
+      <!-- 17. Cách thêm adapter mới -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s17">17. Quy trình thêm một Adapter mới</h2>
+        <p>Quy trình đóng gói kết xuất cho một công cụ AI hoặc IDE agent mới:</p>
+        <ol class="step-list">
+          <li><span class="step-text">Tạo thư mục package mới tại <code>packages/adapters/&lt;tool-name&gt;/</code>.</span></li>
+          <li><span class="step-text">Tạo tệp <code>package.json</code> và khai báo dependency vào package <code>@sdlc-agents/core</code>.</span></li>
+          <li><span class="step-text">Hiện thực hóa một class export từ package kế thừa interface <code>ToolAdapter</code> và triển khai method <code>render(agents, ctx)</code> trả ra danh sách <code>OutputFile[]</code>.</span></li>
+          <li><span class="step-text">Viết đầy đủ 3 loại tests (path contract test, content contract test, snapshot test) trong thư mục <code>src/__tests__/</code> của adapter.</span></li>
+          <li><span class="step-text">Thêm package adapter mới vào dependencies của package <code>packages/cli/package.json</code>.</span></li>
+          <li><span class="step-text">Import và đăng ký adapter mới vào đối tượng <code>ADAPTERS</code> tại tệp <code>packages/cli/src/commands/build.ts</code>.</span></li>
+          <li><span class="step-text">Khai báo thêm tên target mới vào tài liệu cấu hình <code>sdlc.config.yaml</code> để bắt đầu sử dụng.</span></li>
+        </ol>
+      </section>
+
+      <!-- 18. Các điểm cần chú ý khi tiếp tục phát triển -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s18">18. Các điểm cần chú ý khi phát triển tiếp</h2>
+        
+        <div class="pkg-row">
+          <span class="pkg-name">CodeGraph</span>
+          <span class="pkg-desc">Dự án hiện chưa khởi tạo CodeGraph. Khi cần phân tích kiến trúc dự án ở mức độ rộng hoặc trả lời câu hỏi cấu trúc lớn, có thể chạy lệnh <code>codegraph init -i</code> và sử dụng các công cụ tương tác.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">Encoding Output hiển thị</span>
+          <span class="pkg-desc">Một số terminal trên hệ điều hành Windows có thể hiển thị sai phông chữ tiếng Việt hoặc Unicode (mojibake). Tập tin gốc vẫn được đảm bảo lưu dưới định dạng UTF-8; hãy kiểm tra bằng các trình biên soạn hỗ trợ UTF-8 khi cần xác minh nội dung.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">Template Engine</span>
+          <span class="pkg-desc">Hệ thống template hiện tại chỉ cung cấp hướng dẫn tĩnh cho AI agent hoạt động. Dự án chưa có trình phân tích cú pháp để render trực tiếp dữ liệu động vào template. Nếu cần tạo ra tài liệu hoàn chỉnh tự động, cần bổ sung một template renderer engine.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">Config Multi-layer</span>
+          <span class="pkg-desc">Mặc dù nhân core đã hỗ trợ hàm <code>mergeConfigs()</code> phục vụ cấu hình nhiều lớp (base -> org -> team -> project -> local), CLI hiện tại mới chỉ kết nối để đọc file <code>sdlc.config.yaml</code> đơn lẻ.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">Imports &amp; Extends mới</span>
+          <span class="pkg-desc">Schema Zod đã chấp nhận các trường <code>imports</code> và <code>extends</code> để chuẩn bị cho Phase 2, nhưng build engine hiện tại chưa triển khai logic kế thừa agent hay import kỹ năng. Validator hiện tại sẽ chặn lỗi cảnh báo rõ ràng khi agent cố dùng các trường này để tránh lỗi không mong muốn.</span>
+        </div>
+        <div class="pkg-row">
+          <span class="pkg-name">CI Workflow cần review</span>
+          <span class="pkg-desc">Tệp tin <code>.github/workflows/ci.yml</code> hiện tại đang cấu hình các đường dẫn (paths) và thư mục làm việc theo thư mục con <code>AI_Agent_SDLC_set/</code>. Do mã nguồn dự án hiện đang được phân bố trực tiếp tại root của repository, cần chỉnh sửa lại workflow để CI chạy đúng phạm vi.</span>
+        </div>
       </section>
 
       <!-- 19. Quick reference -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s19">19. Tóm tắt nhanh theo folder</h2>
         <table>
-          <thead><tr><th>Folder/File</th><th>Loại</th><th>Sửa tay?</th><th>Chức năng</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Thư mục/Tập tin</th>
+              <th>Loại tệp</th>
+              <th>Sửa tay?</th>
+              <th>Chức năng và ý nghĩa</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr><td><code>agents/</code></td><td>Canonical source</td><td>✅ Có</td><td>Định nghĩa 6 SDLC agents bằng YAML</td></tr>
-            <tr><td><code>templates/</code></td><td>Canonical source</td><td>✅ Có</td><td>Mẫu output PRD/HLD/plan/review/test-plan</td></tr>
-            <tr><td><code>policies/</code></td><td>Canonical source</td><td>✅ Có</td><td>Checklist convention và security</td></tr>
-            <tr><td><code>packages/core/</code></td><td>Code runtime</td><td>✅ Có</td><td>Schema, config, loader, merge, resolver, shared types</td></tr>
-            <tr><td><code>packages/cli/</code></td><td>Code runtime</td><td>✅ Có</td><td>CLI <code>sdlc init/build/validate</code></td></tr>
-            <tr><td><code>packages/adapters/</code></td><td>Code runtime</td><td>✅ Có</td><td>Render agent sang universal, Claude Code, Copilot</td></tr>
-            <tr><td><code>.sdlc/</code></td><td>Generated output</td><td>⚠️ Không nên</td><td>Universal per-agent markdown + build manifest</td></tr>
-            <tr><td><code>.claude/</code></td><td>Generated output</td><td>⚠️ Không nên</td><td>Claude Code subagents</td></tr>
-            <tr><td><code>.github/prompts/</code></td><td>Generated output</td><td>⚠️ Không nên</td><td>Copilot prompt files</td></tr>
-            <tr><td><code>.github/workflows/</code></td><td>CI config</td><td>✅ Có</td><td>GitHub Actions: lint → typecheck → test → spike</td></tr>
-            <tr><td><code>docs/</code></td><td>Documentation</td><td>✅ Có</td><td>SA design, codebase guide, adapter contract + HTML viewers</td></tr>
-            <tr><td><code>spike/</code></td><td>Prototype</td><td>Tham khảo</td><td>Phase 0 renderer prototype — giữ làm bằng chứng thiết kế ban đầu</td></tr>
-            <tr><td><code>examples/</code></td><td>Placeholder</td><td>✅ Có</td><td>Dự kiến chứa demo projects cho từng tool</td></tr>
-            <tr><td><code>skills/</code></td><td>Placeholder</td><td>✅ Có</td><td>Dự kiến chứa local/vendored skills (Phase 2)</td></tr>
+            <tr><td><code>agents/</code></td><td>Canonical source</td><td>✅ Có</td><td>Định nghĩa các agents thuộc vòng đời SDLC bằng YAML.</td></tr>
+            <tr><td><code>templates/</code></td><td>Canonical source</td><td>✅ Có</td><td>Bản mẫu tài liệu đầu ra của agents (PRD/HLD/plan/review/test-plan).</td></tr>
+            <tr><td><code>policies/</code></td><td>Canonical source</td><td>✅ Có</td><td>Checklists quy định về code style và bảo mật.</td></tr>
+            <tr><td><code>packages/core/</code></td><td>Code runtime</td><td>✅ Có</td><td>Nhân xử lý: schema, config, loader, merger, resolver.</td></tr>
+            <tr><td><code>packages/cli/</code></td><td>Code runtime</td><td>✅ Có</td><td>Giao diện CLI <code>init</code>, <code>build</code>, <code>validate</code>.</td></tr>
+            <tr><td><code>packages/adapters/</code></td><td>Code runtime</td><td>✅ Có</td><td>Thư viện render prompt riêng biệt cho Claude, Copilot, Universal.</td></tr>
+            <tr><td><code>.sdlc/</code></td><td>Generated output</td><td>⚠️ Không nên</td><td>Thư mục chứa prompt Markdown Universal và manifest.</td></tr>
+            <tr><td><code>.claude/</code></td><td>Generated output</td><td>⚠️ Không nên</td><td>Thư mục chứa các subagents của Claude Code.</td></tr>
+            <tr><td><code>.github/prompts/</code></td><td>Generated output</td><td>⚠️ Không nên</td><td>Thư mục chứa prompt files cho Copilot.</td></tr>
+            <tr><td><code>.github/workflows/</code></td><td>CI config</td><td>✅ Có</td><td>Quy trình CI/CD tích hợp toàn dự án.</td></tr>
+            <tr><td><code>docs/</code></td><td>Documentation</td><td>✅ Có</td><td>Tài liệu kiến trúc hệ thống và hướng dẫn folder.</td></tr>
+            <tr><td><code>spike/</code></td><td>Prototype</td><td>Tham khảo</td><td>Bản prototype Phase 0 độc lập ban đầu.</td></tr>
+            <tr><td><code>examples/</code></td><td>Placeholder</td><td>✅ Có</td><td>Dự án mẫu minh họa tích hợp IDE agents.</td></tr>
+            <tr><td><code>skills/</code></td><td>Placeholder</td><td>✅ Có</td><td>Kỹ năng đóng gói bổ sung (Phase 2).</td></tr>
           </tbody>
         </table>
       </section>
@@ -327,96 +589,99 @@ policies/*.md   ──►  BuildContext
       <section class="doc-section">
         <h2 class="doc-section-title" id="s20">20. Mental Model ngắn gọn</h2>
         <div class="grid grid-3" style="gap: 10px;">
-          <doc-card title="1. agents/*.yaml" badge="Define" badge-type="info">Nơi định nghĩa agent. Sửa đây để thêm/đổi agent, workflow, tools.</doc-card>
-          <doc-card title="2. packages/core" badge="Validate" badge-type="info">Đảm bảo agent hợp lệ (Zod schema) và resolve biến <code>{{...}}</code>.</doc-card>
-          <doc-card title="3. packages/cli" badge="Orchestrate" badge-type="info">Điều phối build: đọc config → validate → render → write.</doc-card>
-          <doc-card title="4. packages/adapters/*" badge="Render" badge-type="info">Quyết định output file format cho từng AI tool.</doc-card>
-          <doc-card title="5. .sdlc/ .claude/ .github/" badge="Output" badge-type="success">Kết quả generated — commit để consumer dùng ngay.</doc-card>
-          <doc-card title="6. templates/ policies/" badge="Reference" badge-type="success">Tài liệu tham chiếu để agent tạo output đúng format và đúng rule.</doc-card>
+          <doc-card title="1. agents/*.yaml" badge="Định nghĩa" badge-type="info">YAML mô tả chi tiết agent, inputs, workflow steps, tools, policies.</doc-card>
+          <doc-card title="2. packages/core" badge="Xác thực" badge-type="info">Phục vụ parse YAML, validate Zod schema, resolve biến môi trường.</doc-card>
+          <doc-card title="3. packages/cli" badge="Điều phối" badge-type="info">Đọc config, nạp templates, điều phối nạp data cho các adapter.</doc-card>
+          <doc-card title="4. packages/adapters/*" badge="Kết xuất" badge-type="info">Chuyển đổi agent chuẩn thành file prompt tương thích với IDE target.</doc-card>
+          <doc-card title="5. .sdlc/ .claude/ .github/" badge="Kết quả" badge-type="success">Đầu ra tự động, được commit để IDE/AI agents đọc sử dụng ngay.</doc-card>
+          <doc-card title="6. templates/ policies/" badge="Tham chiếu" badge-type="success">Các file markdown hướng dẫn định dạng và quy tắc bảo mật cho agent.</doc-card>
         </div>
       </section>
 
       <!-- 21. SA design review -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s21">21. Đánh giá bổ sung sau khi review SA design và codebase <span class="update-badge">2026-06-11</span></h2>
+        <p>Phần này ghi nhận các phân tích đối chiếu thực tế giữa thiết kế giải pháp Solution Architecture ban đầu và hiện trạng triển khai mã nguồn hiện tại.</p>
 
-        <doc-alert type="success" title="Phase 1 — MVP tech hoàn tất">
-          Canonical agents ✅ · Build engine ✅ · 3 adapters ✅ · Validation chặt ✅ · CI xanh ✅ · Drift detection ✅ · README ✅ · Adapter contract doc ✅. Còn lại: dogfood + 1 pilot team để đạt exit criteria.
-        </doc-alert>
-
-        <doc-accordion title="21.1 Điểm mạnh">
-<ul>
-  <li>Hướng sản phẩm đúng pain point: copy prompt/agent config theo từng tool, khó version, khó test.</li>
-  <li>Kiến trúc canonical DSL → build engine → adapters đúng hướng. <code>agents/*.yaml</code> là source of truth, adapter chỉ lo đóng gói.</li>
-  <li>Universal-first tốt: <code>AGENTS.md</code> + <code>.sdlc/agents/*.md</code> tạo baseline portable cho Codex, Cursor, Windsurf, Gemini CLI, Zed...</li>
-  <li>Adapter pattern gọn và dễ mở rộng: mỗi adapter chỉ cần implement <code>ToolAdapter.render()</code>.</li>
-  <li>Nền test tốt cho MVP: 53 tests, 9 files — schema, loader, resolver, CLI build/validate, adapter snapshot.</li>
-  <li>SA design đã nhìn đúng rủi ro dài hạn: prompt supply-chain, versioning, eval harness, policy layer, adapter compatibility.</li>
-</ul>
+        <doc-accordion title="21.1 Điểm mạnh của dự án">
+          <ul>
+            <li>Giải quyết trực tiếp pain point thực tế của nhà phát triển: tránh việc sao chép/dán prompt thủ công giữa các công cụ AI khác nhau.</li>
+            <li>Kiến trúc phân lớp canonical DSL ➔ build engine ➔ adapters rất rõ ràng và dễ bảo trì.</li>
+            <li>Định hướng Universal-first giúp hỗ trợ ngay lập tức 100% các công cụ AI đọc hiểu được file repo thông qua <code>AGENTS.md</code>.</li>
+            <li>Adapter pattern tối giản giúp dễ dàng viết thêm adapter mới trong vòng dưới 1 tuần.</li>
+            <li>Nền tảng kiểm thử khá vững chắc (60 tests pass) đảm bảo không xảy ra regression lỗi khi refactor code core/CLI.</li>
+          </ul>
         </doc-accordion>
 
-        <doc-accordion title="21.2 Điểm yếu &amp; rủi ro cần quản lý">
-<ul>
-  <li>Scope SA design khá rộng — registry, update mechanism, telemetry, eval harness, marketplace, skill import, multi-layer config đều có giá trị nhưng MVP quá sớm sẽ loãng delivery.</li>
-  <li>✅ <strong>Đã xử lý silent no-op:</strong> <code>imports</code>/<code>extends</code> tồn tại trong schema nhưng <code>validate</code>/<code>build</code> hiện fail rõ ràng với message "not supported yet (planned: Phase 2)" — <code>packages/cli/src/commands/project-validation.ts</code>.</li>
-  <li>✅ <strong>Đã có drift detection:</strong> SHA-256 manifest tại <code>.sdlc/build-manifest.json</code> — <code>packages/cli/src/commands/build.ts</code>.</li>
-  <li>Templates/policies hiện là reference cho AI agent, chưa inline/render body — chấp nhận được ở MVP.</li>
-  <li>Claim "support mọi AI tool": đúng hơn là universal tạo portable baseline; native UX vẫn cần adapter riêng và compatibility test.</li>
-</ul>
+        <doc-accordion title="21.2 Điểm yếu và rủi ro cần quản lý">
+          <ul>
+            <li>Phạm vi (scope) trong SA design ban đầu quá rộng so với nguồn lực MVP. Cần giữ MVP thật tinh gọn để sớm kiểm chứng giá trị cốt lõi trước khi làm registry hay marketplace.</li>
+            <li>Cơ chế validation đã giải quyết triệt để rủi ro silent no-op của các trường chưa hỗ trợ (báo lỗi dừng chương trình thay vì bỏ qua âm thầm).</li>
+            <li>Tệp template và policy hiện đang là liên kết tham chiếu tĩnh cho AI agent chứ chưa inline trực tiếp nội dung vào prompt.</li>
+          </ul>
         </doc-accordion>
 
-        <doc-accordion title="21.3 Bổ sung đã đưa vào SA design">
-<ol>
-  <li>✅ <strong>Adapter contract</strong> — <code>docs/adapter-contract/ADAPTER_CONTRACT.md</code>: interface, determinism bắt buộc, output paths, generated footer, required tests, quy trình thêm adapter mới.</li>
-  <li>✅ <strong>Reference validation</strong> — <code>project-validation.ts</code>: fail rõ nếu missing template/policy, duplicate id, unsupported extends/imports.</li>
-  <li>✅ <strong>Generated output strategy</strong>: commit generated files; footer marker <code>Generated by sdlc-agents</code> chuẩn hóa; drift detection qua manifest.</li>
-  <li>✅ <strong>MVP exit criteria</strong>: validate, build deterministic, adapter tests, CI xanh, README — hoàn tất. Còn: dogfood + pilot.</li>
-</ol>
+        <doc-accordion title="21.3 Bổ sung quan trọng đã đưa vào thiết kế giải pháp">
+          <ol>
+            <li><strong>Adapter Contract:</strong> Đưa ra tệp quy ước <code>ADAPTER_CONTRACT.md</code> định hình rõ interface, tính deterministic và yêu cầu viết snapshot test cho adapter.</li>
+            <li><strong>Reference Validation:</strong> Bổ sung kiểm tra liên kết chéo trong <code>project-validation.ts</code> để tránh link gãy đến template/policy.</li>
+            <li><strong>Generated Output Strategy:</strong> Quyết định commit các tệp generated trực tiếp lên Git để sử dụng ngay kèm theo drift detection.</li>
+            <li><strong>MVP Exit Criteria:</strong> Xác lập tiêu chí đóng Phase 1 bao gồm validate chặt, build idempotent, adapter tests, CI xanh, README hoàn chỉnh.</li>
+          </ol>
         </doc-accordion>
 
-        <h3 style="margin-top: 24px; color: #e2e8f0;">21.4 Ưu tiên kỹ thuật — trạng thái</h3>
+        <h3 style="margin-top: 24px; color: #e2e8f0;">21.4 Ưu tiên kỹ thuật và trạng thái</h3>
         <table>
-          <thead><tr><th>#</th><th>Việc</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hạng mục công việc</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú và vị trí mã nguồn</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr><td>1</td><td>CI workflow chạy trên root project</td><td><span class="status-done">✅ Xong</span></td><td><code>.github/workflows/ci.yml</code> + fix lint: thêm <code>biome.json</code>, format toàn bộ source</td></tr>
-            <tr><td>2</td><td>Vitest include adapter tests</td><td><span class="status-done">✅ Xong</span></td><td><code>vitest.config.ts</code> có pattern riêng cho <code>packages/adapters/*/src</code></td></tr>
-            <tr><td>3</td><td>Validation duplicate id + missing refs</td><td><span class="status-done">✅ Xong</span></td><td><code>project-validation.ts</code> + tests</td></tr>
-            <tr><td>4</td><td>Generated marker / drift detection</td><td><span class="status-done">✅ Xong</span></td><td>SHA-256 manifest + footer chuẩn hóa</td></tr>
-            <tr><td>5</td><td>README quickstart</td><td><span class="status-done">✅ Xong</span></td><td><code>README.md</code> tại root</td></tr>
-            <tr><td>6</td><td>Adapter contract trong docs</td><td><span class="status-done">✅ Xong</span></td><td><code>docs/adapter-contract/ADAPTER_CONTRACT.md</code></td></tr>
-            <tr><td>7</td><td>Multi-layer config, imports, extends, eval harness</td><td><span class="status-todo">⬜ Phase 2</span></td><td><code>extends</code>/<code>imports</code> bị validate chặn; <code>mergeConfigs</code> đã có sẵn trong core chờ wire</td></tr>
+            <tr><td>1</td><td>CI workflow chạy trên root project</td><td><span class="status-done">✅ Xong</span></td><td>Chỉnh sửa <code>.github/workflows/ci.yml</code> + tích hợp <code>biome.json</code> định dạng code.</td></tr>
+            <tr><td>2</td><td>Vitest bao phủ cả các tệp test của adapters</td><td><span class="status-done">✅ Xong</span></td><td>Cấu hình trong tệp <code>vitest.config.ts</code>.</td></tr>
+            <tr><td>3</td><td>Validate trùng lặp id và thiếu file tham chiếu</td><td><span class="status-done">✅ Xong</span></td><td>Triển khai tại <code>project-validation.ts</code> và viết test đầy đủ.</td></tr>
+            <tr><td>4</td><td>Generated marker / Drift detection</td><td><span class="status-done">✅ Xong</span></td><td>Manifest lưu mã băm tại <code>.sdlc/build-manifest.json</code> + chuẩn hóa generated footer.</td></tr>
+            <tr><td>5</td><td>Tài liệu README quickstart ở root</td><td><span class="status-done">✅ Xong</span></td><td>Tệp <code>README.md</code> tại thư mục gốc.</td></tr>
+            <tr><td>6</td><td>Quy ước Adapter trong tài liệu tham khảo</td><td><span class="status-done">✅ Xong</span></td><td>Tệp tin <code>docs/adapter-contract/ADAPTER_CONTRACT.md</code>.</td></tr>
+            <tr><td>7</td><td>Config Multi-layer, imports, extends, eval harness</td><td><span class="status-todo">⬜ Phase 2</span></td><td>Validator đang chặn các trường <code>extends</code>/<code>imports</code> để tránh silent no-op.</td></tr>
           </tbody>
         </table>
 
-        <h3 style="margin-top: 28px; color: #e2e8f0;">21.6 Bảng đối chiếu SA design ↔ code (2026-06-11)</h3>
+        <h3 style="margin-top: 28px; color: #e2e8f0;">21.6 Bảng đối chiếu SA design ↔ code thực tế</h3>
         <table>
-          <thead><tr><th>FR</th><th>Nội dung</th><th>Trạng thái</th><th>Vị trí code</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Mã FR</th>
+              <th>Yêu cầu chức năng</th>
+              <th>Trạng thái đối chiếu</th>
+              <th>Vị trí triển khai trong mã nguồn</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr><td><code>FR-01</code></td><td>DSL chuẩn (YAML) + schema validate</td><td><span class="fr-done">✅ Xong</span><br><small>Chưa export JSON Schema cho editor</small></td><td><code>packages/core/src/schema.ts</code></td></tr>
-            <tr><td><code>FR-02</code></td><td>Universal adapter (AGENTS.md + .sdlc/)</td><td><span class="fr-done">✅ Xong</span></td><td><code>packages/adapters/universal</code></td></tr>
-            <tr><td><code>FR-02b</code></td><td>Native adapters: Claude Code, Copilot</td><td><span class="fr-done">✅ Xong</span></td><td><code>packages/adapters/claude-code</code>, <code>copilot</code></td></tr>
-            <tr><td><code>FR-03</code></td><td>CLI đầy đủ</td><td><span class="fr-partial">🟡 Một phần</span><br><small>init/build/validate xong; update/list/doctor/eject/reset chưa</small></td><td><code>packages/cli/src/index.ts</code></td></tr>
-            <tr><td><code>FR-04</code></td><td>Config override nhiều lớp</td><td><span class="fr-todo">⬜ Chưa</span><br><small>mới load 1 file; <code>mergeConfigs</code> đã có chờ wire</small></td><td><code>packages/core/src/config.ts</code>, <code>merger.ts</code></td></tr>
-            <tr><td><code>FR-05</code></td><td>6 agents MVP end-to-end</td><td><span class="fr-done">✅ Xong</span></td><td><code>agents/*.yaml</code></td></tr>
-            <tr><td><code>FR-06</code></td><td>Patch-based override</td><td><span class="fr-todo">⬜ Phase 2</span></td><td>—</td></tr>
-            <tr><td><code>FR-07</code></td><td><code>extends</code> + local agents</td><td><span class="fr-todo">⬜ Phase 2</span><br><small>validate chặn để tránh silent no-op</small></td><td><code>project-validation.ts</code></td></tr>
-            <tr><td><code>FR-08</code></td><td>Escape hatch (tool_specific, eject/reset)</td><td><span class="fr-todo">⬜ Phase 2</span><br><small>drift detection đã có</small></td><td><code>build.ts</code></td></tr>
-            <tr><td><code>FR-09</code></td><td>SemVer + changelog</td><td><span class="fr-todo">⬜ Chưa publish npm</span></td><td>—</td></tr>
-            <tr><td><code>FR-10</code></td><td>Template variables <code>{{...}}</code></td><td><span class="fr-done">✅ Xong</span></td><td><code>packages/core/src/resolver.ts</code></td></tr>
-            <tr><td><code>FR-11</code></td><td>Adapter plugin interface + hooks</td><td><span class="fr-todo">⬜ Chưa</span><br><small>ToolAdapter interface có sẵn; ADAPTERS map đang hardcode</small></td><td><code>build.ts</code></td></tr>
-            <tr><td><code>FR-12</code></td><td><code>doctor</code> command</td><td><span class="fr-todo">⬜ Phase 2</span></td><td>—</td></tr>
-            <tr><td><code>FR-13–16</code></td><td>Preset publishing, adapters đợt 2, eval harness, web catalog</td><td><span class="fr-todo">⬜ v1.1+ theo roadmap</span></td><td>—</td></tr>
+            <tr><td><code>FR-01</code></td><td>DSL chuẩn (YAML) + validation schema</td><td><span class="fr-done">✅ Xong</span></td><td>Đặc tả tại package <code>packages/core/src/schema.ts</code>.</td></tr>
+            <tr><td><code>FR-02</code></td><td>Universal adapter (AGENTS.md + .sdlc/)</td><td><span class="fr-done">✅ Xong</span></td><td>Triển khai tại package <code>packages/adapters/universal</code>.</td></tr>
+            <tr><td><code>FR-02b</code></td><td>Native adapters: Claude Code, Copilot</td><td><span class="fr-done">✅ Xong</span></td><td>Triển khai tại packages <code>claude-code</code> và <code>copilot</code> tương ứng.</td></tr>
+            <tr><td><code>FR-03</code></td><td>CLI đầy đủ + Hybrid installer UX</td><td><span class="fr-partial">🟡 Một phần</span></td><td>Các lệnh CLI cơ bản đã có ở <code>packages/cli/src/index.ts</code>. Trình tương tác cài đặt (wizard) thuộc Phase 2.</td></tr>
+            <tr><td><code>FR-04</code></td><td>Cấu hình override nhiều lớp</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Mới hỗ trợ nạp cấu hình đơn lẻ; helper <code>mergeConfigs</code> đã có sẵn trong core chờ đấu nối.</td></tr>
+            <tr><td><code>FR-05</code></td><td>6 agents MVP đầu cuối</td><td><span class="fr-done">✅ Xong</span></td><td>Cấu hình chi tiết tại thư mục <code>agents/</code>.</td></tr>
+            <tr><td><code>FR-06</code></td><td>Patch-based override</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Sẽ nghiên cứu triển khai ở Phase 2.</td></tr>
+            <tr><td><code>FR-07</code></td><td>Kế thừa (<code>extends</code>) + local agents</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Bị chặn bởi validator để tránh silent no-op ở Phase 1.</td></tr>
+            <tr><td><code>FR-08</code></td><td>Escape hatch (eject/reset)</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Riêng cơ chế drift detection kiểm soát tệp tin đã hoàn thành.</td></tr>
+            <tr><td><code>FR-09</code></td><td>SemVer + changelog cho package</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Sẽ hoàn thiện khi dự án thực hiện publish npm packages.</td></tr>
+            <tr><td><code>FR-10</code></td><td>Giải biến template <code>{{variable}}</code></td><td><span class="fr-done">✅ Xong</span></td><td>Module xử lý nằm tại <code>packages/core/src/resolver.ts</code>.</td></tr>
+            <tr><td><code>FR-11</code></td><td>Adapter plugin interface + hooks</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Interface có sẵn trong core nhưng CLI map target đang hardcode.</td></tr>
+            <tr><td><code>FR-12</code></td><td>Doctor command</td><td><span class="fr-todo">⬜ Chưa</span></td><td>Sẽ triển khai trong CLI ở Phase 2.</td></tr>
+            <tr><td><code>FR-13–16</code></td><td>Preset publishing, eval harness, web catalog</td><td><span class="fr-todo">⬜ v1.1+</span></td><td>Các tính năng dài hạn trên roadmap.</td></tr>
           </tbody>
         </table>
-
-        <div class="note" style="margin-top: 16px;">
-          <strong>Vị trí trên roadmap:</strong> Phase 0 hoàn tất ✅ · Phase 1 (MVP tech) hoàn tất ✅ — còn dogfood + pilot team. Phase 2 (customization, escape hatch, update flow) <strong>chưa bắt đầu</strong>.
-        </div>
-
-        <doc-accordion title="21.5 Kết luận đánh giá">
-<p>Dự án đang có nền tảng tốt và đang giải quyết đúng vấn đề: biến prompt/agent workflow thành artifact có schema, version, build và test. Giá trị lớn nhất không nằm ở từng prompt riêng lẻ, mà nằm ở việc chuẩn hóa cách team đóng gói và phân phối SDLC agents trên nhiều AI tools.</p>
-<p>Hướng tiếp theo nên giữ MVP thật gọn: canonical agents, deterministic build, 3 adapters, validation chặt và CI đúng. Khi nền này chắc, các phần lớn hơn như registry, import community skills, eval harness và update mechanism sẽ dễ thêm hơn nhiều.</p>
-        </doc-accordion>
+        
+        <p style="margin-top: 16px; font-size: 13.5px; color: var(--text2);">
+          <strong>Vị trí hiện tại trên roadmap:</strong> Giai đoạn Phase 0 hoàn tất ✅. Giai đoạn Phase 1 (MVP tech) đã hoàn tất hoàn toàn phần kỹ thuật ✅, chỉ còn tiến hành thử nghiệm dogfooding và triển khai pilot team để đạt tiêu chí exit criteria chính thức.
+        </p>
       </section>
 
       <footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
@@ -428,7 +693,7 @@ policies/*.md   ──►  BuildContext
 
     <!-- Right TOC sidebar (auto-populated) -->
     <aside class="doc-toc-sidebar">
-      <div class="doc-toc-label">On this page</div>
+      <div class="doc-toc-label">Trên trang này</div>
       <nav id="doc-toc-nav"></nav>
     </aside>
 
@@ -436,5 +701,21 @@ policies/*.md   ──►  BuildContext
 
   <script src="../docs-core.js"></script>
   <script src="../docs-layout.js" defer></script>
+  
+  <!-- Load Mermaid Library from CDN and initialize it dynamically -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        background: '#0d1117',
+        primaryColor: '#1f2937',
+        primaryTextColor: '#cbd5e1',
+        lineColor: '#58a6ff',
+        transitionDuration: '0.15s'
+      }
+    });
+  </script>
 </body>
 </html>

@@ -2,11 +2,62 @@
 
 Tài liệu này mô tả codebase hiện tại của `sdlc-agent` sau khi đối chiếu với `docs/sa-design/SA_DESIGN_Agentic_SDLC_Agents_Set.md` và source code thực tế trong repo.
 
-Mục tiêu của project là duy trì một bộ định nghĩa AI agent cho các phase SDLC theo mô hình "write once, render everywhere": agent được viết một lần ở dạng canonical YAML, sau đó build engine render ra các format mà nhiều AI tools có thể đọc được như `AGENTS.md`, `.sdlc/agents/*.md`, `.claude/agents/*.md`, và `.github/prompts/*.prompt.md`.
+Mục tiêu của project là duy trì một bộ định nghĩa AI agent cho các phase SDLC theo hướng **Hybrid**: agent được viết một lần ở dạng canonical YAML, build engine render ra các format mà nhiều AI tools có thể đọc được như `AGENTS.md`, `.sdlc/agents/*.md`, `.claude/agents/*.md`, và `.github/prompts/*.prompt.md`; người dùng cuối thì đi qua installer/wizard ngắn như `npx sdlc-agents init`.
+
+## 0. Dự án này làm gì và dùng như thế nào
+
+`sdlc-agent` là một monorepo TypeScript để định nghĩa, validate, build và phân phối một bộ AI agents cho các giai đoạn SDLC: requirement, planning, architecture, coding, review và testing. Thay vì copy/paste prompt riêng cho từng tool, project giữ một nguồn chuẩn trong `agents/*.yaml`, sau đó render ra format phù hợp cho nhiều AI tools.
+
+Định hướng sản phẩm hiện tại là **Hybrid**:
+
+- **Builder core:** schema, validation, adapter render, drift detection và test suite vẫn là nền kỹ thuật chính.
+- **Installer UX:** user cuối không cần nhớ chuỗi lệnh dài; `npx sdlc-agents init` sẽ hỏi đang dùng AI host nào, muốn bật agents nào, scope project hay user, language/team variables, rồi tự tạo config và chạy build lần đầu.
+
+Mục đích sản phẩm theo SA design:
+
+- Chuẩn hóa workflow AI agent cho team phát triển phần mềm.
+- Giữ agent definition, template và policy ở dạng có version, có schema, có test.
+- Build một lần ra nhiều target: Universal (`AGENTS.md`, `.sdlc/agents/`), Claude Code (`.claude/agents/`) và GitHub Copilot (`.github/prompts/`, `.github/copilot-instructions.md`).
+- Cho phép team customize dần bằng config, policy, template và adapter, nhưng vẫn tránh sửa tay output generated.
+
+Trạng thái hiện tại: Phase 1 MVP đã có 6 agents, CLI `init` / `validate` / `build`, 3 adapters, validation contract, drift detection và test coverage cơ bản. Các phần lớn hơn như multi-layer config, `imports`, `extends`, registry/update flow, eval harness và adapter plugin interface vẫn thuộc Phase 2+.
+
+Cách dùng nhanh cho consumer project:
+
+```bash
+npx sdlc-agents init
+```
+
+Wizard sẽ hỏi AI host, agent preset, install scope và variables, rồi tạo `sdlc.config.yaml` và render output lần đầu. Với repo này, các lệnh `pnpm sdlc validate`, `pnpm sdlc build`, `pnpm test`, `pnpm typecheck`, `pnpm lint` là workflow maintainer/developer, không phải flow cài đặt cho user cuối.
+
+## 0.1 Overview nhanh theo folder
+
+| Folder/File | Sửa tay? | Generated sau lệnh? | Ý nghĩa nhanh |
+|---|---:|---:|---|
+| `agents/` | Có | Không | Source of truth của agent catalog. Sửa khi thêm agent, đổi workflow, input, model hint, policy/template reference. |
+| `templates/` | Có | Không | Mẫu output mà agent phải dùng, ví dụ PRD, HLD, plan, review report, test plan. |
+| `policies/` | Có | Không | Checklist/convention dùng bởi agents, ví dụ coding convention và security checklist. |
+| `sdlc.config.yaml` | Có | Không | Config target render (`universal`, `claude-code`, `copilot`) và variables như `language`. |
+| `packages/core/` | Có | Không | Schema, config loader, YAML loader, variable resolver, config merger, shared adapter types. |
+| `packages/cli/` | Có | Không | CLI `sdlc init`, `sdlc validate`, `sdlc build`; Phase 2 sẽ mở rộng `init` thành interactive installer/wizard, host detection, agent preset và first build. |
+| `packages/adapters/` | Có | Không | Renderer cho từng AI tool. Sửa ở đây khi output format của Claude/Copilot/Universal thay đổi. |
+| `docs/**/*.md` | Có | Không | Source of truth của docs. Khi đổi nội dung docs, sửa Markdown trước. |
+| `docs/**/*.html` | Có, nhưng phải mirror MD | Không | Rendered docs view. Cần cập nhật cùng nội dung với Markdown để không drift. |
+| `AGENTS.md` | Không | Có, bởi `pnpm sdlc build` | Universal index cho AI tools đọc repo instructions. |
+| `.sdlc/agents/*.md` | Không | Có, bởi `pnpm sdlc build` | Universal per-agent Markdown. |
+| `.sdlc/build-manifest.json` | Không | Có, bởi `pnpm sdlc build` | Hash manifest để phát hiện generated file bị sửa tay. |
+| `.claude/agents/*.md` | Không | Có, bởi `pnpm sdlc build` | Claude Code subagent files. |
+| `.github/copilot-instructions.md` | Không | Có, bởi `pnpm sdlc build` | Copilot repository instructions. |
+| `.github/prompts/*.prompt.md` | Không | Có, bởi `pnpm sdlc build` | Copilot prompt files cho từng agent. |
+| `.github/workflows/` | Có | Không | CI: install, lint, typecheck, test, spike. |
+| `spike/` | Ít khi | Không | Prototype Phase 0, giữ làm reference. Không phải runtime chính. |
+| `node_modules/` | Không | Có, bởi `pnpm install` | Dependency install output. Không commit/sửa tay. |
+| `pnpm-lock.yaml` | Không sửa tay | Có, bởi `pnpm install` | Lockfile dependency. Chỉ thay đổi qua package manager. |
+| `sdlc-phase1.bundle` | Ít khi | Không | Git bundle artifact của phase 1, không phải source runtime. |
 
 ## 1. Tổng quan kiến trúc
 
-Theo SA design, hệ thống có 3 lớp chính:
+Theo SA design, hệ thống có 4 lớp chính:
 
 1. Canonical layer
    - Chứa source of truth của agent, template, policy và config.
@@ -16,7 +67,12 @@ Theo SA design, hệ thống có 3 lớp chính:
    - Đọc config, load YAML agents, validate schema, resolve biến, rồi render output.
    - Trong codebase hiện tại, build engine được chia thành `packages/core/` và `packages/cli/`.
 
-3. Tool adapters
+3. Installer / Wizard UX
+   - Hỏi hoặc detect AI host, agent preset, install scope và variables.
+   - Tạo config và gọi build engine để user cuối có trải nghiệm cài đặt 1 lệnh.
+   - Đây là hướng Hybrid tương tự trải nghiệm `npx skills` / `create-vue`, nhưng vẫn giữ canonical YAML/build engine làm source of truth.
+
+4. Tool adapters
    - Chuyển agent canonical thành format riêng cho từng AI tool.
    - Hiện có 3 adapter: `universal`, `claude-code`, và `copilot` trong `packages/adapters/`.
 
@@ -51,7 +107,7 @@ Chức năng chính:
   - `pnpm spike`: chạy prototype renderer ở `spike/render.ts`.
   - `pnpm typecheck`: chạy `tsc --noEmit`.
   - `pnpm test`: chạy `vitest run`.
-  - `pnpm build`: chạy build trong workspace packages.
+  - `pnpm build`: chạy `pnpm typecheck` để tránh build script no-op.
   - `pnpm lint`: chạy `biome check .`.
 - Khai báo dependency runtime đang dùng:
   - `yaml`: parse YAML agent/config.
@@ -111,11 +167,14 @@ Config test runner.
 
 ```ts
 test: {
-  include: ["packages/*/src/**/*.test.ts"],
+  include: [
+    "packages/*/src/**/*.test.ts",
+    "packages/adapters/*/src/**/*.test.ts",
+  ],
 }
 ```
 
-Lưu ý: pattern này phù hợp với `packages/core/src/**/*.test.ts` và `packages/cli/src/**/*.test.ts`. Adapter tests nằm sâu một cấp sâu hơn (`packages/adapters/*/src/**/*.test.ts`). Thực tế `pnpm test` hiện vẫn pass với 6 test files trong lần kiểm tra gần nhất; nếu muốn đảm bảo adapter tests luôn được include rõ ràng, nên cân nhắc thêm pattern `packages/adapters/*/src/**/*.test.ts`.
+Pattern riêng cho `packages/adapters/*/src/**/*.test.ts` đảm bảo adapter tests luôn được chạy cùng core và CLI tests. Lần kiểm tra hiện tại chạy 9 test files / 60 tests.
 
 ### `sdlc.config.yaml`
 
@@ -424,13 +483,12 @@ Functions:
   - Regex hiện tại chỉ match key word chars: `/\{\{(\w+)\}\}/g`.
 
 - `resolveAgent(agent, vars)`
-  - Serialize agent thành JSON string.
-  - Resolve variables trên string.
-  - Parse lại JSON thành `AgentDef`.
+  - Traverse object/array/string recursively.
+  - Resolve variables trong từng string field.
+  - Không dùng replace trên JSON string nên an toàn hơn với quote, slash và newline trong variable values.
 
 Điểm cần biết:
 
-- Cách serialize/parse giúp resolve biến trong mỗi field string của object.
 - Không mutate original agent.
 - Chỉ hỗ trợ placeholder đơn giản `{{language}}`, `{{team}}`; không hỗ trợ expression như `{{stack | default: "not specified"}}` trong templates.
 
@@ -490,7 +548,7 @@ Fixture cho tests:
 
 ## 7. `packages/cli/` - command line interface
 
-`packages/cli/` là CLI package `@sdlc-agents/cli`.
+`packages/cli/` là CLI package `@sdlc-agents/cli`. Trong Phase 1, package này chủ yếu là build/validate tool cho maintainer. Theo hướng Hybrid, `sdlc init` sẽ trở thành entrypoint installer cho user cuối: hỏi tool/agent/scope/variables, sinh config, rồi chạy validation + build lần đầu.
 
 ### `packages/cli/package.json`
 
@@ -517,7 +575,8 @@ Dùng `commander` để define:
 
 - `sdlc validate`
   - Option `-C, --cwd <dir>`.
-  - Gọi `runValidate(path.join(opts.cwd, "agents"))`.
+  - Gọi `runValidate(opts.cwd)`.
+  - `runValidate()` đọc `sdlc.config.yaml`, validate `targets`, rồi load agents từ `config.agentsDir`.
   - Nếu false thì `process.exit(1)`.
 
 - `sdlc init`
@@ -572,6 +631,8 @@ Flow:
 ### `packages/cli/src/commands/init.ts`
 
 Scaffold config mặc định.
+
+Đây là vị trí nên phát triển interactive installer/wizard trong Phase 2. Wizard không nên nhét logic render vào adapter; nó chỉ thu thập lựa chọn của user, ghi config, chọn targets/agents phù hợp, rồi gọi lại build engine.
 
 Flow:
 
@@ -1043,7 +1104,7 @@ Schema đã chấp nhận `imports` và `extends`, nhưng loader/resolver/build 
 | `templates/` | Canonical source | Có | Mẫu output PRD/HLD/plan/review/test-plan. |
 | `policies/` | Canonical source | Có | Checklist convention và security. |
 | `packages/core/` | Code runtime | Có | Schema, config, loader, merge, resolver, shared types. |
-| `packages/cli/` | Code runtime | Có | CLI `sdlc init/build/validate`. |
+| `packages/cli/` | Code runtime | Có | CLI `sdlc init/build/validate`; `init` là nơi phát triển Hybrid installer/wizard. |
 | `packages/adapters/` | Code runtime | Có | Render agent sang universal, Claude Code, Copilot. |
 | `.sdlc/` | Generated output | Không nên | Universal per-agent markdown. |
 | `.claude/` | Generated output | Không nên | Claude Code subagents. |
@@ -1151,7 +1212,7 @@ Hướng tiếp theo nên giữ MVP thật gọn: canonical agents, deterministi
 | FR-01 | DSL chuẩn (YAML) + schema validate | ✅ Xong (Zod; chưa export JSON Schema cho editor) | `packages/core/src/schema.ts` |
 | FR-02 | Universal adapter (AGENTS.md + `.sdlc/`) | ✅ Xong | `packages/adapters/universal` |
 | FR-02b | Native adapters: Claude Code, Copilot | ✅ Xong | `packages/adapters/claude-code`, `packages/adapters/copilot` |
-| FR-03 | CLI đầy đủ | 🟡 Một phần: `init`/`build`/`validate` xong; `update`/`list`/`doctor`/`eject`/`reset` chưa | `packages/cli/src/index.ts` |
+| FR-03 | CLI đầy đủ + Hybrid installer UX | 🟡 Một phần: `init`/`build`/`validate` xong; interactive wizard, host detection, update/list/doctor/eject/reset chưa | `packages/cli/src/index.ts`, `packages/cli/src/commands/init.ts` |
 | FR-04 | Config override nhiều lớp | ⬜ Chưa — mới load 1 file `sdlc.config.yaml`; `mergeConfigs` đã có trong core chờ wire | `packages/core/src/config.ts`, `merger.ts` |
 | FR-05 | 6 agents MVP end-to-end | ✅ Xong: requirement-analyst, solution-architect, planner, coder, test-generator, code-reviewer | `agents/*.yaml` |
 | FR-06 | Patch-based override | ⬜ Chưa (Phase 2) | — |

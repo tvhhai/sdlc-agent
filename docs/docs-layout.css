@@ -3,6 +3,26 @@
    body.page-doc → .doc-shell → [.doc-nav-sidebar | .doc-main | .doc-toc-sidebar]
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap');
+
+:root {
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', system-ui, -apple-system, sans-serif;
+  --mono: 'Fira Code', 'JetBrains Mono', monospace;
+}
+
+/* Typography & Code overrides */
+h1, h2, h3, h4, h5, h6,
+.doc-section-title,
+.doc-section-subtitle,
+.doc-nav-brand-title {
+  font-family: var(--font-heading);
+}
+
+code, pre, kbd, samp, .flow-box {
+  font-family: var(--mono) !important;
+}
+
 /* --------------------------------------------------------------------------
    Shell grid
    -------------------------------------------------------------------------- */
@@ -12,7 +32,7 @@ body.page-doc {
   padding: 0;
   background: var(--bg, #0d1117);
   color: var(--text, #e6edf3);
-  font-family: var(--font-body, 'Inter', sans-serif);
+  font-family: var(--font-body);
   line-height: 1.6;
 }
 
