@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { stringify as stringifyYaml } from "yaml";
 import { runValidate } from "../commands/validate.js";
 
 const REAL_AGENTS = path.resolve(
@@ -23,14 +24,40 @@ describe("runValidate", () => {
 	});
 
 	it("returns true for the real agents/ directory", () => {
-		expect(runValidate(REAL_AGENTS)).toBe(true);
+		expect(runValidate(path.dirname(REAL_AGENTS))).toBe(true);
+	});
+
+	it("uses agentsDir from sdlc.config.yaml", () => {
+		fs.mkdirSync(path.join(tmpDir, "custom-agents"));
+		fs.rmSync(path.join(tmpDir, "agents"), { recursive: true, force: true });
+		writeAgentFile(path.join(tmpDir, "custom-agents", "planner.yaml"), {
+			id: "planner",
+		});
+		fs.writeFileSync(
+			path.join(tmpDir, "sdlc.config.yaml"),
+			stringifyYaml({ agentsDir: "custom-agents" }),
+			"utf8",
+		);
+
+		expect(runValidate(tmpDir)).toBe(true);
+	});
+
+	it("returns false when config declares an unknown target", () => {
+		writeAgent(tmpDir, "planner.yaml", { id: "planner" });
+		fs.writeFileSync(
+			path.join(tmpDir, "sdlc.config.yaml"),
+			stringifyYaml({ targets: ["universal", "claude_code"] }),
+			"utf8",
+		);
+
+		expect(runValidate(tmpDir)).toBe(false);
 	});
 
 	it("returns false when two agent files use the same id", () => {
 		writeAgent(tmpDir, "first.yaml", { id: "duplicate-agent" });
 		writeAgent(tmpDir, "second.yaml", { id: "duplicate-agent" });
 
-		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+		expect(runValidate(tmpDir)).toBe(false);
 	});
 
 	it("returns false when an output_template does not exist", () => {
@@ -39,7 +66,7 @@ describe("runValidate", () => {
 			output_template: "templates/missing.md",
 		});
 
-		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+		expect(runValidate(tmpDir)).toBe(false);
 	});
 
 	it("returns false when a referenced policy does not exist", () => {
@@ -48,7 +75,7 @@ describe("runValidate", () => {
 			policies: ["missing-policy"],
 		});
 
-		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+		expect(runValidate(tmpDir)).toBe(false);
 	});
 
 	it("returns false when an agent uses the unsupported 'extends' field", () => {
@@ -57,7 +84,7 @@ describe("runValidate", () => {
 			extraLines: ["extends: code-reviewer"],
 		});
 
-		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+		expect(runValidate(tmpDir)).toBe(false);
 	});
 
 	it("returns false when an agent uses the unsupported 'imports' field", () => {
@@ -72,7 +99,7 @@ describe("runValidate", () => {
 			],
 		});
 
-		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+		expect(runValidate(tmpDir)).toBe(false);
 	});
 });
 
@@ -101,8 +128,40 @@ function writeAgent(
 			: {}),
 	};
 
+	writeAgentFile(path.join(projectDir, "agents", fileName), {
+		id: agent.id,
+		output_template: agent.output_template,
+		policies: agent.policies,
+		extraLines: overrides.extraLines,
+	});
+}
+
+function writeAgentFile(
+	filePath: string,
+	overrides: {
+		id?: string;
+		output_template?: string;
+		policies?: string[];
+		extraLines?: string[];
+	},
+): void {
+	const agent = {
+		id: overrides.id ?? "test-agent",
+		version: "1.0.0",
+		phase: "planning",
+		description: "Test agent used to validate project contracts.",
+		model_hint: "balanced",
+		tools_required: [],
+		inputs: [],
+		workflow: [{ step: "Run the validation contract" }],
+		policies: overrides.policies ?? [],
+		...(overrides.output_template
+			? { output_template: overrides.output_template }
+			: {}),
+	};
+
 	fs.writeFileSync(
-		path.join(projectDir, "agents", fileName),
+		filePath,
 		[
 			`id: ${agent.id}`,
 			`version: ${agent.version}`,

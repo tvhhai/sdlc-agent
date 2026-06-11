@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import path from "node:path";
 import { Command } from "commander";
 import { runBuild } from "./commands/build.js";
 import { runInit } from "./commands/init.js";
@@ -25,7 +24,7 @@ program
 	.description("Validate all agent YAML definitions without building")
 	.option("-C, --cwd <dir>", "project directory", process.cwd())
 	.action((opts: { cwd: string }) => {
-		const ok = runValidate(path.join(opts.cwd, "agents"));
+		const ok = runValidate(opts.cwd);
 		if (!ok) process.exit(1);
 	});
 

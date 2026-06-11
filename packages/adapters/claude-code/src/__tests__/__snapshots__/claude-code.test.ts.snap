@@ -7,8 +7,8 @@ description: >-
   [SDLC:review] Reviews PR diff against checklists.
 model: claude-opus-4-8
 tools:
-  - read_file
-  - grep
+  - "read_file"
+  - "grep"
 ---
 
 # code-reviewer (phase: review)

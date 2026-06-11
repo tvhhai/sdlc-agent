@@ -4,10 +4,10 @@ description: >-
   [SDLC:coding] Implements a task from an implementation plan using TDD — writes the failing test first, then the minimal code to make it pass, then refactors.
 model: claude-sonnet-4-6
 tools:
-  - read_file
-  - write_file
-  - bash
-  - grep
+  - "read_file"
+  - "write_file"
+  - "bash"
+  - "grep"
 ---
 
 # coder (phase: coding)

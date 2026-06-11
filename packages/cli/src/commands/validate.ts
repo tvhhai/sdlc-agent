@@ -1,13 +1,25 @@
 import path from "node:path";
-import { loadAgents } from "@sdlc-agents/core";
+import { loadAgents, loadConfig } from "@sdlc-agents/core";
 import { ZodError } from "zod";
-import { validateProjectContracts } from "./project-validation.js";
+import {
+	validateProjectContracts,
+	validateTargets,
+} from "./project-validation.js";
 
-export function runValidate(agentsDir: string): boolean {
+export function runValidate(cwd: string): boolean {
 	try {
+		const config = loadConfig(cwd);
+		const targetErrors = validateTargets(config.targets);
+		if (targetErrors.length > 0) {
+			console.error("Validation errors:");
+			for (const message of targetErrors) {
+				console.error(`  ${message}`);
+			}
+			return false;
+		}
+		const agentsDir = path.join(cwd, config.agentsDir);
 		const agents = loadAgents(agentsDir);
-		const projectRoot = path.dirname(agentsDir);
-		const contractErrors = validateProjectContracts(agents, projectRoot);
+		const contractErrors = validateProjectContracts(agents, cwd);
 		if (contractErrors.length > 0) {
 			console.error("Validation errors:");
 			for (const message of contractErrors) {

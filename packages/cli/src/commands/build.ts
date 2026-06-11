@@ -11,7 +11,10 @@ import {
 	resolveAgent,
 	type ToolAdapter,
 } from "@sdlc-agents/core";
-import { validateProjectContracts } from "./project-validation.js";
+import {
+	validateProjectContracts,
+	validateTargets,
+} from "./project-validation.js";
 
 const ADAPTERS: Record<string, ToolAdapter> = {
 	universal: new UniversalAdapter(),
@@ -50,6 +53,10 @@ function detectDrift(
 
 export function runBuild(cwd: string): void {
 	const config = loadConfig(cwd);
+	const targetErrors = validateTargets(config.targets);
+	if (targetErrors.length > 0) {
+		throw new Error(`Project validation failed:\n${targetErrors.join("\n")}`);
+	}
 	const agentsDir = path.join(cwd, config.agentsDir);
 	const rawAgents = loadAgents(agentsDir);
 	const agents = rawAgents.map((a) => resolveAgent(a, config.variables));

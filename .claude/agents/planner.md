@@ -4,8 +4,8 @@ description: >-
   [SDLC:planning] Breaks down a PRD or feature spec into a concrete, time-boxed implementation plan with tasks, dependencies, and effort estimates.
 model: claude-opus-4-8
 tools:
-  - read_file
-  - list_files
+  - "read_file"
+  - "list_files"
 ---
 
 # planner (phase: planning)

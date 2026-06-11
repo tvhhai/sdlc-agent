@@ -122,4 +122,16 @@ describe("runBuild", () => {
 
 		expect(warnings.some((w) => w.includes("Drift detected"))).toBe(false);
 	});
+
+	it("throws instead of silently skipping unknown targets", () => {
+		fs.writeFileSync(
+			path.join(tmpDir, "sdlc.config.yaml"),
+			stringifyYaml({
+				targets: ["universal", "claude_code"],
+				variables: {},
+			}),
+		);
+
+		expect(() => runBuild(tmpDir)).toThrow(/Unknown target/);
+	});
 });

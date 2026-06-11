@@ -21,6 +21,14 @@ describe("resolveVariables", () => {
 			"foo and bar",
 		);
 	});
+
+	it("safely resolves values that contain JSON-sensitive characters", () => {
+		expect(
+			resolveVariables("Team: {{team}}", {
+				team: 'R&D "core" \\ platform\nnext',
+			}),
+		).toBe('Team: R&D "core" \\ platform\nnext');
+	});
 });
 
 describe("resolveAgent", () => {
@@ -53,5 +61,15 @@ describe("resolveAgent", () => {
 	it("does not mutate original agent", () => {
 		resolveAgent(agent, { team: "core" });
 		expect(agent.description).toContain("{{team}}");
+	});
+
+	it("preserves valid agent shape when variables contain quotes and slashes", () => {
+		const resolved = resolveAgent(agent, {
+			team: 'R&D "core" \\ platform',
+			stack: "Node.js",
+		});
+
+		expect(resolved.description).toContain('R&D "core" \\ platform team');
+		expect(resolved.workflow[0].step).toBe('Plan for R&D "core" \\ platform');
 	});
 });

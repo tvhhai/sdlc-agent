@@ -1,5 +1,6 @@
 import type { BuildContext } from "@sdlc-agents/core";
 import { describe, expect, it } from "vitest";
+import { parse as parseYaml } from "yaml";
 import { ClaudeCodeAdapter } from "../index.js";
 
 const adapter = new ClaudeCodeAdapter();
@@ -62,5 +63,21 @@ describe("ClaudeCodeAdapter", () => {
 	it("matches snapshot", () => {
 		const outputs = adapter.render([mockAgent], mockCtx);
 		expect(outputs[0].content).toMatchSnapshot();
+	});
+
+	it("escapes YAML frontmatter fields", () => {
+		const agent = {
+			...mockAgent,
+			description: 'Reviews PR diff for the "core" team.',
+			tools_required: ["read:file", "grep # exact"],
+		};
+		const { content } = adapter.render([agent], mockCtx)[0];
+		const frontmatter = content.split("---")[1];
+		const parsed = parseYaml(frontmatter);
+
+		expect(parsed.description).toBe(
+			'[SDLC:review] Reviews PR diff for the "core" team.',
+		);
+		expect(parsed.tools).toEqual(["read:file", "grep # exact"]);
 	});
 });

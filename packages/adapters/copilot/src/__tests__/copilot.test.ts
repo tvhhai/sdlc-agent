@@ -1,5 +1,6 @@
 import type { BuildContext } from "@sdlc-agents/core";
 import { describe, expect, it } from "vitest";
+import { parse as parseYaml } from "yaml";
 import { CopilotAdapter } from "../index.js";
 
 const adapter = new CopilotAdapter();
@@ -76,5 +77,21 @@ describe("CopilotAdapter", () => {
 			(o) => o.path === ".github/copilot-instructions.md",
 		)!;
 		expect(instructions.content).toMatchSnapshot();
+	});
+
+	it("escapes prompt frontmatter description", () => {
+		const quotedAgent = {
+			...agents[0],
+			description: 'Plan for the "core" team.',
+		};
+		const outputs = adapter.render([quotedAgent], mockCtx);
+		const prompt = outputs.find(
+			(o) => o.path === ".github/prompts/planner.prompt.md",
+		)!;
+		const frontmatter = prompt.content.split("---")[1];
+
+		expect(parseYaml(frontmatter).description).toBe(
+			'Plan for the "core" team.',
+		);
 	});
 });

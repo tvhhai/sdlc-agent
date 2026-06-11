@@ -4,9 +4,9 @@ description: >-
   [SDLC:testing] Generates a test plan and concrete test code (unit + integration) from a feature spec or existing source file, covering happy path and edge cases.
 model: claude-sonnet-4-6
 tools:
-  - read_file
-  - grep
-  - write_file
+  - "read_file"
+  - "grep"
+  - "write_file"
 ---
 
 # test-generator (phase: testing)

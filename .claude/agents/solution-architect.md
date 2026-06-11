@@ -4,9 +4,9 @@ description: >-
   [SDLC:architecture] Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options.
 model: claude-opus-4-8
 tools:
-  - read_file
-  - list_files
-  - grep
+  - "read_file"
+  - "list_files"
+  - "grep"
 ---
 
 # solution-architect (phase: architecture)

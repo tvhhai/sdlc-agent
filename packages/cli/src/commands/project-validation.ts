@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { AgentDef } from "@sdlc-agents/core";
 
+const KNOWN_TARGETS = new Set(["universal", "claude-code", "copilot"]);
+
 export function validateProjectContracts(
 	agents: AgentDef[],
 	projectRoot: string,
@@ -52,4 +54,13 @@ export function validateProjectContracts(
 	}
 
 	return errors;
+}
+
+export function validateTargets(targets: string[]): string[] {
+	return targets
+		.filter((target) => !KNOWN_TARGETS.has(target))
+		.map(
+			(target) =>
+				`Unknown target "${target}". Supported targets: ${Array.from(KNOWN_TARGETS).join(", ")}.`,
+		);
 }
