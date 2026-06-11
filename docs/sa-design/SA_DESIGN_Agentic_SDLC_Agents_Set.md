@@ -2,162 +2,162 @@
 
 | | |
 |---|---|
-| **Tên sản phẩm** | Agentic SDLC Agents Set |
-| **Loại sản phẩm** | Library (bộ agent definitions tái sử dụng, đa nền tảng) |
-| **Phiên bản tài liệu** | 0.1 (Draft) |
-| **Ngày** | 2026-06-10 |
-| **Tác giả** | SA Team |
-| **Trạng thái** | Đang thiết kế — chờ review |
+| **Product Name** | Agentic SDLC Agents Set |
+| **Product Type** | Library (reusable, multi-platform agent definitions set) |
+| **Document Version** | 0.1 (Draft) |
+| **Date** | 2026-06-10 |
+| **Author** | SA Team |
+| **Status** | Designing — awaiting review |
 
 ---
 
 ## 1. Executive Summary
 
-**Agentic SDLC Agents Set** là một **bộ AI Agent được đặc tả sẵn** (agent definitions, prompts, workflows, skills) cho từng giai đoạn của vòng đời phát triển phần mềm (SDLC), được đóng gói theo chiến lược **Hybrid**:
+**Agentic SDLC Agents Set** is a **pre-specified set of AI Agents** (agent definitions, prompts, workflows, skills) for each phase of the Software Development Life Cycle (SDLC), packaged using a **Hybrid** strategy:
 
-1. **Builder core:** giữ một nguồn chuẩn trong `agents/*.yaml`, validate bằng schema, rồi build ra nhiều format qua adapter.
-2. **Installer UX:** cung cấp trải nghiệm cài đặt tương tự `npx skills` / `create-vue`: hỏi người dùng đang dùng tool nào, muốn bật agents nào, scope project hay user, language/team variables là gì, sau đó tự generate config và output.
+1. **Builder core:** maintains a standard source in `agents/*.yaml`, validates using schemas, and then builds into multiple formats via adapters.
+2. **Installer UX:** provides an installation experience similar to `npx skills` / `create-vue`: asks the user which tool they are using, which agents they want to enable, project or user scope, language/team variables, and then automatically generates configuration and outputs.
 
-Cơ chế runtime vẫn là **universal-first**: luôn build `AGENTS.md` + `.sdlc/agents/` để mọi AI tool đọc được, cộng thêm **native adapter** cho tool nào có format riêng mạnh hơn như Claude Code hoặc GitHub Copilot.
+The runtime mechanism remains **universal-first**: it always builds `AGENTS.md` + `.sdlc/agents/` so that any AI tool can read them, plus **native adapters** for tools with stronger proprietary formats like Claude Code or GitHub Copilot.
 
-**Giá trị cốt lõi:**
-- Team mới chỉ cần `install` bộ agents là có ngay quy trình SDLC chuẩn có AI hỗ trợ — không phải tự viết prompt/agent từ đầu.
-- Chuẩn hoá chất lượng output AI giữa các team (cùng coding convention, cùng template tài liệu, cùng quy trình review).
-- Một nguồn maintain duy nhất (single source of truth) → build ra nhiều format cho từng tool.
+**Core Values:**
+- New teams only need to run `install` on the agents set to get a standard AI-assisted SDLC workflow immediately — without having to write prompts/agents from scratch.
+- Standardizes the quality of AI output across teams (same coding conventions, same document templates, same review process).
+- A single source of truth for maintenance → build into multiple formats for each tool.
 
-**Analogy:** giống như "Terraform modules" + "`npx create-*` wizard" cho AI agents — viết một lần, validate/test được, rồi cài đặt/generate thân thiện theo tool người dùng đang có.
+**Analogy:** like "Terraform modules" + "`npx create-*` wizard" for AI agents — write once, validate/test, then install/generate user-friendly outputs according to the tools the user already has.
 
-### 1.1 Định hướng Hybrid so với Agent Skills CLI
+### 1.1 Hybrid Direction vs. Agent Skills CLI
 
-Agent Skills CLI (`npx skills`, `gh skill`) giải rất tốt bài toán **discover/install**: chọn skill, detect agent host, rồi copy vào `.claude/skills/`, `.cursor/skills/`, `.github/skills/`... Dự án này không nên thay thế hoàn toàn bằng mô hình đó, vì bài toán chính rộng hơn một skill đơn lẻ: chuẩn hóa một **agent catalog SDLC có phase, template, policy, adapter contract, generated manifest và test suite**.
+The Agent Skills CLI (`npx skills`, `gh skill`) solves the **discover/install** problem very well: select a skill, detect the agent host, and copy it to `.claude/skills/`, `.cursor/skills/`, `.github/skills/`... This project should not be completely replaced by that model, as the core problem is broader than a single skill: standardizing an **SDLC agent catalog containing phases, templates, policies, adapter contracts, generated manifests, and test suites**.
 
-Định hướng chốt:
+Final Decision on Direction:
 
-- Không pivot khỏi canonical YAML/build engine.
-- Thêm wizard installer để onboarding ngắn như Agent Skills CLI.
-- Có thể thêm output target dạng Agent Skills (`SKILL.md`) trong Phase 2 để tương thích ecosystem, nhưng vẫn giữ `agents/*.yaml` là source of truth.
-- Tách rõ command cho user cuối (`npx sdlc-agents init`) và command cho maintainer (`pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sdlc validate`, `pnpm sdlc build`).
+- Do not pivot away from the canonical YAML/build engine.
+- Add an installer wizard to make onboarding as short as the Agent Skills CLI.
+- Possibly add an Agent Skills (`SKILL.md`) output target in Phase 2 for ecosystem compatibility, while keeping `agents/*.yaml` as the source of truth.
+- Clearly separate commands for end-users (`npx sdlc-agents init`) and commands for maintainers (`pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sdlc validate`, `pnpm sdlc build`).
 
-Trade-off:
+Trade-offs:
 
-| Hướng | Ưu | Nhược |
+| Approach | Pros | Cons |
 |---|---|---|
-| Build engine hiện tại | Deterministic, test được, source of truth rõ, adapter output đồng nhất | UX cài đặt dài, giống dev tool hơn consumer tool |
-| Agent Skills CLI thuần | UX cực ngắn, hợp ecosystem, detect host tốt | Khó biểu diễn đầy đủ SDLC catalog + template/policy/build contract nếu chỉ copy skill files |
-| Hybrid | Giữ nền kỹ thuật chắc và có UX cài đặt tốt | Cần thêm wizard, host detection, install scope, update/pin flow |
+| Current Build Engine | Deterministic, testable, clear source of truth, consistent adapter output | Long installation UX, feels more like a dev tool than a consumer tool |
+| Pure Agent Skills CLI | Extremely short UX, fits the ecosystem, good host detection | Hard to fully represent SDLC catalog + templates/policies/build contracts if only copying skill files |
+| Hybrid | Keeps the technical foundation solid while having a good installation UX | Requires adding a wizard, host detection, install scope, and update/pin flow |
 
 ---
 
 ## 2. Problem Statement
 
-### 2.1 Hiện trạng
-- Mỗi developer/team tự viết prompt, custom instructions, agent config riêng → chất lượng không đồng đều, trùng lặp công sức.
-- Mỗi AI tool có format cấu hình riêng:
+### 2.1 Current State
+- Each developer/team writes their own prompts, custom instructions, and agent configurations → inconsistent quality and duplicated effort.
+- Each AI tool has its own configuration format:
   - Claude Code: `CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/`, slash commands, hooks, MCP
   - GitHub Copilot: `.github/copilot-instructions.md`, `.github/prompts/*.prompt.md`, custom agents
   - Codex CLI: `AGENTS.md`
   - Cursor: `.cursorrules`, `.cursor/rules/*.mdc`
   - Gemini CLI: `GEMINI.md`
-- Kiến thức nghiệp vụ/quy trình của công ty (coding standard, review checklist, định dạng tài liệu) không được nhúng nhất quán vào AI workflow.
-- Không có cơ chế versioning, testing, phân phối cho prompt/agent.
+- Company business knowledge and processes (coding standards, review checklists, document formats) are not consistently embedded into AI workflows.
+- No versioning, testing, or distribution mechanisms for prompts/agents.
 
-### 2.2 Bài toán cần giải
-> Làm sao để **viết agent một lần**, **dùng được trên mọi AI tool**, **phủ đủ các phase SDLC**, và **phân phối/cập nhật dễ dàng** cho nhiều team?
+### 2.2 Core Problem to Solve
+> How to **write an agent once**, **use it on any AI tool**, **cover all SDLC phases**, and **easily distribute/update** it across multiple teams?
 
 ---
 
 ## 3. Goals & Non-Goals
 
 ### 3.1 Goals (MVP → v1.0)
-| # | Goal | Đo lường |
+| # | Goal | Measurement |
 |---|------|----------|
-| G1 | Bộ agent phủ tối thiểu 6 phase SDLC (Requirement → Maintain) | ≥ 12 agents hoạt động được |
-| G2 | **Universal-first**: build ra chuẩn mở AGENTS.md chạy được trên MỌI AI agent (Codex, Cursor, Windsurf, Gemini, Antigravity, Zed, Cline...) + native adapter cho tool có format riêng mạnh hơn (Claude Code, Copilot...) | Tầng Universal phủ 100% tools; thêm native adapter mới < 1 tuần |
-| G3 | Cài đặt 1 lệnh qua interactive wizard | `npx sdlc-agents init` xong < 2 phút; người dùng không phải nhớ `validate`/`build` |
-| G4 | Cho phép customize ở mọi cấp độ (override prompt, workflow, template, thêm agent riêng) mà không fork toàn bộ | Customization model 4 cấp (mục 7) |
+| G1 | Agents set covers at least 6 SDLC phases (Requirement → Maintain) | ≥ 12 working agents |
+| G2 | **Universal-first**: builds into the open standard AGENTS.md, running on ANY AI agent (Codex, Cursor, Windsurf, Gemini, Antigravity, Zed, Cline...) + native adapters for tools with stronger proprietary formats (Claude Code, Copilot...) | Universal layer covers 100% of tools; adding a new native adapter takes < 1 week |
+| G3 | One-command installation via an interactive wizard | `npx sdlc-agents init` takes < 2 minutes; users do not need to remember `validate`/`build` |
+| G4 | Allows customization at all levels (override prompt, workflow, template, add custom agent) without fully forking | 4-tier customization model (Section 7) |
 | G5 | Versioning + changelog + update mechanism | Semantic versioning, `update` command |
 
-### 3.2 Non-Goals (phase đầu KHÔNG làm)
-- ❌ Không build AI model riêng / fine-tune model.
-- ❌ Không build IDE plugin/extension riêng (tận dụng tool sẵn có).
-- ❌ Không làm orchestration platform chạy multi-agent tự động 24/7 (đó là sản phẩm khác — có thể là phase 3).
-- ❌ Không xử lý billing/license của các AI tool bên dưới.
+### 3.2 Non-Goals (NOT doing in early phases)
+- ❌ Do not build custom AI models / fine-tune models.
+- ❌ Do not build custom IDE plugins/extensions (leverage existing tools).
+- ❌ Do not build an orchestration platform to run multi-agents automatically 24/7 (that is a separate product — potentially Phase 3).
+- ❌ Do not handle billing/licensing of the underlying AI tools.
 
 ---
 
 ## 4. Personas & Use Cases
 
-| Persona | Nhu cầu | Use case ví dụ |
+| Persona | Need | Example Use Case |
 |---------|---------|----------------|
-| **Developer** | Code nhanh, đúng convention | Gọi `@code-agent` để implement feature theo plan, tự chạy TDD workflow |
-| **Tech Lead / SA** | Chuẩn hoá thiết kế, review | `@design-agent` sinh ADR/HLD theo template công ty; `@review-agent` review PR theo checklist |
-| **BA / PO** | Viết requirement chuẩn | `@requirement-agent` chuyển ý tưởng thô → user story + acceptance criteria |
-| **QA Engineer** | Sinh test case/test script | `@test-agent` sinh test plan, unit/integration test từ spec |
-| **DevOps** | CI/CD, release | `@devops-agent` sinh pipeline config, release notes, rollback plan |
-| **Engineering Manager** | Áp quy trình cho nhiều team | Cài bộ agents chung, customize theo từng team qua config |
+| **Developer** | Write code quickly, following conventions | Call `@code-agent` to implement a feature according to a plan, running TDD workflow |
+| **Tech Lead / SA** | Standardize designs and reviews | `@design-agent` generates ADRs/HLDs according to company templates; `@review-agent` reviews PRs according to checklist |
+| **BA / PO** | Write standardized requirements | `@requirement-agent` transforms raw ideas → user stories + acceptance criteria |
+| **QA Engineer** | Generate test cases/test scripts | `@test-agent` generates test plans, unit/integration tests from spec |
+| **DevOps** | CI/CD, releases | `@devops-agent` generates pipeline configs, release notes, rollback plans |
+| **Engineering Manager** | Standardize processes across teams | Install the shared agents set, customize per team via configuration |
 
 ---
 
 ## 5. Product Scope — Agent Catalog
 
-Bộ agents được tổ chức theo phase SDLC. Mỗi agent gồm: **system prompt, workflow (các bước bắt buộc), input/output template, checklist, ví dụ few-shot**.
+The agents set is structured around SDLC phases. Each agent consists of: **system prompt, workflow (mandatory steps), input/output templates, checklists, and few-shot examples**.
 
 ### Phase 1 — Planning & Requirement
-| Agent | Chức năng |
+| Agent | Function |
 |-------|-----------|
-| `requirement-analyst` | Phỏng vấn user, làm rõ yêu cầu mơ hồ → BRD/PRD, user stories, acceptance criteria (Gherkin) |
-| `estimation-agent` | Break down epic → tasks, ước lượng effort, identify dependency & risk |
+| `requirement-analyst` | Interviews users, clarifies vague requirements → BRDs/PRDs, user stories, acceptance criteria (Gherkin) |
+| `estimation-agent` | Breaks down epics → tasks, estimates effort, identifies dependencies & risks |
 
 ### Phase 2 — Design
-| Agent | Chức năng |
+| Agent | Function |
 |-------|-----------|
-| `solution-architect` | Sinh HLD/LLD, ADR (Architecture Decision Record), so sánh trade-off công nghệ |
-| `api-designer` | Thiết kế API contract (OpenAPI/Protobuf), data model, ERD |
-| `ux-reviewer` | Review wireframe/flow theo heuristics (optional, phase sau) |
+| `solution-architect` | Generates HLDs/LLDs, ADRs (Architecture Decision Records), compares technology trade-offs |
+| `api-designer` | Designs API contracts (OpenAPI/Protobuf), data models, ERDs |
+| `ux-reviewer` | Reviews wireframes/flows based on heuristics (optional, future phase) |
 
 ### Phase 3 — Implementation
-| Agent | Chức năng |
+| Agent | Function |
 |-------|-----------|
-| `planner` | Đọc spec → sinh implementation plan chia phase, mỗi bước có verify criteria |
-| `coder` | Implement theo plan, tuân thủ convention được inject từ config, TDD-first |
-| `refactor-agent` | Phát hiện code smell, đề xuất & thực hiện refactor an toàn |
+| `planner` | Reads specs → generates phased implementation plans, each step containing verification criteria |
+| `coder` | Implements according to plans, adheres to conventions injected from configuration, TDD-first |
+| `refactor-agent` | Detects code smells, proposes & performs safe refactoring |
 
 ### Phase 4 — Testing
-| Agent | Chức năng |
+| Agent | Function |
 |-------|-----------|
-| `test-strategist` | Sinh test plan, test matrix, coverage strategy |
-| `test-generator` | Sinh unit/integration/E2E test code từ source + spec |
-| `bug-triager` | Phân tích bug report, reproduce, root-cause analysis (systematic debugging workflow) |
+| `test-strategist` | Generates test plans, test matrices, coverage strategies |
+| `test-generator` | Generates unit/integration/E2E test code from source + specs |
+| `bug-triager` | Analyzes bug reports, reproduces issues, performs root-cause analysis (systematic debugging workflow) |
 
 ### Phase 5 — Review & Release
-| Agent | Chức năng |
+| Agent | Function |
 |-------|-----------|
-| `code-reviewer` | Review PR theo checklist công ty: security, performance, correctness, convention |
-| `security-auditor` | Quét OWASP top 10, secrets, dependency vulnerabilities |
-| `release-manager` | Sinh release notes, deploy checklist, rollback plan |
+| `code-reviewer` | Reviews PRs based on company checklists: security, performance, correctness, conventions |
+| `security-auditor` | Scans for OWASP Top 10, secrets, dependency vulnerabilities |
+| `release-manager` | Generates release notes, deployment checklists, rollback plans |
 
 ### Phase 6 — Operate & Maintain
-| Agent | Chức năng |
+| Agent | Function |
 |-------|-----------|
-| `incident-responder` | Hướng dẫn triage incident, viết postmortem blameless |
-| `doc-writer` | Sinh/cập nhật README, runbook, API docs, onboarding guide |
-| `tech-debt-auditor` | Quét và ưu tiên hoá technical debt |
+| `incident-responder` | Guides incident triage, writes blameless postmortems |
+| `doc-writer` | Generates/updates READMEs, runbooks, API docs, onboarding guides |
+| `tech-debt-auditor` | Scans and prioritizes technical debt |
 
-> **MVP scope đề xuất:** `requirement-analyst`, `solution-architect`, `planner`, `coder`, `test-generator`, `code-reviewer` (6 agents, đủ một vòng SDLC tối thiểu).
+> **Proposed MVP Scope:** `requirement-analyst`, `solution-architect`, `planner`, `coder`, `test-generator`, `code-reviewer` (6 agents, covering a minimal SDLC cycle).
 
 ---
 
 ## 6. System Architecture
 
-### 6.1 Kiến trúc tổng thể
+### 6.1 Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                  CANONICAL LAYER (source of truth)       │
-│  agents/*.yaml  — định nghĩa agent tool-agnostic         │
-│  skills/*.md    — workflow/quy trình chi tiết            │
-│  templates/*.md — template output (ADR, PRD, test plan)  │
-│  policies/*.yaml — convention, checklist của org/team    │
+│  agents/*.yaml  — tool-agnostic agent definitions        │
+│  skills/*.md    — detailed workflows/processes           │
+│  templates/*.md — output templates (ADR, PRD, test plan)  │
+│  policies/*.yaml — org/team conventions & checklists     │
 └────────────────────────┬────────────────────────────────┘
                          │
                 ┌────────▼────────┐
@@ -167,106 +167,106 @@ Bộ agents được tổ chức theo phase SDLC. Mỗi agent gồm: **system pr
                 │  - render       │
                 └────────┬────────┘
                          │
-      ┌──────────────────┴───────────────────────┐
-      ▼                                          ▼
+       ┌──────────────────┴───────────────────────┐
+       ▼                                          ▼
 ┌─────────────────────────┐   ┌─────────────────────────────────────┐
-│ TẦNG 0: UNIVERSAL       │   │ TẦNG 1: NATIVE ADAPTERS (optional)  │
-│ (luôn build, mọi tool)  │   │                                     │
+│ TIER 0: UNIVERSAL       │   │ TIER 1: NATIVE ADAPTERS (optional)  │
+│ (always built, all tools)│   │                                     │
 │                         │   │ claude-code  copilot  cursor        │
 │ AGENTS.md + .sdlc/      │   │ windsurf     gemini   cline/roo ... │
 └────────────┬────────────┘   └────────┬────────────────────────────┘
              ▼                         ▼
-  Codex, Windsurf, Antigravity,   .claude/agents/  .github/prompts/
-  Zed, Amp, Gemini CLI, Jules,    .cursor/rules/   .windsurf/rules/
-  Devin, + mọi tool tương lai     GEMINI.md        ...
+   Codex, Windsurf, Antigravity,   .claude/agents/  .github/prompts/
+   Zed, Amp, Gemini CLI, Jules,    .cursor/rules/   .windsurf/rules/
+   Devin, + all future tools       GEMINI.md        ...
 ```
 
-### 6.2 Thành phần chính
+### 6.2 Key Components
 
-**1. Canonical Agent Definition (DSL)** — file YAML/Markdown frontmatter, ví dụ:
+**1. Canonical Agent Definition (DSL)** — YAML files with Markdown frontmatter, for example:
 
 ```yaml
 # agents/code-reviewer.yaml
 id: code-reviewer
 version: 1.2.0
 phase: review
-description: Review PR theo checklist bảo mật, hiệu năng, convention
-model_hint: high-reasoning        # adapter tự map sang model của tool
-model_variants:                   # (optional) tinh chỉnh prompt theo từng model/agent
-  claude: { prompt_append: "Dùng extended thinking cho bước phân tích." }
-  gemini: { prompt_append: "Trình bày kết luận trước, chi tiết sau." }
+description: Reviews PRs based on security, performance, and convention checklists
+model_hint: high-reasoning        # adapter automatically maps to the tool's model
+model_variants:                   # (optional) fine-tune prompt per model/agent
+  claude: { prompt_append: "Use extended thinking for the analysis step." }
+  gemini: { prompt_append: "Present conclusions first, followed by details." }
 tools_required: [read_file, grep, git_diff]
 inputs:
   - name: pr_diff
     required: true
 workflow:
-  - step: Đọc toàn bộ diff, phân loại file thay đổi
-  - step: Chạy checklist security (ref: policies/security-checklist.yaml)
-  - step: Chạy checklist convention (ref: policies/{{team}}/conventions.yaml)
-  - step: Output theo template templates/review-report.md
+  - step: Read the entire diff, classify modified files
+  - step: Run security checklist (ref: policies/security-checklist.yaml)
+  - step: Run convention checklist (ref: policies/{{team}}/conventions.yaml)
+  - step: Output according to the template templates/review-report.md
 output_template: templates/review-report.md
 policies: [security-checklist, conventions]
 ```
 
-**2. Build Engine (CLI)** — trách nhiệm:
-- Validate schema (JSON Schema cho agent definition).
-- Resolve references (policies, templates, skills).
-- Merge config nhiều lớp **base → org → team → project → local** (5 lớp, xem mục 7.3).
-- Render ra format từng tool qua adapter.
-- Lint prompt (độ dài, từ cấm, placeholder chưa resolve).
+**2. Build Engine (CLI)** — responsibilities:
+- Schema validation (JSON Schema for agent definitions).
+- Reference resolution (policies, templates, skills).
+- Multi-layer configuration merging **base → org → team → project → local** (5 layers, see Section 7.3).
+- Rendering to tool-specific formats via adapters.
+- Prompt linting (length, forbidden words, unresolved placeholders).
 
-**2b. Installer / Wizard UX** — trách nhiệm:
-- Detect hoặc hỏi người dùng đang dùng AI host nào: Claude Code, Cursor, Copilot, Codex, Windsurf, Gemini...
-- Cho chọn preset agents: full SDLC, planning+coding, review+testing, hoặc custom.
-- Cho chọn scope: project-local generated files hay user-global skills/prompts nếu host hỗ trợ.
-- Sinh `sdlc.config.yaml`, chạy validation và build lần đầu.
-- Giữ các lệnh dev (`validate`, `build`, `test`, `typecheck`, `lint`) cho maintainer, không bắt user cuối chạy từng lệnh.
+**2b. Installer / Wizard UX** — responsibilities:
+- Detect or ask the user which AI host they are using: Claude Code, Cursor, Copilot, Codex, Windsurf, Gemini...
+- Allow selection of agent presets: full SDLC, planning+coding, review+testing, or custom.
+- Allow selection of scope: project-local generated files or user-global skills/prompts if supported by the host.
+- Generate `sdlc.config.yaml`, run validation, and execute the initial build.
+- Reserve development commands (`validate`, `build`, `test`, `typecheck`, `lint`) for maintainers, without forcing end-users to run individual commands.
 
-**3. Adapters — chiến lược 2 tầng: Universal baseline + Progressive enhancement**
+**3. Adapters — Two-tier strategy: Universal baseline + Progressive enhancement**
 
-> **Nguyên tắc:** mọi tool đều dùng được ngay qua tầng Universal; tool nào có format native mạnh hơn thì adapter riêng "nâng cấp" trải nghiệm. Tool mới ra mắt → tự động được hỗ trợ ở tầng Universal mà không cần code thêm.
+> **Principle:** all tools are supported out-of-the-box via the Universal tier; tools with stronger native formats get a dedicated adapter to "enhance" the experience. When a new tool is released → it is automatically supported at the Universal tier with zero code changes.
 
-**Tầng 0 — Universal Adapter (`universal`) — LUÔN được build, là ưu tiên số 1:**
+**Tier 0 — Universal Adapter (`universal`) — ALWAYS built, Priority #1:**
 
-Dựa trên chuẩn mở **AGENTS.md** (https://agents.md) — chuẩn de-facto đã được OpenAI Codex, Cursor, Windsurf, Gemini CLI, Google Antigravity, Zed, Amp, Roo Code, Cline, Jules, Devin, Factory... cùng hỗ trợ:
+Based on the open standard **AGENTS.md** (https://agents.md) — the de-facto standard supported by OpenAI Codex, Cursor, Windsurf, Gemini CLI, Google Antigravity, Zed, Amp, Roo Code, Cline, Jules, Devin, Factory, and more:
 
 ```
-AGENTS.md                      # entry point chuẩn mở — mọi tool đọc được
+AGENTS.md                      # open standard entry point — read by all tools
 .sdlc/                         # plain-markdown, tool-agnostic
-├─ agents/                     # mỗi agent = 1 file Markdown thuần
+├─ agents/                     # one plain Markdown file per agent
 │  ├─ planner.md
 │  ├─ coder.md
 │  └─ code-reviewer.md
-├─ workflows/                  # quy trình từng phase
-├─ templates/                  # template output (ADR, PRD, ...)
-└─ policies/                   # checklist, conventions
+├─ workflows/                  # workflows for each phase
+├─ templates/                  # output templates (ADR, PRD, ...)
+└─ policies/                   # checklists, conventions
 ```
 
-- `AGENTS.md` chứa: hướng dẫn chung + **bảng chỉ mục trỏ tới `.sdlc/agents/*.md`** ("khi cần review PR, đọc và làm theo `.sdlc/agents/code-reviewer.md`").
-- Vì chỉ là Markdown thuần + đường dẫn tương đối, **bất kỳ AI agent nào đọc được file** (kể cả tool chưa ra đời) đều dùng được — đây là tầng đảm bảo "support mọi AI agent".
-- Hỗ trợ per-directory `AGENTS.md` cho monorepo (chuẩn cho phép nested).
+- `AGENTS.md` contains: general instructions + **an index table pointing to `.sdlc/agents/*.md`** ("when you need to review a PR, read and follow `.sdlc/agents/code-reviewer.md`").
+- Being plain Markdown + relative links, **any AI agent capable of reading files** (including those not yet created) can use it — ensuring universal support.
+- Supports per-directory `AGENTS.md` for monorepos (supported by the standard's nested specification).
 
-**Tầng 1 — Native Adapters (progressive enhancement):**
+**Tier 1 — Native Adapters (progressive enhancement):**
 
-| Adapter | Output native | Lợi ích thêm so với Universal |
+| Adapter | Native Output | Additional Benefit over Universal |
 |---------|---------------|-------------------------------|
-| `claude-code` | `CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/`, `.claude/commands/`, hooks | Subagent thật (context riêng), slash commands, auto-trigger skills, hooks |
-| `copilot` | `.github/copilot-instructions.md`, `.github/prompts/*.prompt.md`, `.github/agents/*.md` | Prompt files gọi nhanh, Copilot coding agent trên GitHub.com |
-| `cursor` | `.cursor/rules/*.mdc` | Rule scoping theo glob, auto-attach theo file đang mở |
+| `claude-code` | `CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/`, `.claude/commands/`, hooks | True subagents (isolated context), slash commands, auto-triggered skills, hooks |
+| `copilot` | `.github/copilot-instructions.md`, `.github/prompts/*.prompt.md`, `.github/agents/*.md` | Fast-call prompt files, Copilot coding agent on GitHub.com |
+| `cursor` | `.cursor/rules/*.mdc` | Rule scoping via glob patterns, auto-attaching to active files |
 | `windsurf` | `.windsurf/rules/*.md`, `.windsurf/workflows/*.md` | Cascade workflows, rule activation modes |
-| `gemini` | `GEMINI.md` (+ trỏ về `.sdlc/`) | Tích hợp Gemini CLI native |
-| `antigravity` | `AGENTS.md` (dùng chung Universal) + `.agent/` config nếu có | Antigravity đọc trực tiếp AGENTS.md |
-| `codex` | `AGENTS.md` (dùng chung Universal) + `~/.codex/prompts/` | Custom prompts cho Codex CLI |
-| `cline` / `roo` | `.clinerules/`, `.roo/rules/` | Rule theo mode (architect/code/debug) |
-| `zed` / `amp` / khác | `AGENTS.md` (dùng chung Universal) | Không cần adapter riêng |
+| `gemini` | `GEMINI.md` (+ points to `.sdlc/`) | Native Gemini CLI integration |
+| `antigravity` | `AGENTS.md` (shares Universal) + `.agent/` config if present | Antigravity reads AGENTS.md directly |
+| `codex` | `AGENTS.md` (shares Universal) + `~/.codex/prompts/` | Custom prompts for Codex CLI |
+| `cline` / `roo` | `.clinerules/`, `.roo/rules/` | Mode-based rules (architect/code/debug) |
+| `zed` / `amp` / others | `AGENTS.md` (shares Universal) | No separate adapter needed |
 
-- Tool nằm trong nhóm "dùng chung Universal" → **chi phí hỗ trợ = 0** (chỉ cần ghi nhận trong docs + contract test).
-- Adapter native chỉ viết khi tool có cơ chế riêng đáng giá (subagents, slash commands, rule scoping...).
-- Cả 2 tầng build từ **cùng một nguồn canonical** → nội dung đồng nhất, chỉ khác cách đóng gói.
+- Tools in the "shares Universal" group → **support cost = 0** (only requires validation in docs + contract tests).
+- Native adapters are only written when a tool has high-value proprietary mechanisms (subagents, slash commands, rule scoping, etc.).
+- Both tiers are built from **the same canonical source** → content is identical, only packaging differs.
 
-**4. Config Layer (customization không cần fork):**
+**4. Config Layer (customization without forking):**
 ```
-sdlc-agents.config.yaml      # tại root project của team
+sdlc-agents.config.yaml      # at the team's project root
 ├─ extends: "@org/sdlc-agents-base"
 ├─ targets: [universal, claude-code, copilot]
 ├─ agents: { enable: [...], disable: [...] }
@@ -276,56 +276,56 @@ sdlc-agents.config.yaml      # tại root project của team
 ```
 
 **5. Distribution:**
-- npm package (`npx sdlc-agents init|build|update`) — hoặc Git template repo cho team không dùng Node.
-- Interactive wizard là entrypoint mặc định cho user cuối; non-interactive flags vẫn cần cho CI/automation.
-- Claude Code plugin marketplace format (bonus cho Claude users).
-- Registry nội bộ (Git repo + tags) cho enterprise.
+- npm package (`npx sdlc-agents init|build|update`) — or a Git template repo for teams not using Node.
+- Interactive wizard is the default entry point for end-users; non-interactive flags remain available for CI/automation.
+- Claude Code plugin marketplace format (bonus for Claude users).
+- Internal registry (Git repo + tags) for enterprises.
 
-### 6.3 Luồng sử dụng (Developer Journey)
+### 6.3 Usage Flow (Developer Journey)
 
 ```
 1. npx sdlc-agents init
-   → wizard hỏi: tool nào? agents nào? project-local hay user-global? language/team variables?
-   → sinh sdlc.config.yaml + build lần đầu
+   → wizard asks: which tools? which agents? project-local or user-global? language/team variables?
+   → generates sdlc.config.yaml + runs initial build
 
-2. Files được generate vào repo (.claude/, .github/, ...)
-   → commit vào git như code bình thường
+2. Files are generated into the repo (.claude/, .github/, ...)
+   → commit to git like normal code
 
-3. Dev dùng agent trong tool quen thuộc:
-   Claude Code:  /plan "thêm tính năng X"   → planner agent
+3. Developer uses the agent in their familiar tool:
+   Claude Code:  /plan "add feature X"     → planner agent
    Copilot:      @workspace /review-pr      → code-reviewer prompt
 
-4. Org cập nhật bộ agents (vd: checklist security mới)
-   → npx sdlc-agents update → re-build → PR tự động
+4. Org updates the agents set (e.g., new security checklist)
+   → npx sdlc-agents update → re-build → automatic PR
 ```
 
 ---
 
 ## 7. Customization & Extensibility Model
 
-> **Nguyên tắc thiết kế:** "Convention over configuration, but everything is overridable."
-> Người dùng mới: chạy 1 lệnh là dùng được ngay (zero-config). Người dùng nâng cao: tùy chỉnh được **từng dòng prompt** mà không bao giờ phải fork repo gốc.
+> **Design Principle:** "Convention over configuration, but everything is overridable."
+> New users: run one command and it works out of the box (zero-config). Advanced users: customize **every single line of prompt** without ever forking the original repository.
 
-### 7.1 Bốn cấp độ tùy chỉnh (Progressive Customization)
+### 7.1 Four Levels of Customization (Progressive Customization)
 
-Người dùng đi từ cấp 1 → 4 theo nhu cầu, không bắt buộc học hết:
+Users navigate from Tier 1 to Tier 4 according to their needs, with no requirement to learn everything upfront:
 
-| Cấp | Tên | Người dùng làm gì | Effort |
+| Tier | Name | What the user does | Effort |
 |-----|-----|-------------------|--------|
-| **L1** | **Configure** | Bật/tắt agents, set variables (`stack`, `language`, `team`) trong config | 5 phút |
-| **L2** | **Override** | Thay thế từng phần: policies, templates, checklist, từng `step` trong workflow | 30 phút |
-| **L3** | **Extend** | Viết agent mới của riêng dự án, kế thừa (`extends`) agent có sẵn | 1–2 giờ |
-| **L4** | **Plug-in** | Viết adapter cho tool mới, hook vào build pipeline, publish preset cho team khác dùng | 1–2 ngày |
+| **L1** | **Configure** | Enable/disable agents, set variables (`stack`, `language`, `team`) in configuration | 5 minutes |
+| **L2** | **Override** | Partially replace: policies, templates, checklists, or individual `steps` in workflows | 30 minutes |
+| **L3** | **Extend** | Write project-specific custom agents, inheriting (`extends`) from existing agents | 1–2 hours |
+| **L4** | **Plug-in** | Write adapters for new tools, hook into the build pipeline, or publish presets for other teams | 1–2 days |
 
-### 7.2 L1 — Configure: zero-code, chỉ sửa config
+### 7.2 L1 — Configure: zero-code, configuration only
 
 ```yaml
 # sdlc-agents.config.yaml
-extends: "@org/sdlc-agents-base"        # hoặc preset cộng đồng: "@sdlc-agents/preset-fintech"
-targets: [universal, claude-code, copilot]   # universal luôn nên có — phủ mọi tool còn lại
+extends: "@org/sdlc-agents-base"        # or a community preset: "@sdlc-agents/preset-fintech"
+targets: [universal, claude-code, copilot]   # universal should always be enabled — covers all other tools
 
 variables:
-  language: vi                          # ngôn ngữ output của agents
+  language: en                          # output language of the agents
   stack: nestjs-postgres
   team: payment-squad
 
@@ -334,98 +334,97 @@ agents:
   disable: [ux-reviewer]
 ```
 
-### 7.3 L2 — Override: ghi đè từng phần, merge theo lớp
+### 7.3 L2 — Override: partial overrides, merged by layer
 
-Cơ chế **deep-merge có thứ tự ưu tiên** (giống cách ESLint/Tailwind config hoạt động):
+Prioritized **deep-merge** mechanism (similar to ESLint/Tailwind configurations):
 
 ```
-Base package (@org/sdlc-agents-base)     ← thấp nhất
-  ↑ override bởi
-Org preset (policies chuẩn công ty)
-  ↑ override bởi
-Team preset (convention của team)
-  ↑ override bởi
-Project config (sdlc-agents.config.yaml) ← cao nhất
-  ↑ override bởi
-Local overrides (sdlc-agents.local.yaml — gitignored, cho cá nhân thử nghiệm)
+Base package (@org/sdlc-agents-base)     ← lowest priority
+  ↑ overridden by
+Org preset (company-wide standard policies)
+  ↑ overridden by
+Team preset (team-specific conventions)
+  ↑ overridden by
+Project config (sdlc-agents.config.yaml) ← highest priority
+  ↑ overridden by
+Local overrides (sdlc-agents.local.yaml — gitignored, for personal testing)
 ```
 
-Override chi tiết đến mức **từng step của workflow** — không phải thay cả agent:
+Granular overrides down to **individual workflow steps** — no need to replace the entire agent:
 
 ```yaml
 # overrides/code-reviewer.yaml
 agent: code-reviewer
 patch:
   workflow:
-    insert_after: "Chạy checklist security"
-    step: "Kiểm tra naming theo quy ước payment-squad (ref: ./our-naming.md)"
-  output_template: ./our-review-template.md   # chỉ thay template, giữ nguyên prompt
-  prompt_append: |                            # nối thêm, không thay thế
-    Luôn kiểm tra idempotency cho mọi API thanh toán.
+    insert_after: "Run security checklist"
+    step: "Check naming conventions according to payment-squad (ref: ./our-naming.md)"
+  output_template: ./our-review-template.md   # replaces only the template, keeping the prompt intact
+  prompt_append: |                            # appends content instead of replacing
+    Always check idempotency for all payment APIs.
 ```
 
-Ba toán tử patch được hỗ trợ: `replace` (thay hẳn), `append`/`prepend` (nối thêm), `insert_after`/`insert_before` (chèn vào workflow). Build engine validate patch — nếu base agent đổi cấu trúc ở version mới, patch không apply được sẽ **báo lỗi rõ ràng thay vì silently bỏ qua**.
+Three patch operators are supported: `replace` (complete replacement), `append`/`prepend` (add to end/beginning), and `insert_after`/`insert_before` (inject into workflow). The build engine validates the patch — if a base agent changes structure in a new version and the patch cannot be applied, it will **raise a clear error instead of silently skipping it**.
 
-### 7.4 L3 — Extend: tạo agent riêng bằng kế thừa
+### 7.4 L3 — Extend: custom agents via inheritance
 
 ```yaml
-# .sdlc-agents/agents/migration-reviewer.yaml  (agent riêng của dự án)
+# .sdlc-agents/agents/migration-reviewer.yaml  (project-specific custom agent)
 id: migration-reviewer
-extends: code-reviewer            # kế thừa toàn bộ workflow + checklist
+extends: code-reviewer            # inherits entire workflow + checklist
 version: 1.0.0
-description: Review riêng cho database migration scripts
+description: Specific review agent for database migration scripts
 prompt_append: |
-  Tập trung vào: backward compatibility, lock time, rollback script.
+  Focus on: backward compatibility, lock time, and rollback scripts.
 workflow:
   append:
-    - step: Kiểm tra migration có rollback script tương ứng
-policies: [security-checklist, db-migration-rules]   # thêm policy riêng
+    - step: Verify that the migration has a corresponding rollback script
+policies: [security-checklist, db-migration-rules]   # adds custom policies
 ```
 
-- Agent local đặt trong `.sdlc-agents/agents/` của project — được build cùng agents gốc, cùng pipeline, cùng validate.
-- Có thể `extends` nhiều tầng (org agent → team agent → project agent).
-- **Composition qua skill:** agent có thể tham chiếu skill dùng chung (`skills/tdd-workflow.md`) — sửa skill một chỗ, mọi agent dùng skill đó được cập nhật.
+- Local agents are placed under `.sdlc-agents/agents/` in the project — built, validated, and processed along with original agents.
+- Can `extends` multiple levels (org agent → team agent → project agent).
+- **Composition via skills:** agents can reference shared skills (`skills/tdd-workflow.md`) — updating the skill in one place updates all agents using it.
 
-### 7.5 L4 — Plug-in: mở rộng chính hệ thống
+### 7.5 L4 — Plug-in: extending the core system
 
-**a) Adapter interface** — thêm tool mới không sửa core:
+**a) Adapter interface** — add support for new tools without modifying the core:
 
 ```typescript
-// Adapter là 1 npm package implement interface này
+// An adapter is an npm package implementing this interface
 interface ToolAdapter {
   name: string;                                   // "windsurf", "zed", ...
   render(agents: ResolvedAgent[], ctx: BuildContext): OutputFile[];
-  validate?(output: OutputFile[]): Diagnostic[];  // contract test với format tool
+  validate?(output: OutputFile[]): Diagnostic[];  // contract tests for the tool's format
 }
 ```
-Đăng ký qua config: `adapters: ["@myorg/sdlc-adapter-windsurf"]`.
+Register via config: `adapters: ["@myorg/sdlc-adapter-windsurf"]`.
 
-**b) Build hooks** — chèn logic vào pipeline:
+**b) Build hooks** — inject custom logic into the pipeline:
 
 ```yaml
 hooks:
-  pre-build: ./scripts/fetch-latest-conventions.sh   # vd: kéo convention từ Confluence
+  pre-build: ./scripts/fetch-latest-conventions.sh   # e.g., pull conventions from Confluence
   post-build: ./scripts/notify-slack.sh
-  transform: ./scripts/inject-jira-context.js        # sửa agent đã resolve trước khi render
+  transform: ./scripts/inject-jira-context.js        # modify resolved agents before rendering
 ```
 
-**c) Preset publishing** — đóng gói toàn bộ customization (agents + overrides + policies) thành npm package để team khác `extends`. Đây là cơ chế **contribution model**: team giỏi về security publish `@org/preset-security-strict`, team khác dùng lại.
+**c) Preset publishing** — package all customizations (agents + overrides + policies) into an npm package for other teams to `extends`. This forms the **contribution model**: a team highly skilled in security can publish `@org/preset-security-strict`, which others can reuse.
 
-### 7.6 Escape hatch — không bao giờ bị kẹt
+### 7.6 Escape hatch — never get locked in
 
-| Tình huống | Lối thoát |
+| Scenario | Escape Route |
 |------------|-----------|
-| DSL không biểu diễn được thứ cần | Block `tool_specific:` trong agent — viết raw content cho riêng 1 tool, các tool khác bỏ qua |
-| Muốn sửa trực tiếp file output | `eject` mode: `npx sdlc-agents eject code-reviewer` — copy file generated thành file thường, đánh dấu `managed: false`, build sau không ghi đè |
-| File generated bị sửa tay ngoài ý muốn | Build engine chèn header `# generated — do not edit` + lệnh `diff` cảnh báo drift giữa source và output |
-| Cần quay về mặc định | `npx sdlc-agents reset <agent>` — xoá override, về base |
+| DSL cannot represent a specific requirement | Use `tool_specific:` block in agent YAML — write raw content for a single tool, ignored by others |
+| Want to manually modify a generated file | `eject` mode: `npx sdlc-agents eject code-reviewer` — copies generated file into a regular file, marks it `managed: false`, and prevents build from overwriting |
+| Generated file is accidentally modified manually | Build engine injects `# generated — do not edit` header + runs `diff` commands to warn about drift between source and output |
+| Need to revert to default state | `npx sdlc-agents reset <agent>` — deletes overrides, reverts to base agent |
 
-### 7.7 Ràng buộc thiết kế để giữ flexibility bền vững
-
-1. **Mọi customization nằm ngoài package gốc** (trong repo của user) → update version mới không mất tùy chỉnh.
-2. **Patch-based thay vì copy-based**: override chỉ chứa phần khác biệt → khi base cải tiến prompt, user hưởng cải tiến mà vẫn giữ tùy chỉnh riêng.
-3. **Validate sớm, fail rõ ràng**: mọi override/extend đều qua schema validation lúc build; lỗi chỉ ra đúng file + dòng.
-4. **`npx sdlc-agents doctor`**: lệnh chẩn đoán cho biết config đang merge từ những lớp nào, override nào đang active, override nào mồ côi (trỏ tới agent đã bị xoá).
+### 7.7 Design Constraints for Sustainable Flexibility
+1. **All customizations reside outside the original package** (in the user's repository) → updating to new versions won't overwrite customizations.
+2. **Patch-based instead of copy-based**: overrides only contain the delta → when the base agent prompt is improved, users benefit from the improvement while retaining their custom settings.
+3. **Early validation, clear failures**: all overrides/extensions undergo schema validation at build time; errors point directly to the file and line.
+4. **`npx sdlc-agents doctor`**: diagnostic command showing which layers are merging, which overrides are active, and which are orphaned (pointing to deleted agents).
 
 ---
 
@@ -433,143 +432,143 @@ hooks:
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-01 | Định nghĩa agent bằng DSL chuẩn (YAML + Markdown), có JSON Schema validate | Must |
-| FR-02 | **Universal adapter (AGENTS.md + `.sdlc/`)** — output chuẩn mở dùng được trên mọi AI agent | Must |
-| FR-02b | Native adapters đợt đầu: Claude Code, Copilot | Must |
-| FR-03 | CLI + Hybrid installer UX: interactive `init`, `build`, `update`, `list`, `validate`, `doctor`, `eject`, `reset`; non-interactive flags cho CI | Must |
-| FR-04 | Config override nhiều lớp (base → org → team → project → local), deep-merge có thứ tự ưu tiên | Must |
-| FR-05 | Bộ 6 agents MVP hoạt động end-to-end | Must |
-| FR-06 | Patch-based override: `replace`/`append`/`insert_after` từng phần agent (prompt, workflow step, template) | Must |
-| FR-07 | Agent kế thừa: `extends` agent có sẵn, agent local trong `.sdlc-agents/agents/` | Must |
-| FR-08 | Escape hatch: `tool_specific` block + `eject`/`reset` command | Should |
-| FR-09 | Versioning theo SemVer, changelog tự động; patch fail rõ ràng khi base đổi cấu trúc | Should |
+| FR-01 | Define agents using a standard DSL (YAML + Markdown), validated via JSON Schema | Must |
+| FR-02 | **Universal adapter (AGENTS.md + `.sdlc/`)** — open standard output running on any AI agent | Must |
+| FR-02b | First batch of native adapters: Claude Code, Copilot | Must |
+| FR-03 | CLI + Hybrid installer UX: interactive `init`, `build`, `update`, `list`, `validate`, `doctor`, `eject`, `reset`; non-interactive flags for CI | Must |
+| FR-04 | Multi-layer config override (base → org → team → project → local), prioritized deep-merge | Must |
+| FR-05 | Set of 6 MVP agents working end-to-end | Must |
+| FR-06 | Patch-based overrides: `replace`/`append`/`insert_after` for parts of an agent (prompt, workflow step, template) | Must |
+| FR-07 | Agent inheritance: `extends` existing agents, local agents in `.sdlc-agents/agents/` | Must |
+| FR-08 | Escape hatch: `tool_specific` block + `eject`/`reset` commands | Should |
+| FR-09 | SemVer versioning, auto-changelog; patch failures clearly reported when base structure changes | Should |
 | FR-10 | Template variables ({{team}}, {{stack}}, {{language}}) | Should |
 | FR-11 | Adapter plugin interface (npm package) + build hooks (pre/post/transform) | Should |
-| FR-12 | `doctor` command: hiển thị layer merge, override active/mồ côi | Should |
-| FR-13 | Preset publishing: đóng gói customization thành package cho team khác `extends` | Could (v1.1) |
-| FR-14 | Native adapters đợt 2: Cursor, Windsurf, Gemini, Cline/Roo (Codex/Antigravity/Zed/Amp đã chạy qua Universal) | Could (v1.1) |
-| FR-15 | Eval harness: test chất lượng output agent tự động | Could (v1.1) |
-| FR-16 | Web catalog/docs site để browse agents | Could (v1.2) |
+| FR-12 | `doctor` command: displays merge layers, active/orphaned overrides | Should |
+| FR-13 | Preset publishing: packages customization into reusable presets for other teams to `extends` | Could (v1.1) |
+| FR-14 | Second batch of native adapters: Cursor, Windsurf, Gemini, Cline/Roo (Codex/Antigravity/Zed/Amp covered by Universal) | Could (v1.1) |
+| FR-15 | Eval harness: automated test quality evaluation for agent output | Could (v1.1) |
+| FR-16 | Web catalog/docs site to browse agents | Could (v1.2) |
 
 ## 9. Non-Functional Requirements
 
-| ID | Requirement | Tiêu chí |
+| ID | Requirement | Criteria |
 |----|-------------|----------|
-| NFR-01 | **Portability** | Không phụ thuộc runtime đặc thù; output là plain text files commit được vào git |
-| NFR-02 | **Idempotency** | `build` chạy lại cho output giống hệt (deterministic) — diff sạch trong PR |
-| NFR-03 | **Security** | Không chứa secrets trong agent files; lint chặn pattern nhạy cảm; policies file có thể đánh dấu `internal-only` |
-| NFR-04 | **Maintainability** | Thêm 1 agent mới chỉ cần thêm 1 file YAML + templates, không sửa engine |
-| NFR-05 | **Extensibility** | Adapter là plugin interface — bên thứ ba viết adapter mới không sửa core |
-| NFR-06 | **Backward compat** | Update minor version không phá config của team |
-| NFR-07 | **Offline-friendly** | Build engine chạy local, không gọi network (trừ `update`) |
+| NFR-01 | **Portability** | No specific runtime dependencies; outputs are plain text files committable to git |
+| NFR-02 | **Idempotency** | Re-running `build` produces identical outputs (deterministic) — clean git diffs in PRs |
+| NFR-03 | **Security** | No secrets stored in agent files; linting blocks sensitive patterns; policy files can be marked `internal-only` |
+| NFR-04 | **Maintainability** | Adding a new agent only requires adding a YAML file + templates, without modifying the engine |
+| NFR-05 | **Extensibility** | Adapters are plugin interfaces — third parties can write new adapters without altering the core |
+| NFR-06 | **Backward compatibility** | Minor version updates do not break team configurations |
+| NFR-07 | **Offline-friendly** | Build engine runs locally, making no network calls (except for `update`) |
 
 ---
 
-## 10. Tech Stack đề xuất
+## 10. Proposed Tech Stack
 
-| Layer | Lựa chọn | Lý do |
+| Layer | Choice | Rationale |
 |-------|----------|-------|
-| **CLI / Build engine** | **TypeScript + Node.js** (commander/clack cho CLI) | Hệ sinh thái npm để phân phối; team dev nào cũng chạy được `npx`; dễ viết adapter render text |
-| **Schema validation** | JSON Schema + `ajv` / Zod | Validate agent definitions, config |
-| **Template rendering** | Handlebars hoặc Eta | Render template với variables, an toàn, đơn giản |
-| **Agent definitions** | YAML + Markdown | Human-readable, review được trong PR, không cần tooling đặc biệt |
-| **Testing** | Vitest (unit cho engine/adapters) + snapshot tests cho output | Output là text → snapshot test rất hợp |
-| **Eval (v1.1)** | promptfoo hoặc tự build harness gọi Claude API chấm điểm output | Đo chất lượng agent khi sửa prompt |
-| **CI/CD** | GitHub Actions: lint → test → build → publish npm | Chuẩn industry |
-| **Docs site (v1.2)** | VitePress / Docusaurus | Catalog agents, hướng dẫn |
-| **Distribution** | npm (public/private registry) + Git tags | `npx sdlc-agents init` cho user cuối, versioning/update qua npm tags |
+| **CLI / Build engine** | **TypeScript + Node.js** (commander/clack for CLI) | npm ecosystem for distribution; runable by any dev via `npx`; straightforward text-rendering adapters |
+| **Schema validation** | JSON Schema + `ajv` / Zod | Validate agent definitions and configurations |
+| **Template rendering** | Handlebars or Eta | Render templates with variables safely and simply |
+| **Agent definitions** | YAML + Markdown | Human-readable, reviewable in PRs, no special tooling required |
+| **Testing** | Vitest (unit for engine/adapters) + snapshot tests for output | Outputs are text → snapshot testing fits perfectly |
+| **Eval (v1.1)** | promptfoo or custom harness calling Claude API to score output | Measure agent quality changes when modifying prompts |
+| **CI/CD** | GitHub Actions: lint → test → build → publish npm | Industry standard |
+| **Docs site (v1.2)** | VitePress / Docusaurus | Catalog agents, user guides |
+| **Distribution** | npm (public/private registry) + Git tags | `npx sdlc-agents init` for end-users, versioning/updates via npm tags |
 
-> **Lưu ý:** sản phẩm này **không cần backend/database** ở MVP. Toàn bộ là static files + CLI. Đây là lợi thế lớn: chi phí vận hành ≈ 0.
+> **Note:** this product **does not require a backend/database** for MVP. The entire system consists of static files + CLI. This is a major advantage: operational cost ≈ 0.
 
-### 10.1 Toolchain chi tiết trong quá trình dev
+### 10.1 Detailed Toolchain during Development
 
 **Core development:**
-| Tool/Lib | Vai trò | Ghi chú |
+| Tool/Lib | Role | Notes |
 |----------|---------|---------|
-| Node.js ≥ 20 LTS + TypeScript 5.x | Runtime + ngôn ngữ | strict mode |
-| pnpm workspaces | Monorepo (`core`, `cli`, `adapters/*`) | Nhẹ hơn turborepo, đủ cho scale này |
-| `commander` | CLI framework (parse lệnh, flags) | Chuẩn industry |
-| `@clack/prompts` | Interactive wizard cho `init` | UX đẹp, nhẹ |
-| `zod` | Schema validation cho DSL + config | Type-safe, error message tốt; sinh JSON Schema qua `zod-to-json-schema` cho editor autocomplete |
-| `yaml` (eemeli/yaml) | Parse YAML giữ comment + vị trí dòng | Cần vị trí dòng để báo lỗi "file X dòng Y" |
-| `gray-matter` | Parse Markdown frontmatter | Cho skills/templates |
-| Handlebars hoặc `eta` | Render template với variables | Logic-less, an toàn |
-| `deepmerge-ts` / custom merger | Deep-merge config nhiều lớp | Cần kiểm soát thứ tự ưu tiên + array strategy |
-| `tsup` | Bundle CLI thành ESM/CJS | Zero-config |
+| Node.js ≥ 20 LTS + TypeScript 5.x | Runtime + language | strict mode |
+| pnpm workspaces | Monorepo (`core`, `cli`, `adapters/*`) | Lighter than Turborepo, sufficient for this scale |
+| `commander` | CLI framework (parses commands, flags) | Industry standard |
+| `@clack/prompts` | Interactive wizard for `init` | Beautiful UX, lightweight |
+| `zod` | Schema validation for DSL + config | Type-safe, excellent error messages; exports JSON Schema via `zod-to-json-schema` for editor autocomplete |
+| `yaml` (eemeli/yaml) | Parses YAML preserving comments + line numbers | Line numbers needed to report errors like "file X line Y" |
+| `gray-matter` | Parses Markdown frontmatter | For skills/templates |
+| Handlebars or `eta` | Renders templates with variables | Logic-less, secure |
+| `deepmerge-ts` / custom merger | Multi-layer config deep-merging | Controls override priority + array strategies |
+| `tsup` | Bundles CLI into ESM/CJS | Zero-config |
 
 **Quality & release:**
-| Tool/Lib | Vai trò |
+| Tool/Lib | Role |
 |----------|---------|
-| Vitest | Unit test engine/adapters + **snapshot test** toàn bộ output (output là text → snapshot là cách test rẻ và chắc nhất) |
-| Biome (thay ESLint+Prettier) | Lint + format, 1 tool duy nhất, nhanh |
-| `markdownlint` + link checker (`lychee`) | Lint nội dung agents/skills/templates — đây là "source code" thật của sản phẩm |
-| Changesets | Versioning SemVer + changelog tự động + publish npm |
-| Lefthook | Git hooks (lint trước commit) |
+| Vitest | Unit test engine/adapters + **snapshot tests** for all output (text output makes snapshot testing the cheapest and safest method) |
+| Biome (replaces ESLint+Prettier) | Lint + format, single fast tool |
+| `markdownlint` + link checker (`lychee`) | Lints agent/skill/template contents — the true "source code" of the product |
+| Changesets | SemVer versioning + auto-changelog + publish to npm |
+| Lefthook | Git hooks (pre-commit linting) |
 | GitHub Actions | CI: lint → test → snapshot → build → publish |
 
-**Eval, trace & observability (quan trọng — prompt là code, phải test được):**
-| Tool/Lib | Vai trò | Khi nào |
+**Eval, trace & observability (critical — prompts are code, must be tested):**
+| Tool/Lib | Role | When |
 |----------|---------|---------|
-| **promptfoo** | Eval harness: chạy agent prompts qua nhiều model (Claude/GPT/Gemini), assert output theo rubric, so sánh trước/sau khi sửa prompt, chạy trong CI | Phase 2 |
-| **Langfuse** (self-host, open source) | **Trace** từng lần chạy eval: prompt → response → score, theo dõi regression chất lượng theo version | Phase 2 |
-| Anthropic/OpenAI/Gemini SDK | Gọi model trong eval harness (chỉ dùng cho testing, KHÔNG phải runtime của sản phẩm) | Phase 2 |
-| Golden test cases | Bộ input/output mẫu cho từng agent (vd: 1 PR diff mẫu → review report kỳ vọng) | Phase 1, mỗi agent ≥ 3 cases |
-| OpenTelemetry (opt-in) | Telemetry CLI: lệnh nào được chạy, adapter nào được build (ẩn danh, opt-in) — đo adoption thực tế | Phase 3 |
+| **promptfoo** | Eval harness: runs agent prompts across models (Claude/GPT/Gemini), asserts output against rubrics, compares before/after prompt changes, runs in CI | Phase 2 |
+| **Langfuse** (self-host, open source) | **Trace** each eval run: prompt → response → score, tracks quality regression across versions | Phase 2 |
+| Anthropic/OpenAI/Gemini SDK | Calls models in eval harness (only for testing, NOT a runtime dependency of the product) | Phase 2 |
+| Golden test cases | Reference input/output samples per agent (e.g., 1 sample PR diff → expected review report) | Phase 1, each agent ≥ 3 cases |
+| OpenTelemetry (opt-in) | CLI Telemetry: tracked commands run, built adapters (anonymous, opt-in) — measures actual adoption | Phase 3 |
 
-**Compatibility testing (đặc thù của sản phẩm này):**
-| Tool | Vai trò |
+**Compatibility testing (product-specific):**
+| Tool | Role |
 |------|---------|
-| Claude Code headless (`claude -p`), Copilot CLI, Gemini CLI chạy trong CI | Contract test: output build ra có được tool thật load đúng không |
-| Docker images chứa từng tool | Môi trường test tái lập được cho compatibility matrix |
+| Claude Code headless (`claude -p`), Copilot CLI, Gemini CLI running in CI | Contract tests: verify whether generated outputs are successfully loaded by real tools |
+| Docker images containing each tool | Replicable test environments for compatibility matrix |
 
 ---
 
 ## 11. Roadmap & Milestones
 
-### Phase 0 — Foundation (Tuần 1–2)
-- [x] Chốt DSL schema cho agent definition (spike: viết tay 2 agents — `planner` + `code-reviewer`, render thử sang Claude Code + Universal format — output valid ✅)
-- [x] Setup repo, CI, cấu trúc monorepo (`packages/core`, `packages/cli`, `packages/adapters/*`, `agents/`, `templates/`, `policies/`)
-- [x] Viết Zod schema + validator (tự động fail rõ ràng nếu agent YAML sai)
+### Phase 0 — Foundation (Weeks 1–2)
+- [x] Finalize DSL schema for agent definition (spike: manually wrote 2 agents — `planner` + `code-reviewer`, tested rendering to Claude Code + Universal format — valid outputs ✅)
+- [x] Setup repo, CI, and monorepo structure (`packages/core`, `packages/cli`, `packages/adapters/*`, `agents/`, `templates/`, `policies/`)
+- [x] Write Zod schema + validator (fail clearly if agent YAML is invalid)
 - [ ] Setup CI (GitHub Actions: lint → typecheck → spike test)
-- [ ] Viết unit test cho schema validator (Vitest)
+- [ ] Write unit tests for schema validator (Vitest)
 
 **Spike findings (Q6 answer):**
-- Claude Code: `description` field trong frontmatter → auto-routing hoạt động ngay, không cần thêm gì
-- Universal (AGENTS.md): trigger là instruction thủ công hoặc user nói tên agent; không có auto-routing — đây là ceiling của tầng Universal, và là acceptable tradeoff so với coverage 20+ tools
+- Claude Code: `description` field in frontmatter → auto-routing works out of the box, no additions needed
+- Universal (AGENTS.md): trigger is manual instruction or naming the agent; no auto-routing — this is the ceiling of the Universal tier, and an acceptable trade-off given the coverage of 20+ tools
 
-### Phase 1 — MVP (Tuần 3–6)
-- [ ] Build engine + adapter `universal` (AGENTS.md — ưu tiên cao nhất) + adapter `claude-code` + adapter `copilot`
+### Phase 1 — MVP (Weeks 3–6)
+- [ ] Build engine + adapter `universal` (AGENTS.md — highest priority) + adapter `claude-code` + adapter `copilot`
 - [ ] CLI `init` / `build` / `validate`
-- [ ] 6 agents MVP (mục 5) với prompt + workflow + template hoàn chỉnh
-- [ ] Dogfood: chính team dùng bộ agents này để phát triển tiếp dự án
-- [ ] **Exit criteria:** 1 team pilot ngoài team dev cài và dùng được trong 1 sprint
+- [ ] 6 MVP agents (Section 5) with completed prompts, workflows, and templates
+- [ ] Dogfooding: developer team uses this agents set to build the project itself
+- [ ] **Exit criteria:** 1 pilot team outside the core devs successfully installs and uses it in a sprint
 
-### Phase 2 — Hardening (Tuần 7–10)
-- [ ] Customization đầy đủ: multi-layer override, patch-based override, `extends` agent, local agents
-- [ ] Escape hatch: `tool_specific`, `eject`/`reset`, drift detection + `doctor` command
+### Phase 2 — Hardening (Weeks 7–10)
+- [ ] Complete customization: multi-layer overrides, patch-based overrides, `extends` agents, and local agents
+- [ ] Escape hatches: `tool_specific`, `eject`/`reset`, drift detection + `doctor` command
 - [ ] CLI `update` + changelog + SemVer release flow
-- [ ] Snapshot test toàn bộ output, eval harness cơ bản
-- [ ] Bổ sung agents: `test-strategist`, `security-auditor`, `release-manager`
-- [ ] **Exit criteria:** 3 teams sử dụng, NPS khảo sát ≥ 7
+- [ ] Snapshot tests for all outputs, basic eval harness
+- [ ] Add agents: `test-strategist`, `security-auditor`, `release-manager`
+- [ ] **Exit criteria:** 3 teams using the system, NPS survey score ≥ 7
 
-### Phase 3 — Scale (Quý sau)
-- [ ] Native adapters đợt 2: Cursor, Windsurf, Gemini CLI, Cline/Roo
-- [ ] Compatibility matrix công khai: tool nào chạy Universal, tool nào có native adapter, test định kỳ
+### Phase 3 — Scale (Next Quarter)
+- [ ] Second batch of native adapters: Cursor, Windsurf, Gemini CLI, Cline/Roo
+- [ ] Public compatibility matrix: which tools run Universal, which have native adapters, updated regularly
 - [ ] Docs site + agent catalog
-- [ ] Telemetry opt-in (agent nào được dùng nhiều)
-- [ ] Marketplace/registry nội bộ; cho phép team đóng góp agent ngược lại (contribution model)
+- [ ] Opt-in telemetry (tracking most used agents)
+- [ ] Internal marketplace/registry; allow teams to contribute agents back (contribution model)
 
 ---
 
 ## 12. Success Metrics
 
-| Metric | Target (3 tháng sau release) |
+| Metric | Target (3 months post-release) |
 |--------|------------------------------|
-| Số team adopt | ≥ 3 teams |
-| Time-to-setup cho team mới | < 30 phút (từ 0 → dùng được) |
-| Tỷ lệ agent được dùng hàng tuần | ≥ 60% bộ MVP agents |
-| Giảm thời gian viết tài liệu (PRD/ADR/test plan) | ≥ 40% (khảo sát) |
-| PR có review-agent chạy trước human review | ≥ 70% |
+| Number of adopting teams | ≥ 3 teams |
+| Setup time for new teams | < 30 minutes (from zero → working state) |
+| Weekly active agent rate | ≥ 60% of MVP agents set |
+| Reduced documentation writing time (PRD/ADR/test plan) | ≥ 40% (surveyed) |
+| PRs reviewed by review-agent prior to human review | ≥ 70% |
 
 ---
 
@@ -577,112 +576,112 @@ hooks:
 
 | # | Risk | Likelihood | Impact | Mitigation |
 |---|------|------------|--------|------------|
-| R1 | Các AI tool **thay đổi format config liên tục** (Claude Code, Copilot update nhanh) | Cao | Cao | Adapter pattern cô lập thay đổi; contract test theo từng tool version; theo dõi changelog các tool |
-| R2 | **Lowest common denominator**: feature mạnh của 1 tool (vd: hooks, MCP của Claude Code) không map được sang tool khác | Cao | Trung bình | DSL có section `tool_specific` cho phép khai báo phần riêng từng tool; không ép 100% portable |
-| R3 | Chất lượng output agent không ổn định giữa các model | Trung bình | Cao | Eval harness + golden test cases; `model_hint` trong DSL |
-| R4 | Team không adopt vì "thêm một thứ phải học" | Trung bình | Cao | `init` 1 lệnh, zero-config mặc định; dogfooding + champion tại mỗi team |
-| R5 | Prompt chứa thông tin nội bộ bị leak khi commit public | Thấp | Cao | Lint rule + `.gitignore` guidance + phân tách policies internal |
-| R6 | Scope creep sang orchestration platform | Trung bình | Trung bình | Non-goals rõ ràng (mục 3.2); review scope mỗi milestone |
-| R7 | **Supply-chain prompt injection**: skill import từ cộng đồng (mục 15.2) có thể chứa chỉ dẫn độc hại/ẩn — vendored content trở thành "code chạy trong agent" của mọi team dùng bộ này | Thấp | **Rất cao** | Human review bắt buộc khi vendor lần đầu + khi bump pin; diff review giữa 2 pin; lint scan pattern đáng ngờ (exfiltration URL, lệnh shell ẩn); pin theo commit hash, không pin theo branch/tag mutable |
+| R1 | AI tools **frequently change config formats** (Claude Code, Copilot update rapidly) | High | High | Adapter pattern isolates changes; contract tests track each tool version; monitor tool changelogs |
+| R2 | **Lowest common denominator**: powerful tool-specific features (e.g., hooks, MCP in Claude Code) don't map to other tools | High | Medium | DSL includes `tool_specific` block allowing proprietary configurations; do not enforce 100% portability |
+| R3 | Agent output quality is unstable across models | Medium | High | Eval harness + golden test cases; `model_hint` in DSL |
+| R4 | Teams do not adopt due to "another tool to learn" | Medium | High | One-command `init`, zero-config by default; dogfooding + sponsor champions in each team |
+| R5 | Prompts containing internal info leaked during public commits | Low | High | Lint rules + `.gitignore` guidance + isolate internal policies |
+| R6 | Scope creep towards an orchestration platform | Medium | Medium | Clear non-goals (Section 3.2); review scope at each milestone |
+| R7 | **Supply-chain prompt injection**: community skills imported (Section 15.2) might contain malicious instructions — imported content runs as code inside agents for all teams | Low | **Very High** | Mandatory human review for first-time imports + version updates; diff reviews between pinned versions; lint for suspicious patterns (exfiltration URLs, hidden shell commands); pin by commit hashes, not mutable branches/tags |
 
 ---
 
-## 14. Open Questions (cần chốt trước Phase 0)
+## 14. Open Questions (to resolve before Phase 0)
 
-1. ~~**Ngôn ngữ prompt:**~~ ✅ **CHỐT:** Prompt viết tiếng Anh (chất lượng model tốt hơn); output template theo config `language` (default `en`, có thể set `vi`).
-2. ~~**Tool ưu tiên thứ 2:**~~ ✅ **CHỐT:** **GitHub Copilot** — native adapter Phase 1 là Claude Code + Copilot.
-3. **OSS vs Private — kiến trúc khác nhau ở 3 điểm cốt lõi:**
+1. ~~**Prompt language:**~~ ✅ **DECIDED:** Prompts are written in English (higher model quality); output templates follow `language` config (default `en`, can be set to `vi`).
+2. ~~**Second priority tool:**~~ ✅ **DECIDED:** **GitHub Copilot** — native adapters for Phase 1 are Claude Code + Copilot.
+3. **OSS vs Private — differences in 3 core architecture points:**
 
-   | Chiều ảnh hưởng | Open Source | Private-only |
+   | Impact Dimension | Open Source | Private-only |
    |---|---|---|
-   | **Plugin interface** | Phải stable, versioned, documented — trở thành public API; breaking change buộc major bump | Internal-only, có thể refactor tự do |
-   | **Policy layer** | Không thể nhúng proprietary policies vào repo chính; cần tách `packages/policies-private` ra ngoài mono | Nhúng trực tiếp vào monorepo, đơn giản hơn |
-   | **Adapter code** | Cần E2E docs + compatibility promise vì community sẽ build against nó | Chỉ cần chạy được là xong |
+   | **Plugin interface** | Must be stable, versioned, documented — becomes a public API; breaking changes require major bumps | Internal-only, free refactoring |
+   | **Policy layer** | Cannot embed proprietary policies into main repo; requires isolating `packages/policies-private` | Embedded directly in monorepo, simpler |
+   | **Adapter code** | E2E docs + compatibility promise required since community builds against it | Just needs to run |
 
-   Build engine + DSL schema + vendor mechanism **code y hệt nhau** dù OSS hay private — không có rủi ro kiến trúc phân kỳ ở lớp đó.
+   Build engine + DSL schema + vendor mechanism **use identical code** regardless of OSS or private — no architectural divergence risks in that layer.
 
-   **Thương mại hoá có nên không?** Raw engine ai cũng build được — đó là lý do chọn đúng mô hình, không phải lý do từ bỏ. **Đề xuất: Open Core.**
-   - **OSS (free):** engine core + Universal adapter + agent catalog cơ bản → build community, tăng adoption, nhận contribution adapter từ cộng đồng
-   - **Commercial:** hosted policy management (team dashboard, audit log, secret vault), native adapters đầy đủ, eval harness hosted, SLA support, preset marketplace per-industry
+   **Should we commercialize?** Anyone can build the raw engine — that is a reason to choose the right business model, not to abandon it. **Proposal: Open Core.**
+   - **OSS (free):** core engine + Universal adapter + basic agent catalog → build community, boost adoption, receive community adapter contributions
+   - **Commercial:** hosted policy management (team dashboard, audit log, secret vault), full suite of native adapters, hosted eval harness, SLA support, industry-specific preset marketplace
    - Precedent: Terraform OSS → HCP, ESLint → enterprise tooling, Biome → enterprise tier
-   - **Action item:** quyết định trước Phase 1 (không cần trước Phase 0 spike); nếu chọn OSS thì thiết kế plugin interface như public API ngay từ đầu (semver + deprecation policy) và tách `packages/policies-private` ra khỏi main repo.
-4. **Ai own bộ policies chuẩn org?** Cần 1 owner (vd: Engineering Excellence group) duyệt thay đổi checklist/convention.
-5. **Mức độ tích hợp MCP:** có ship kèm MCP servers (vd: Jira, Confluence connector) trong bộ này không, hay để phase sau?
-6. **Cơ chế trigger trên tầng Universal:** Claude Code có auto-trigger skill theo description, nhưng tool chỉ đọc AGENTS.md thì agent được "gọi" thế nào — dựa vào model tự đọc chỉ mục, hay quy ước lệnh tay (vd: "làm theo `.sdlc/agents/planner.md`")? Cần trả lời bằng spike Phase 0 trên 2-3 tool thật, vì nó quyết định UX của tầng Universal.
-7. **Ngân sách eval:** eval harness gọi API model thật (Claude/GPT/Gemini) — ai trả, hạn mức bao nhiêu cho mỗi lần CI chạy? Cần quota để eval không bị bỏ vì tốn tiền.
-8. **Pháp lý khi thương mại hoá:** vendor skill MIT/Apache vào sản phẩm bán cho khách thì attribution thế nào là đủ; tên sản phẩm có đụng trademark không? Cần 1 buổi với legal trước khi public.
+   - **Action item:** decide before Phase 1 (not needed before Phase 0 spike); if OSS is chosen, design the plugin interface as a public API from day one (SemVer + deprecation policies) and isolate `packages/policies-private` from the main repository.
+4. **Who owns the organization's standard policy set?** Requires an owner (e.g., Engineering Excellence group) to approve changes to checklists/conventions.
+5. **MCP Integration depth:** should we ship MCP servers (e.g., Jira, Confluence connectors) with this set, or leave it for later phases?
+6. **Trigger mechanism on Universal tier:** Claude Code has auto-triggered skills by description, but how is an agent "called" in tools that only read AGENTS.md — does the model read the index itself, or is there a manual command convention (e.g., "follow `.sdlc/agents/planner.md`")? Requires a Phase 0 spike on 2-3 real tools, as it dictates the Universal tier UX.
+7. **Evaluation budget:** eval harness calls real model APIs (Claude/GPT/Gemini) — who pays, and what is the limit for each CI run? Quota needed to avoid skipping evals due to cost.
+8. **Legal issues with commercialization:** attribution requirements for vendored MIT/Apache skills in commercial products; does the product name collide with trademarks? Requires a legal review before public release.
 
 ---
 
-## 15. Định vị so với skill ecosystem & chiến lược tái sử dụng
+## 15. Positioning vs. Skill Ecosystem & Reuse Strategy
 
-### 15.1 Khác gì so với các "skill" ngoài kia?
+### 15.1 How does it differ from other "skills"?
 
-Ngoài kia đã có nhiều bộ skill/rules nổi tiếng (obra/superpowers, anthropics/skills, awesome-claude-code, awesome-cursorrules, agent-rules…). Sản phẩm này **không cạnh tranh ở tầng nội dung skill đơn lẻ** — nó cạnh tranh ở tầng **hệ thống**:
+Many famous skill/rule sets exist (obra/superpowers, anthropics/skills, awesome-claude-code, awesome-cursorrules, agent-rules...). This product does **not compete at the single-skill content level** — it competes at the **system** level:
 
-| Tiêu chí | Skill ngoài kia | Agentic SDLC Agents Set |
+| Criteria | Existing Skills | Agentic SDLC Agents Set |
 |----------|-----------------|--------------------------|
-| Phạm vi | 1 kỹ năng đơn lẻ (TDD, debug…) | **Bộ hoàn chỉnh phủ cả vòng SDLC**, các agent nối với nhau (output của requirement-analyst là input của planner) |
-| Tool support | Khoá vào 1 tool (đa số chỉ Claude Code) | **Một nguồn → build ra mọi tool** (Universal + native adapters) |
-| Customization | Fork rồi sửa tay → mất khả năng update | **Patch-based override**, update bản gốc không mất tùy chỉnh |
-| Convention công ty | Không có chỗ nhúng | **Policy layer** (org → team → project) nhúng checklist/convention nội bộ |
-| Versioning & phân phối | Copy/paste thủ công, không version | SemVer, `update` command, registry, changelog |
-| Chất lượng | Không test được | Eval harness + golden cases + snapshot test trong CI |
+| Scope | 1 isolated skill (TDD, debugging...) | **Complete set covering the entire SDLC**, agents connected sequentially (output of requirement-analyst is input of planner) |
+| Tool support | Locked into 1 tool (mostly Claude Code only) | **Single source → builds for all tools** (Universal + native adapters) |
+| Customization | Fork and edit manually → lose updateability | **Patch-based overrides**, update the base without losing customizations |
+| Company Conventions | No standard place to inject | **Policy layer** (org → team → project) embedding internal checklists/conventions |
+| Versioning & Distribution | Manual copy/paste, no versioning | SemVer, `update` command, registry, changelog |
+| Quality | Untestable | Eval harness + golden cases + snapshot tests in CI |
 
-> **Một câu định vị:** skill ngoài kia là *bài hát lẻ*; sản phẩm này là *hãng phát hành album* — có tuyển chọn, chuẩn hoá, đóng gói đa nền tảng, phân phối và cập nhật.
+> **Positioning Statement:** other skills are *singles*; this product is the *album publisher* — curated, standardized, packaged for multi-platform, distributed, and updated.
 
-### 15.2 Tái sử dụng skill có sẵn (build on, not rebuild)
+### 15.2 Reusing Existing Skills (build on, not rebuild)
 
-**Chiến lược: KHÔNG viết lại những skill cộng đồng đã làm tốt.** Cơ chế `import` trong build engine:
+**Strategy: DO NOT rewrite what the community has already done well.** The `import` mechanism in the build engine:
 
 ```yaml
 # agents/bug-triager.yaml
 id: bug-triager
 imports:
-  - source: github:obra/superpowers            # skill GitHub star cao
+  - source: github:obra/superpowers            # high-star GitHub skill
     path: skills/systematic-debugging
-    pin: v4.2.0                                # pin version/commit — không trôi theo upstream
-    license: MIT                                # build fail nếu license không cho phép
+    pin: v4.2.0                                # pin version/commit — does not drift with upstream
+    license: MIT                                # build fails if license is incompatible
 prompt_prepend: |
-  Áp dụng quy trình systematic-debugging bên dưới, output bằng {{language}}.
+  Apply the systematic-debugging workflow below, outputting in {{language}}.
 ```
 
-- **Vendor + pin**: skill được copy vào `vendor/` lúc build, pin theo tag/commit — build vẫn deterministic và offline-friendly, không phụ thuộc upstream sống chết.
-- **License check tự động**: chỉ import skill có license tương thích (MIT/Apache-2.0); ghi attribution vào output.
-- **Wrap, không sửa**: nội dung skill gốc giữ nguyên, customize qua `prompt_prepend/append` — khi upstream ra version mới chỉ cần bump `pin` và chạy lại eval.
-- **Ứng viên import cho MVP**: systematic-debugging & TDD workflow (superpowers, ~94k+ stars, đã vào Anthropic marketplace), document skills từ anthropics/skills (official, ~135k stars), engineering workflow skills từ mattpocock/skills (124k stars, MIT — xem bảng 15.3), agents lẻ từ VoltAgent/awesome-claude-code-subagents và wshobson/agents. Giảm đáng kể effort viết 6 agents MVP — phần phải tự viết chủ yếu là policies công ty + templates tài liệu tiếng Việt + phần "nối" các agent thành vòng SDLC.
+- **Vendor + pin**: skills are copied to `vendor/` during build, pinned by tag/commit — build remains deterministic and offline-friendly, independent of upstream availability.
+- **Automated license checking**: only import skills with compatible licenses (MIT/Apache-2.0); write attribution in the output.
+- **Wrap, don't modify**: original skill content is kept intact, customized via `prompt_prepend/append` — when upstream releases a new version, simply bump the `pin` and run evals again.
+- **Import candidates for MVP**: systematic-debugging & TDD workflow (superpowers, ~94k+ stars, in Anthropic marketplace), document skills from anthropics/skills (official, ~135k stars), engineering workflow skills from mattpocock/skills (124k stars, MIT — see Table 15.3), individual agents from VoltAgent/awesome-claude-code-subagents and wshobson/agents. Significantly reduces the effort of writing the 6 MVP agents — the part to write manually is mostly company policies + Vietnamese output templates + "connecting" agents into the SDLC loop.
 
-### 15.3 Bảng map skill cộng đồng → Agent Catalog (đã thẩm định 06/2026)
+### 15.3 Mapping Community Skills to the Agent Catalog (Evaluated 06/2026)
 
-| Agent trong catalog | Skill import (nguồn) | Ghi chú |
+| Catalog Agent | Skill to Import (Source) | Notes |
 |---|---|---|
-| `requirement-analyst` | `to-prd`, `grill-me`, `grill-with-docs` (mattpocock) + `brainstorming` (superpowers) | `to-prd` có sẵn template PRD 8 mục (Problem, Solution, User Stories, Implementation/Testing Decisions, Out of Scope) + tự publish lên issue tracker — gần như dùng được ngay |
-| `estimation-agent` | `to-issues`, `triage` (mattpocock) | `to-issues` chuyển spec → các GitHub issues độc lập "grabbable" — đúng bài break-down |
-| `solution-architect` | `improve-codebase-architecture`, `zoom-out` (mattpocock) + pattern `docs/adr/` của chính repo đó | Repo mattpocock tự dùng ADR — mượn luôn cấu trúc |
+| `requirement-analyst` | `to-prd`, `grill-me`, `grill-with-docs` (mattpocock) + `brainstorming` (superpowers) | `to-prd` has a ready-made 8-section PRD template (Problem, Solution, User Stories, Implementation/Testing Decisions, Out of Scope) + auto-publishes to issue tracker — almost ready to use |
+| `estimation-agent` | `to-issues`, `triage` (mattpocock) | `to-issues` converts specs → independent "grabbable" GitHub issues — perfect for breakdown |
+| `solution-architect` | `improve-codebase-architecture`, `zoom-out` (mattpocock) + `docs/adr/` pattern of that repository | mattpocock's repository uses ADRs — borrow the structure directly |
 | `planner` | `writing-plans`, `executing-plans` (superpowers) + `prototype` (mattpocock) | |
-| `coder` | `tdd` (cả superpowers lẫn mattpocock), `subagent-driven-development` (superpowers) | So sánh 2 bản TDD, chọn/merge bản tốt hơn |
-| `bug-triager` | `diagnose` (mattpocock) + `systematic-debugging` (superpowers) | Hai workflow debug độc lập cùng triết lý — tín hiệu mạnh là pattern đúng |
-| `code-reviewer` | `requesting/receiving-code-review` (superpowers), `git-guardrails`, `setup-pre-commit` (mattpocock) | Wrap thêm checklist công ty qua policy layer |
+| `coder` | `tdd` (both superpowers and mattpocock), `subagent-driven-development` (superpowers) | Compare the two TDD versions, select/merge the better one |
+| `bug-triager` | `diagnose` (mattpocock) + `systematic-debugging` (superpowers) | Two independent debugging workflows with the same philosophy — strong signal that the pattern is correct |
+| `code-reviewer` | `requesting/receiving-code-review` (superpowers), `git-guardrails`, `setup-pre-commit` (mattpocock) | Wrap with company checklist via policy layer |
 | `doc-writer` | document skills PDF/DOCX/XLSX/PPTX (anthropics/skills) | Official, production-ready |
-| **Cross-cutting (mọi agent)** | `handoff` (mattpocock) — nén context khi chuyển giao agent→agent; `caveman` (mattpocock) — giảm ~75% token output | `handoff` chính là mảnh ghép "nối các agent thành vòng SDLC"; `caveman` đáp ứng pain point token-cost nóng nhất cộng đồng hiện nay |
-| **Meta (build engine)** | `write-a-skill` (mattpocock), `writing-skills` (superpowers) | Tham khảo cho chuẩn DSL + guideline đóng góp agent mới |
+| **Cross-cutting (all agents)** | `handoff` (mattpocock) — compresses context when transitioning agent→agent; `caveman` (mattpocock) — reduces token output by ~75% | `handoff` is the missing piece to "connect agents into the SDLC loop"; `caveman` addresses the community's burning token-cost pain point |
+| **Meta (build engine)** | `write-a-skill` (mattpocock), `writing-skills` (superpowers) | Reference for standard DSL + guidelines for contributing new agents |
 
-> Các skill KHÔNG import từ mattpocock/skills (quá cá nhân, ngoài scope): `setup-matt-pocock-skills`, `scaffold-exercises`, `migrate-to-shoehorn`, `teach`.
+> Skills NOT imported from mattpocock/skills (too personal, out of scope): `setup-matt-pocock-skills`, `scaffold-exercises`, `migrate-to-shoehorn`, `teach`.
 
-## 16. Team & Effort ước tính (MVP)
+## 16. Estimated Team & Effort (MVP)
 
-| Role | Số lượng | Trách nhiệm |
+| Role | Quantity | Responsibility |
 |------|----------|-------------|
-| Tech Lead / SA | 1 | DSL design, adapter architecture, review |
+| Tech Lead / SA | 1 | DSL design, adapter architecture, reviews |
 | Backend/Tooling Dev (TS) | 1–2 | Build engine, CLI, adapters, CI |
-| Prompt Engineer / Senior Dev | 1 | Viết & tune 6 agents MVP, eval cases |
-| (Part-time) BA/QA | 0.5 | Test agent output với case thực tế, viết docs |
+| Prompt Engineer / Senior Dev | 1 | Write & tune 6 MVP agents, eval cases |
+| (Part-time) BA/QA | 0.5 | Test agent output with real cases, write docs |
 
-**Tổng effort MVP:** ~6 tuần × 3 người ≈ **18 person-weeks**.
+**Total MVP Effort:** ~6 weeks × 3 people ≈ **18 person-weeks**.
 
 ---
 
-## Phụ lục A — Cấu trúc repo đề xuất
+## Appendix A — Proposed Repository Structure
 
 ```
 sdlc-agents/
@@ -694,20 +693,20 @@ sdlc-agents/
 │     ├─ copilot/
 │     └─ ...
 ├─ agents/                # canonical agent definitions (YAML)
-├─ skills/                # workflow chi tiết (Markdown)
+├─ skills/                # detailed workflows (Markdown)
 ├─ templates/             # output templates (ADR, PRD, ...)
-├─ policies/              # checklist, conventions (org defaults)
-├─ examples/              # demo project đã build sẵn từng tool
+├─ policies/              # checklists, conventions (org defaults)
+├─ examples/              # pre-built demo projects for each tool
 └─ docs/
 ```
 
-## Phụ lục B — Tham khảo
+## Appendix B — References
 - Claude Code subagents/skills/plugins: https://docs.claude.com/en/docs/claude-code
 - GitHub Copilot customization: https://docs.github.com/en/copilot/customizing-copilot
 - AGENTS.md convention (Linux Foundation AAIF, 60k+ repos adopt): https://agents.md
 - promptfoo (LLM eval): https://promptfoo.dev
-- obra/superpowers (SDLC skill framework, trong Anthropic marketplace): https://github.com/obra/superpowers
+- obra/superpowers (SDLC skill framework, in Anthropic marketplace): https://github.com/obra/superpowers
 - anthropics/skills (official document skills): https://github.com/anthropics/skills
 - mattpocock/skills (engineering workflow skills, MIT): https://github.com/mattpocock/skills
-- wshobson/agents (multi-harness plugin marketplace — đối thủ tham chiếu): https://github.com/wshobson/agents
+- wshobson/agents (multi-harness plugin marketplace — reference competitor): https://github.com/wshobson/agents
 - VoltAgent/awesome-claude-code-subagents (100+ subagents): https://github.com/VoltAgent/awesome-claude-code-subagents
