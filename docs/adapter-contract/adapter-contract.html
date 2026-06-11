@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Adapter Contract — sdlc-agent docs</title>
+  <title>Quy ước Adapter — Tài liệu sdlc-agent</title>
   <link rel="stylesheet" href="../style.css" />
   <link rel="stylesheet" href="../docs-layout.css" />
   <style>
@@ -29,16 +29,16 @@
     <aside class="doc-nav-sidebar">
       <a class="doc-nav-brand" href="../sa-design/sa-design.html">
         <div class="doc-nav-brand-title">sdlc-agent</div>
-        <div class="doc-nav-brand-sub">Documentation</div>
+        <div class="doc-nav-brand-sub">Tài liệu hướng dẫn</div>
       </a>
       <nav class="doc-nav-group">
-        <div class="doc-nav-group-label">Architecture</div>
+        <div class="doc-nav-group-label">Kiến trúc</div>
         <a class="doc-nav-link" href="../sa-design/sa-design.html" data-doc="sa-design">
           <span class="doc-nav-link-icon">🏗</span> SA Design
         </a>
       </nav>
       <nav class="doc-nav-group">
-        <div class="doc-nav-group-label">Reference</div>
+        <div class="doc-nav-group-label">Tham chiếu</div>
         <a class="doc-nav-link" href="../codebase-guide/codebase-guide.html" data-doc="codebase-guide">
           <span class="doc-nav-link-icon">📁</span> Codebase Guide
         </a>
@@ -53,122 +53,122 @@
 
       <div class="doc-badges">
         <span class="doc-badge doc-badge-default">2026-06-11</span>
-        <span class="doc-badge doc-badge-default">Architecture · Adapters</span>
-        <span class="doc-badge doc-badge-success">Stable</span>
+        <span class="doc-badge doc-badge-default">Kiến trúc · Adapters</span>
+        <span class="doc-badge doc-badge-success">Ổn định</span>
       </div>
-      <h1>Adapter Contract</h1>
-      <p class="doc-subtitle">The contract every adapter must satisfy to be registered in the build engine. Defines interface, determinism rules, required output properties, and test requirements.</p>
+      <h1>Quy ước Adapter (Adapter Contract)</h1>
+      <p class="doc-subtitle">Bộ quy ước bắt buộc mọi adapter phải đáp ứng để được đăng ký vào build engine. Xác định interface, quy tắc tính bất biến (determinism), thuộc tính đầu ra bắt buộc và yêu cầu kiểm thử.</p>
 
       <!-- Interface & Rules -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="interface">Interface</h2>
-        <p>An adapter implements <code>ToolAdapter</code> from <code>@sdlc-agents/core</code>:</p>
+        <p>Một adapter sẽ implement interface <code>ToolAdapter</code> từ package <code>@sdlc-agents/core</code>:</p>
         <pre class="flow" style="margin: 16px 0;"><span class="c">// packages/adapters/&lt;tool&gt;/src/index.ts</span>
 <span class="k">interface</span> ToolAdapter {
-  <span class="k">readonly</span> name: string;                                      <span class="c">// registry key, kebab-case</span>
+  <span class="k">readonly</span> name: string;                                      <span class="c">// registry key, dạng kebab-case</span>
   render(agents: AgentDef[], ctx: BuildContext): OutputFile[];
-  validate?(outputs: OutputFile[]): Diagnostic[];             <span class="c">// optional self-check</span>
+  validate?(outputs: OutputFile[]): Diagnostic[];             <span class="c">// tự kiểm tra (optional)</span>
 }</pre>
 
-        <h2 class="doc-section-title" id="rules" style="margin-top: 28px;">Rules</h2>
+        <h2 class="doc-section-title" id="rules" style="margin-top: 28px;">Quy tắc cốt lõi</h2>
         <div>
           <div class="rule-row">
             <span class="rule-num">R1</span>
-            <span class="rule-text"><strong>Pure &amp; deterministic:</strong> same agents + same context → byte-identical output. No timestamps, no random ids, no network calls, no filesystem reads. Determinism is what makes drift detection and snapshot testing possible.</span>
+            <span class="rule-text"><strong>Bất biến &amp; thuần khiết (Pure &amp; deterministic):</strong> cùng danh sách agents + cùng context ➔ kết quả đầu ra phải giống nhau đến từng byte. Không ghi timestamp, không sinh ID ngẫu nhiên, không gọi network, không đọc file ngoài luồng. Tính bất biến là điều kiện bắt buộc để chạy cơ chế phát hiện drift và kiểm thử snapshot.</span>
           </div>
           <div class="rule-row">
             <span class="rule-num">R2</span>
-            <span class="rule-text"><strong>Relative paths:</strong> <code>OutputFile.path</code> is relative to the consumer project root and must use <code>/</code> separators.</span>
+            <span class="rule-text"><strong>Đường dẫn tương đối:</strong> <code>OutputFile.path</code> là đường dẫn tương đối so với thư mục gốc của dự án người dùng (consumer project root) và bắt buộc phải sử dụng dấu phân tách <code>/</code>.</span>
           </div>
           <div class="rule-row">
             <span class="rule-num">R3</span>
-            <span class="rule-text"><strong>No filesystem writes:</strong> an adapter must not write files itself — the build engine owns all filesystem writes and records each file's hash in <code>.sdlc/build-manifest.json</code> for drift detection.</span>
+            <span class="rule-text"><strong>Không tự ghi tệp tin:</strong> một adapter tuyệt đối không tự ghi file ra ổ đĩa — Build Engine sẽ chịu trách nhiệm ghi toàn bộ file và lưu mã hash của từng file vào <code>.sdlc/build-manifest.json</code> để phục vụ cơ chế phát hiện drift.</span>
           </div>
         </div>
       </section>
 
       <!-- Required Output Properties -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="required-output">Required Output Properties</h2>
-        <p>Every generated file must satisfy all three rules:</p>
+        <h2 class="doc-section-title" id="required-output">Thuộc tính đầu ra bắt buộc</h2>
+        <p>Mỗi tệp tin được tạo ra bắt buộc phải đáp ứng cả 3 quy định sau:</p>
         <ol class="step-list">
-          <li><span class="step-text"><strong>Carry a generated footer</strong> so humans (and drift tooling) know it is machine-owned: the string <code>Generated by sdlc-agents</code> must appear (exact wording may vary per adapter).</span></li>
-          <li><span class="step-text"><strong>Render every load-bearing field</strong> of the agent definition: <code>description</code>, <code>inputs</code> (with required markers), <code>workflow</code> (ordered, with <code>ref</code> hints), <code>output_template</code> reference and <code>policies</code> references when present.</span></li>
-          <li><span class="step-text"><strong>Respect <code>model_variants</code>:</strong> if the agent declares a variant for this adapter's tool (e.g. <code>model_variants.claude.prompt_append</code>), include it; ignore other tools' variants.</span></li>
+          <li><span class="step-text"><strong>Chứa footer đánh dấu tự động:</strong> để lập trình viên (và các công cụ phát hiện drift) biết đây là file tự động tạo ra — chuỗi chữ <code>Generated by sdlc-agents</code> bắt buộc phải xuất hiện (cú pháp chính xác có thể khác nhau tùy từng adapter).</span></li>
+          <li><span class="step-text"><strong>Hiển thị đầy đủ các trường thông tin cốt lõi</strong> của agent: <code>description</code>, <code>inputs</code> (kèm ký hiệu bắt buộc), <code>workflow</code> (theo thứ tự, kèm gợi ý <code>ref</code>), tham chiếu <code>output_template</code> và tham chiếu <code>policies</code> nếu có.</span></li>
+          <li><span class="step-text"><strong>Tuân thủ <code>model_variants</code>:</strong> nếu agent có khai báo cấu hình variant riêng cho công cụ của adapter này (ví dụ <code>model_variants.claude.prompt_append</code>), hãy chèn nó vào; bỏ qua cấu hình variant của các công cụ khác.</span></li>
         </ol>
       </section>
 
       <!-- Required Tests -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="required-tests">Required Tests</h2>
-        <p>Each adapter package must contain, under <code>src/__tests__/</code>:</p>
+        <h2 class="doc-section-title" id="required-tests">Yêu cầu kiểm thử</h2>
+        <p>Mỗi package adapter bắt buộc phải có các tệp kiểm thử trong thư mục <code>src/__tests__/</code>:</p>
 
         <div class="grid grid-3" style="margin-top: 16px;">
-          <doc-card title="Path contract test" badge="Required" badge-type="error">
-            Asserts the <strong>exact output paths</strong> for a representative agent — verifies the adapter targets the right file locations.
+          <doc-card title="Kiểm thử quy ước đường dẫn (Path)" badge="Bắt buộc" badge-type="error">
+            Kiểm tra đường dẫn đầu ra chính xác cho một agent mẫu — đảm bảo adapter xuất file đúng vị trí thư mục quy định.
           </doc-card>
-          <doc-card title="Content contract test" badge="Required" badge-type="error">
-            Asserts agent <code>id</code>, <code>phase</code>, and all <strong>workflow steps</strong> appear in the rendered output.
+          <doc-card title="Kiểm thử quy ước nội dung (Content)" badge="Bắt buộc" badge-type="error">
+            Kiểm tra nội dung chứa đầy đủ các trường <code>id</code>, <code>phase</code>, và toàn bộ các bước <code>workflow</code> của agent trong file kết quả.
           </doc-card>
-          <doc-card title="Snapshot test" badge="Required" badge-type="error">
-            At least one <code>toMatchSnapshot()</code> on a full rendered file — any format change shows up in review.
+          <doc-card title="Kiểm thử Snapshot" badge="Bắt buộc" badge-type="error">
+            Ít nhất một kiểm thử <code>toMatchSnapshot()</code> trên toàn bộ file kết quả — giúp phát hiện ngay lập tức bất kỳ thay đổi định dạng nào khi review.
           </doc-card>
         </div>
       </section>
 
       <!-- Registered Adapters -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="registered-adapters">Registered Adapters</h2>
+        <h2 class="doc-section-title" id="registered-adapters">Danh sách Adapter đã đăng ký</h2>
         <table>
           <thead>
             <tr>
               <th>Adapter</th>
               <th><code>name</code></th>
-              <th>Output Paths</th>
-              <th>Notes</th>
+              <th>Đường dẫn đầu ra</th>
+              <th>Ghi chú</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><strong>Universal</strong></td>
               <td><code>universal</code></td>
-              <td><code>AGENTS.md</code> (index) + <code>.sdlc/agents/&lt;id&gt;.md</code> (one per agent)</td>
-              <td>The baseline tier — plain Markdown readable by any AI tool (Codex, Cursor, Windsurf, Gemini CLI, Zed, …). <strong>Always keep this target enabled.</strong> No auto-routing: users invoke agents by name or by opening the file.</td>
+              <td><code>AGENTS.md</code> (index) + <code>.sdlc/agents/&lt;id&gt;.md</code> (mỗi file cho 1 agent)</td>
+              <td>Mức độ cơ bản (baseline) — Markdown thuần túy có thể được đọc bởi bất kỳ công cụ AI nào (Codex, Cursor, Windsurf, Gemini CLI, Zed, ...). <strong>Luôn giữ adapter này hoạt động.</strong> Không tự định tuyến: người dùng gọi agent bằng tên hoặc mở trực tiếp tệp tin.</td>
             </tr>
             <tr>
               <td><strong>Claude Code</strong></td>
               <td><code>claude-code</code></td>
-              <td><code>.claude/agents/&lt;id&gt;.md</code> (one per agent)</td>
-              <td>YAML frontmatter: <code>name</code>, <code>description</code> (prefixed <code>[SDLC:&lt;phase&gt;]</code> — drives auto-routing), <code>model</code> (mapped from <code>model_hint</code>: fast → Haiku, balanced → Sonnet, high-reasoning → Opus), <code>tools</code>. Applies <code>model_variants.claude</code>.</td>
+              <td><code>.claude/agents/&lt;id&gt;.md</code> (mỗi file cho 1 agent)</td>
+              <td>YAML frontmatter: chứa <code>name</code>, <code>description</code> (tiền tố <code>[SDLC:&lt;phase&gt;]</code> để tự động định tuyến), <code>model</code> (ánh xạ từ <code>model_hint</code>: fast ➔ Haiku, balanced ➔ Sonnet, high-reasoning ➔ Opus), và <code>tools</code>. Áp dụng <code>model_variants.claude</code>.</td>
             </tr>
             <tr>
               <td><strong>Copilot</strong></td>
               <td><code>copilot</code></td>
-              <td><code>.github/copilot-instructions.md</code> (index) + <code>.github/prompts/&lt;id&gt;.prompt.md</code> (one per agent)</td>
-              <td>Prompt files use <code>mode: agent</code> frontmatter with a one-line <code>description</code>. Applies <code>model_variants.copilot</code>.</td>
+              <td><code>.github/copilot-instructions.md</code> (index) + <code>.github/prompts/&lt;id&gt;.prompt.md</code> (mỗi file cho 1 agent)</td>
+              <td>Các tệp prompt sử dụng frontmatter <code>mode: agent</code> kèm theo <code>description</code> tóm tắt trên một dòng. Áp dụng <code>model_variants.copilot</code>.</td>
             </tr>
           </tbody>
         </table>
 
-        <doc-alert type="info" title="Phase 2 note">
-          Phase 2 (per SA design FR-11) will replace the hardcoded <code>ADAPTERS</code> map in <code>packages/cli/src/commands/build.ts</code> with a plugin interface (<code>adapters: ["@org/sdlc-adapter-x"]</code> in config). Until then, adapters live in this monorepo.
+        <doc-alert type="info" title="Lưu ý cho Phase 2">
+          Ở Phase 2 (theo yêu cầu FR-11 của SA design), chúng ta sẽ thay thế cấu hình hardcode <code>ADAPTERS</code> trong <code>packages/cli/src/commands/build.ts</code> bằng một hệ thống plugin interface (sử dụng <code>adapters: ["@org/sdlc-adapter-x"]</code> trong config). Cho tới lúc đó, các adapter tạm thời nằm chung trong monorepo này.
         </doc-alert>
       </section>
 
       <!-- Adding a New Adapter -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="adding-adapter">Adding a New Adapter</h2>
+        <h2 class="doc-section-title" id="adding-adapter">Quy trình thêm Adapter mới</h2>
         <ol class="step-list">
-          <li><span class="step-text">Create <code>packages/adapters/&lt;tool&gt;/</code> with <code>src/index.ts</code> exporting a <code>ToolAdapter</code>.</span></li>
-          <li><span class="step-text">Satisfy all output properties and tests above (path contract + content contract + snapshot).</span></li>
-          <li><span class="step-text">Register it in the <code>ADAPTERS</code> map in <code>packages/cli/src/commands/build.ts</code>.</span></li>
-          <li><span class="step-text">Add the target name to <code>sdlc.config.yaml</code> docs and the root <code>README.md</code>.</span></li>
-          <li><span class="step-text">Add a row to the Registered Adapters table above, including which tool versions were verified and any format caveats.</span></li>
+          <li><span class="step-text">Khởi tạo thư mục <code>packages/adapters/&lt;tool&gt;/</code> với <code>src/index.ts</code> export một class hiện thực hóa <code>ToolAdapter</code>.</span></li>
+          <li><span class="step-text">Đảm bảo đáp ứng đầy đủ các thuộc tính đầu ra và viết đủ các loại kiểm thử nêu trên (path contract + content contract + snapshot).</span></li>
+          <li><span class="step-text">Đăng ký adapter mới trong đối tượng <code>ADAPTERS</code> tại tệp <code>packages/cli/src/commands/build.ts</code>.</span></li>
+          <li><span class="step-text">Khai báo thêm tên target vào tài liệu cấu hình <code>sdlc.config.yaml</code> và tệp <code>README.md</code> ở thư mục gốc.</span></li>
+          <li><span class="step-text">Bổ sung một hàng vào bảng Danh sách Adapter đã đăng ký ở trên, nêu rõ phiên bản công cụ đã được xác thực và các lưu ý về định dạng file.</span></li>
         </ol>
       </section>
 
       <footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
-        <span>Adapter Contract · sdlc-agents</span>
+        <span>Quy ước Adapter · sdlc-agents</span>
         <span>Source of truth: <code>docs/adapter-contract/ADAPTER_CONTRACT.md</code></span>
       </footer>
 
@@ -176,7 +176,7 @@
 
     <!-- Right TOC sidebar (auto-populated) -->
     <aside class="doc-toc-sidebar">
-      <div class="doc-toc-label">On this page</div>
+      <div class="doc-toc-label">Trên trang này</div>
       <nav id="doc-toc-nav"></nav>
     </aside>
 
