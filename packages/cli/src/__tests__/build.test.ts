@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stringify as stringifyYaml } from "yaml";
 import { runBuild } from "../commands/build.js";
 
@@ -72,5 +72,54 @@ describe("runBuild", () => {
 		runBuild(tmpDir);
 		const second = fs.readFileSync(path.join(tmpDir, "AGENTS.md"), "utf8");
 		expect(first).toBe(second);
+	});
+
+	it("writes a build manifest with a hash per generated file", () => {
+		runBuild(tmpDir);
+		const manifestPath = path.join(tmpDir, ".sdlc", "build-manifest.json");
+		expect(fs.existsSync(manifestPath)).toBe(true);
+		const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+		expect(manifest["AGENTS.md"]).toMatch(/^[0-9a-f]{64}$/);
+	});
+
+	it("warns about drift when a generated file was manually edited", () => {
+		runBuild(tmpDir);
+		const target = path.join(tmpDir, "AGENTS.md");
+		fs.appendFileSync(target, "\nmanual edit\n", "utf8");
+
+		const warnings: string[] = [];
+		const warnSpy = vi
+			.spyOn(console, "warn")
+			.mockImplementation((msg: string) => {
+				warnings.push(String(msg));
+			});
+		try {
+			runBuild(tmpDir);
+		} finally {
+			warnSpy.mockRestore();
+		}
+
+		expect(warnings.some((w) => w.includes("Drift detected"))).toBe(true);
+		expect(warnings.some((w) => w.includes("AGENTS.md"))).toBe(true);
+		// drifted file is regenerated from canonical sources
+		expect(fs.readFileSync(target, "utf8")).not.toContain("manual edit");
+	});
+
+	it("does not warn about drift when outputs are untouched", () => {
+		runBuild(tmpDir);
+
+		const warnings: string[] = [];
+		const warnSpy = vi
+			.spyOn(console, "warn")
+			.mockImplementation((msg: string) => {
+				warnings.push(String(msg));
+			});
+		try {
+			runBuild(tmpDir);
+		} finally {
+			warnSpy.mockRestore();
+		}
+
+		expect(warnings.some((w) => w.includes("Drift detected"))).toBe(false);
 	});
 });

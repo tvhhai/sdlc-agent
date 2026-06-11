@@ -50,6 +50,30 @@ describe("runValidate", () => {
 
 		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
 	});
+
+	it("returns false when an agent uses the unsupported 'extends' field", () => {
+		writeAgent(tmpDir, "child.yaml", {
+			id: "child-agent",
+			extraLines: ["extends: code-reviewer"],
+		});
+
+		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+	});
+
+	it("returns false when an agent uses the unsupported 'imports' field", () => {
+		writeAgent(tmpDir, "importer.yaml", {
+			id: "importer-agent",
+			extraLines: [
+				"imports:",
+				"  - source: github:obra/superpowers",
+				"    path: skills/systematic-debugging",
+				"    pin: v4.2.0",
+				"    license: MIT",
+			],
+		});
+
+		expect(runValidate(path.join(tmpDir, "agents"))).toBe(false);
+	});
 });
 
 function writeAgent(
@@ -59,6 +83,7 @@ function writeAgent(
 		id?: string;
 		output_template?: string;
 		policies?: string[];
+		extraLines?: string[];
 	},
 ): void {
 	const agent = {
@@ -94,6 +119,7 @@ function writeAgent(
 			...(agent.policies.length
 				? ["policies:", ...agent.policies.map((policy) => `  - ${policy}`)]
 				: ["policies: []"]),
+			...(overrides.extraLines ?? []),
 			"",
 		].join("\n"),
 		"utf8",

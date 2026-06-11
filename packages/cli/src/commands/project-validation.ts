@@ -30,6 +30,19 @@ export function validateProjectContracts(
 				);
 			}
 		}
+
+		// These fields parse but the build engine does not act on them yet.
+		// Fail loudly instead of silently producing output that ignores them.
+		if (agent.extends !== undefined) {
+			errors.push(
+				`Agent "${agent.id}" uses "extends", which is not supported by the build engine yet (planned: Phase 2 inheritance). Remove it until then.`,
+			);
+		}
+		if (agent.imports !== undefined && agent.imports.length > 0) {
+			errors.push(
+				`Agent "${agent.id}" uses "imports", which is not supported by the build engine yet (planned: Phase 2 vendoring). Remove it until then.`,
+			);
+		}
 	}
 
 	for (const [id, count] of seenIds.entries()) {

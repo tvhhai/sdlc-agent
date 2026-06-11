@@ -1,0 +1,22 @@
+{
+	".claude/agents/code-reviewer.md": "bf7e3b29e7cf3fc0250e74deb59d6b32d7374c55ffa2ae96caa137d97e505980",
+	".claude/agents/coder.md": "eed79e54ab957c0253186bcbc72a8603a11427d7624942f9ad76c1c2b163f36a",
+	".claude/agents/planner.md": "953daeb3adf3b7896eb639a63ab0ee752a33ef36a307946b4b79cc8c9fea0176",
+	".claude/agents/requirement-analyst.md": "14a5fea74b9865dd5ff4153f9219d36d9b1bc0419623f1a032d1a2e2278f9cf1",
+	".claude/agents/solution-architect.md": "6dd1e7de9e54e77c507379e46b65d5d717f05abbaddf562fa2e80b4ae4c2f67c",
+	".claude/agents/test-generator.md": "dca988fb165009077e4f0b73a5076fa89410d0c3a6a0a562bbbb6535bee4fc9e",
+	".github/copilot-instructions.md": "5771ec30e7593b12a878eb76c24bb6e4eab883e4ef39c6b387357fdf6787f1e7",
+	".github/prompts/code-reviewer.prompt.md": "458a823b0b52066d79e0314d85f96f695862e7073a2fecf06f9c5d1760dd7746",
+	".github/prompts/coder.prompt.md": "aca05a5417a31938dc49ab2775e22047fd02f05f892ec6294615214524499e84",
+	".github/prompts/planner.prompt.md": "550ea75521ff20ee9b64b12b19b2f47a2b5e755f6d4aa983b971b7646feb569e",
+	".github/prompts/requirement-analyst.prompt.md": "fbb1e63b28a40f51f87f5fed006f6955dc91d290824c3a30105bb6848827b7ef",
+	".github/prompts/solution-architect.prompt.md": "c5d6296459483f2079f44f2537acc8d96fbfcc3f1b5f2d98e9e1c0124f94772c",
+	".github/prompts/test-generator.prompt.md": "ef519f3bc31b40a2b0d405f6a23e3cc972f64f3d3120973f955ce72f87cd5daa",
+	".sdlc/agents/code-reviewer.md": "853f98939afff83e56923cb0d8c4acca6337a79280763db39a5f43b5d7af9278",
+	".sdlc/agents/coder.md": "b9ac824a585a058657f65c8783655033815e53017d5e58d2c9cad96f0f929235",
+	".sdlc/agents/planner.md": "e4d05a2841fe93353b89edc35bf5d4145a23f26aaffb57c5341018eaef6e929e",
+	".sdlc/agents/requirement-analyst.md": "cf3fa837206b7f931e237f6eecf1d38cdd539f1bb275bd46e490a61e1ef10c84",
+	".sdlc/agents/solution-architect.md": "ef91927771a4dd3372fa4471bebd272fb9375e49106e5f2180e354b5a613c8b2",
+	".sdlc/agents/test-generator.md": "46d19c8c6e1021bdc5ec044a32f5bc9457968465a1841e8a0cacb1e14a15ef47",
+	"AGENTS.md": "21522528db07d48d220b65c45685603e7e854c4918a65331e74fbc6906bf278d"
+}
