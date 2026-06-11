@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><!-- DOC TITLE --> — sdlc-agent docs</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../docs-layout.css">
+</head>
+<!--
+  body[data-doc] must match one of the data-doc values on .doc-nav-link
+  so DocLayout.markActiveDoc() can highlight the current page.
+  Values: "sa-design" | "codebase-guide" | "adapter-contract"
+-->
+<body class="page-doc" data-doc="<!-- SLUG -->">
+
+  <!-- Mobile hamburger (visible ≤860px) -->
+  <button class="doc-nav-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="doc-nav-backdrop"></div>
+
+  <div class="doc-shell">
+
+    <!-- ── Left nav sidebar ────────────────────────────────────────────── -->
+    <aside class="doc-nav-sidebar">
+      <a class="doc-nav-brand" href="../sa-design/sa-design.html">
+        <div class="doc-nav-brand-title">sdlc-agent</div>
+        <div class="doc-nav-brand-sub">Documentation</div>
+      </a>
+
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Architecture</div>
+        <a class="doc-nav-link" href="../sa-design/sa-design.html" data-doc="sa-design">
+          <span class="doc-nav-link-icon">🏗</span> SA Design
+        </a>
+      </nav>
+
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Reference</div>
+        <a class="doc-nav-link" href="../codebase-guide/codebase-guide.html" data-doc="codebase-guide">
+          <span class="doc-nav-link-icon">📁</span> Codebase Guide
+        </a>
+        <a class="doc-nav-link" href="../adapter-contract/adapter-contract.html" data-doc="adapter-contract">
+          <span class="doc-nav-link-icon">🔌</span> Adapter Contract
+        </a>
+      </nav>
+    </aside>
+
+    <!-- ── Main content ────────────────────────────────────────────────── -->
+    <main class="doc-main">
+
+      <!-- Hero -->
+      <div class="doc-badges">
+        <span class="doc-badge doc-badge-default"><!-- DATE --></span>
+        <span class="doc-badge doc-badge-default"><!-- SCOPE --></span>
+        <span class="doc-badge doc-badge-success"><!-- STATUS --></span>
+      </div>
+      <h1><!-- DOCUMENT TITLE --></h1>
+      <p class="doc-subtitle"><!-- ONE-LINE SUBTITLE --></p>
+
+      <!-- Section example -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="overview">Overview</h2>
+        <p>Content here…</p>
+      </section>
+
+      <!-- Another section -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="another-section">Another Section</h2>
+        <p>Content here…</p>
+
+        <!-- h3 headings also appear in TOC with indent -->
+        <h3 class="doc-section-subtitle" id="subsection-one">Subsection</h3>
+        <p>Subsection content…</p>
+      </section>
+
+    </main>
+
+    <!-- ── Right TOC sidebar (auto-populated by docs-layout.js) ─────────── -->
+    <aside class="doc-toc-sidebar">
+      <div class="doc-toc-label">On this page</div>
+      <nav id="doc-toc-nav"></nav>
+    </aside>
+
+  </div><!-- /.doc-shell -->
+
+  <script src="../docs-core.js"></script>
+  <script src="../docs-layout.js" defer></script>
+</body>
+</html>

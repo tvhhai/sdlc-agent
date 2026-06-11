@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SA Design — sdlc-agent docs</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../docs-layout.css" />
+  <style>
+    .phase-group { margin-bottom: 28px; }
+    .phase-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent2); margin-bottom: 10px; padding: 4px 10px; background: rgba(167,139,250,0.1); border-radius: 6px; display: inline-block; }
+    .risk-row { display: grid; grid-template-columns: 32px 1fr 80px 80px; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+    .risk-row:last-child { border-bottom: none; }
+    .risk-num { color: var(--accent); font-weight: 700; font-size: 12px; }
+    .risk-like-high { color: var(--red); font-size: 12px; font-weight: 700; }
+    .risk-like-mid  { color: var(--yellow); font-size: 12px; font-weight: 700; }
+    .risk-like-low  { color: var(--green); font-size: 12px; font-weight: 700; }
+    .risk-impact-high { color: var(--red); font-size: 12px; font-weight: 700; }
+    .risk-impact-veryhigh { color: #f43f5e; font-size: 12px; font-weight: 700; }
+    .risk-impact-mid  { color: var(--yellow); font-size: 12px; font-weight: 700; }
+    .tl-title { font-size: 14px !important; font-weight: 700 !important; color: #fff !important; }
+    .tl-detail { font-size: 13px !important; line-height: 1.6 !important; color: var(--muted) !important; }
+    .tl-dot { width: 12px !important; height: 12px !important; left: -21px !important; top: 6px !important; box-shadow: 0 0 8px currentColor !important; }
+  </style>
+</head>
+<body class="page-doc" data-doc="sa-design">
+
+  <button class="doc-nav-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="doc-nav-backdrop"></div>
+
+  <div class="doc-shell">
+
+    <!-- Left nav sidebar -->
+    <aside class="doc-nav-sidebar">
+      <a class="doc-nav-brand" href="sa-design.html">
+        <div class="doc-nav-brand-title">sdlc-agent</div>
+        <div class="doc-nav-brand-sub">Documentation</div>
+      </a>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Architecture</div>
+        <a class="doc-nav-link" href="sa-design.html" data-doc="sa-design">
+          <span class="doc-nav-link-icon">🏗</span> SA Design
+        </a>
+      </nav>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Reference</div>
+        <a class="doc-nav-link" href="../codebase-guide/codebase-guide.html" data-doc="codebase-guide">
+          <span class="doc-nav-link-icon">📁</span> Codebase Guide
+        </a>
+        <a class="doc-nav-link" href="../adapter-contract/adapter-contract.html" data-doc="adapter-contract">
+          <span class="doc-nav-link-icon">🔌</span> Adapter Contract
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="doc-main">
+
+      <div class="doc-badges">
+        <span class="doc-badge doc-badge-default">2026-06-10</span>
+        <span class="doc-badge doc-badge-default">Kiến Trúc Giải Pháp · Sản Phẩm</span>
+        <span class="doc-badge doc-badge-warning">Đang review</span>
+      </div>
+      <h1>Agentic SDLC Agents Set</h1>
+      <p class="doc-subtitle">Solution Architecture Document — bộ AI agent definitions tái sử dụng, tool-agnostic, phủ toàn bộ vòng đời phát triển phần mềm từ Requirement → Maintain.</p>
+
+      <!-- 1. Executive Summary -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s1">1. Executive Summary</h2>
+        <p><strong>Agentic SDLC Agents Set</strong> là một <strong>thư viện các AI Agent được đặc tả sẵn</strong> (agent definitions, prompts, workflows, skills) cho từng giai đoạn của vòng đời phát triển phần mềm (SDLC), được đóng gói theo cách <strong>tool-agnostic</strong>: cùng một agent có thể chạy trên <strong>mọi AI agent/IDE agent hiện nay</strong> — Claude Code, GitHub Copilot, OpenAI Codex, Cursor, Windsurf, Gemini CLI, Zed, Cline… — mà không phải viết lại.</p>
+        <p>Cơ chế: <strong>ưu tiên 1 chuẩn mở universal (AGENTS.md)</strong> mà mọi tool đều đọc được, cộng thêm <strong>native adapter</strong> cho tool nào có format riêng mạnh hơn.</p>
+
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <doc-card title="Zero-to-productive" badge="Core Value" badge-type="success">
+            Team mới chỉ cần <code>install</code> bộ agents là có ngay quy trình SDLC chuẩn có AI hỗ trợ — không phải tự viết prompt/agent từ đầu.
+          </doc-card>
+          <doc-card title="Chuẩn hoá chất lượng" badge="Core Value" badge-type="success">
+            Cùng coding convention, cùng template tài liệu, cùng quy trình review giữa các team.
+          </doc-card>
+          <doc-card title="Single source of truth" badge="Core Value" badge-type="success">
+            Một nguồn maintain duy nhất → build ra nhiều format cho từng tool. Giống <em>Terraform modules</em> nhưng cho AI agents.
+          </doc-card>
+        </div>
+      </section>
+
+      <!-- 2. Problem Statement -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s2">2. Problem Statement</h2>
+        <h3>2.1 Hiện trạng</h3>
+        <ul>
+          <li>Mỗi developer/team tự viết prompt riêng → chất lượng không đồng đều, trùng lặp công sức.</li>
+          <li>Mỗi AI tool có format cấu hình riêng: Claude Code (<code>CLAUDE.md</code>, <code>.claude/agents/</code>), Copilot (<code>.github/prompts/</code>), Codex (<code>AGENTS.md</code>), Cursor (<code>.cursorrules</code>), Gemini (<code>GEMINI.md</code>)…</li>
+          <li>Kiến thức nghiệp vụ (coding standard, review checklist, tài liệu) không được nhúng nhất quán vào AI workflow.</li>
+          <li>Không có versioning, testing, phân phối cho prompt/agent.</li>
+        </ul>
+
+        <h3>2.2 Bài toán cần giải</h3>
+        <div class="quote">
+          Làm sao để <strong>viết agent một lần</strong>, <strong>dùng được trên mọi AI tool</strong>, <strong>phủ đủ các phase SDLC</strong>, và <strong>phân phối/cập nhật dễ dàng</strong> cho nhiều team?
+        </div>
+      </section>
+
+      <!-- 3. Goals -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s3">3. Goals &amp; Non-Goals</h2>
+        <h3>Goals (MVP → v1.0)</h3>
+        <table>
+          <thead><tr><th>#</th><th>Goal</th><th>Đo lường</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill acc">G1</span></td><td>Bộ agent phủ tối thiểu 6 phase SDLC (Requirement → Maintain)</td><td>≥ 12 agents hoạt động được</td></tr>
+            <tr><td><span class="pill acc">G2</span></td><td><strong>Universal-first:</strong> build ra chuẩn mở AGENTS.md chạy được trên MỌI AI agent + native adapter cho tool có format riêng mạnh hơn</td><td>Tầng Universal phủ 100% tools; thêm native adapter mới &lt; 1 tuần</td></tr>
+            <tr><td><span class="pill acc">G3</span></td><td>Cài đặt 1 lệnh (CLI installer)</td><td><code>npx sdlc-agents init</code> xong &lt; 2 phút</td></tr>
+            <tr><td><span class="pill acc">G4</span></td><td>Customize ở mọi cấp độ mà không fork toàn bộ</td><td>Customization model 4 cấp (mục 7)</td></tr>
+            <tr><td><span class="pill acc">G5</span></td><td>Versioning + changelog + update mechanism</td><td>Semantic versioning, <code>update</code> command</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 20px;">Non-Goals (phase đầu)</h3>
+        <div class="grid grid-2" style="gap: 10px; margin-top: 10px;">
+          <div class="danger">❌ Không build AI model riêng / fine-tune model.</div>
+          <div class="danger">❌ Không build IDE plugin/extension riêng.</div>
+          <div class="danger">❌ Không làm orchestration platform chạy multi-agent tự động 24/7.</div>
+          <div class="danger">❌ Không xử lý billing/license của các AI tool bên dưới.</div>
+        </div>
+      </section>
+
+      <!-- 4. Personas -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s4">4. Personas &amp; Use Cases</h2>
+        <table>
+          <thead><tr><th>Persona</th><th>Nhu cầu</th><th>Use case ví dụ</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Developer</strong></td><td>Code nhanh, đúng convention</td><td>Gọi <code>@code-agent</code> để implement feature theo plan, tự chạy TDD workflow</td></tr>
+            <tr><td><strong>Tech Lead / SA</strong></td><td>Chuẩn hoá thiết kế, review</td><td><code>@design-agent</code> sinh ADR/HLD; <code>@review-agent</code> review PR theo checklist</td></tr>
+            <tr><td><strong>BA / PO</strong></td><td>Viết requirement chuẩn</td><td><code>@requirement-agent</code> chuyển ý tưởng thô → user story + acceptance criteria</td></tr>
+            <tr><td><strong>QA Engineer</strong></td><td>Sinh test case/test script</td><td><code>@test-agent</code> sinh test plan, unit/integration test từ spec</td></tr>
+            <tr><td><strong>DevOps</strong></td><td>CI/CD, release</td><td><code>@devops-agent</code> sinh pipeline config, release notes, rollback plan</td></tr>
+            <tr><td><strong>Engineering Manager</strong></td><td>Áp quy trình cho nhiều team</td><td>Cài bộ agents chung, customize theo từng team qua config</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 5. Agent Catalog -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s5">5. Agent Catalog</h2>
+        <p>Bộ agents theo phase SDLC. Mỗi agent gồm: system prompt, workflow, input/output template, checklist, few-shot examples. <strong>MVP scope (6 agents):</strong> <code>requirement-analyst</code>, <code>solution-architect</code>, <code>planner</code>, <code>coder</code>, <code>test-generator</code>, <code>code-reviewer</code>.</p>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 1 — Planning &amp; Requirement</span>
+          <table><thead><tr><th>Agent</th><th>Chức năng</th></tr></thead><tbody>
+            <tr><td><code>requirement-analyst</code> <span class="pill acc">MVP</span></td><td>Phỏng vấn user, làm rõ yêu cầu mơ hồ → BRD/PRD, user stories, acceptance criteria (Gherkin)</td></tr>
+            <tr><td><code>estimation-agent</code></td><td>Break down epic → tasks, ước lượng effort, identify dependency &amp; risk</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 2 — Design</span>
+          <table><thead><tr><th>Agent</th><th>Chức năng</th></tr></thead><tbody>
+            <tr><td><code>solution-architect</code> <span class="pill acc">MVP</span></td><td>Sinh HLD/LLD, ADR (Architecture Decision Record), so sánh trade-off công nghệ</td></tr>
+            <tr><td><code>api-designer</code></td><td>Thiết kế API contract (OpenAPI/Protobuf), data model, ERD</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 3 — Implementation</span>
+          <table><thead><tr><th>Agent</th><th>Chức năng</th></tr></thead><tbody>
+            <tr><td><code>planner</code> <span class="pill acc">MVP</span></td><td>Đọc spec → sinh implementation plan chia phase, mỗi bước có verify criteria</td></tr>
+            <tr><td><code>coder</code> <span class="pill acc">MVP</span></td><td>Implement theo plan, tuân thủ convention được inject từ config, TDD-first</td></tr>
+            <tr><td><code>refactor-agent</code></td><td>Phát hiện code smell, đề xuất &amp; thực hiện refactor an toàn</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 4 — Testing</span>
+          <table><thead><tr><th>Agent</th><th>Chức năng</th></tr></thead><tbody>
+            <tr><td><code>test-generator</code> <span class="pill acc">MVP</span></td><td>Sinh unit/integration/E2E test code từ source + spec</td></tr>
+            <tr><td><code>bug-triager</code></td><td>Phân tích bug report, reproduce, root-cause analysis</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 5 — Review &amp; Release</span>
+          <table><thead><tr><th>Agent</th><th>Chức năng</th></tr></thead><tbody>
+            <tr><td><code>code-reviewer</code> <span class="pill acc">MVP</span></td><td>Review PR theo checklist công ty: security, performance, correctness, convention</td></tr>
+            <tr><td><code>security-auditor</code></td><td>Quét OWASP top 10, secrets, dependency vulnerabilities</td></tr>
+            <tr><td><code>release-manager</code></td><td>Sinh release notes, deploy checklist, rollback plan</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 6 — Operate &amp; Maintain</span>
+          <table><thead><tr><th>Agent</th><th>Chức năng</th></tr></thead><tbody>
+            <tr><td><code>incident-responder</code></td><td>Hướng dẫn triage incident, viết postmortem blameless</td></tr>
+            <tr><td><code>doc-writer</code></td><td>Sinh/cập nhật README, runbook, API docs, onboarding guide</td></tr>
+            <tr><td><code>tech-debt-auditor</code></td><td>Quét và ưu tiên hoá technical debt</td></tr>
+          </tbody></table>
+        </div>
+      </section>
+
+      <!-- 6. Architecture -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s6">6. System Architecture</h2>
+
+        <h3>6.1 Kiến trúc tổng thể</h3>
+        <pre class="ascii">┌──────────────────────────────────────────────────────────┐
+│              CANONICAL LAYER (source of truth)            │
+│  agents/*.yaml  — định nghĩa agent tool-agnostic          │
+│  templates/*.md — template output (ADR, PRD, test plan)   │
+│  policies/*.md  — convention, checklist của org/team      │
+└──────────────────────────┬───────────────────────────────┘
+                           │
+                  ┌────────▼────────┐
+                  │   BUILD ENGINE  │  (CLI: compile + validate)
+                  │  - schema check │
+                  │  - resolve vars │
+                  │  - render       │
+                  └────────┬────────┘
+                           │
+        ┌──────────────────┴──────────────────────┐
+        ▼                                         ▼
+┌──────────────────────┐   ┌──────────────────────────────────┐
+│ TẦNG 0: UNIVERSAL    │   │ TẦNG 1: NATIVE ADAPTERS          │
+│ (luôn build)         │   │                                  │
+│ AGENTS.md + .sdlc/   │   │ claude-code  copilot  cursor     │
+└──────────────────────┘   │ windsurf     gemini   cline/roo  │
+                           └──────────────────────────────────┘</pre>
+
+        <h3 style="margin-top: 24px;">6.2 Adapter Strategy — 2 tầng</h3>
+        <div class="grid grid-2" style="margin-top: 12px;">
+          <doc-card title="Tầng 0 — Universal" badge="Always build" badge-type="success">
+            Dựa trên chuẩn mở <strong>AGENTS.md</strong> — chuẩn de-facto được Codex, Cursor, Windsurf, Gemini CLI, Zed, Amp, Roo, Cline, Jules, Devin… cùng hỗ trợ. Chỉ là Markdown thuần + đường dẫn tương đối — mọi AI agent có thể đọc file đều dùng được.
+          </doc-card>
+          <doc-card title="Tầng 1 — Native Adapters" badge="Progressive enhancement" badge-type="info">
+            Chỉ viết khi tool có cơ chế riêng đáng giá (subagents, slash commands, rule scoping…). Tool mới ra → tự động được hỗ trợ ở Tầng 0, không cần code thêm.
+          </doc-card>
+        </div>
+
+        <h3 style="margin-top: 24px;">Bảng adapters</h3>
+        <table>
+          <thead><tr><th>Adapter</th><th>Output native</th><th>Lợi ích thêm</th></tr></thead>
+          <tbody>
+            <tr><td><code>claude-code</code></td><td><code>CLAUDE.md</code>, <code>.claude/agents/*.md</code>, skills, commands, hooks</td><td>Subagent thật (context riêng), slash commands, auto-trigger skills, hooks</td></tr>
+            <tr><td><code>copilot</code></td><td><code>.github/copilot-instructions.md</code>, <code>.github/prompts/*.prompt.md</code></td><td>Prompt files gọi nhanh, Copilot coding agent trên GitHub.com</td></tr>
+            <tr><td><code>cursor</code></td><td><code>.cursor/rules/*.mdc</code></td><td>Rule scoping theo glob, auto-attach theo file đang mở</td></tr>
+            <tr><td><code>windsurf</code></td><td><code>.windsurf/rules/*.md</code>, workflows</td><td>Cascade workflows, rule activation modes</td></tr>
+            <tr><td><code>gemini</code></td><td><code>GEMINI.md</code></td><td>Tích hợp Gemini CLI native</td></tr>
+            <tr><td>codex / antigravity / zed / amp</td><td><code>AGENTS.md</code> (dùng chung Universal)</td><td>Không cần adapter riêng — chi phí hỗ trợ = 0</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 24px;">6.3 Developer Journey</h3>
+        <div class="timeline">
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">1. <code>npx @org/sdlc-agents init</code></div><div class="tl-detail">Wizard hỏi: tool nào? team nào? stack gì? → sinh <code>sdlc-agents.config.yaml</code> + build lần đầu</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">2. Commit generated files</div><div class="tl-detail">Files được generate vào repo (<code>.claude/</code>, <code>.github/</code>, …) → commit vào git như code bình thường</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">3. Dev dùng agent trong tool quen thuộc</div><div class="tl-detail">Claude Code: <code>/plan "thêm tính năng X"</code> → planner agent<br>Copilot: <code>@workspace /review-pr</code> → code-reviewer prompt</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-medium"></div><div class="tl-title">4. Org cập nhật bộ agents</div><div class="tl-detail"><code>npx @org/sdlc-agents update</code> → re-build → PR tự động</div></div>
+        </div>
+      </section>
+
+      <!-- 7. Customization -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s7">7. Customization &amp; Extensibility Model</h2>
+        <p><em>"Convention over configuration, but everything is overridable."</em> — zero-config cho người mới, override từng dòng prompt cho người nâng cao, không bao giờ phải fork repo gốc.</p>
+
+        <table style="margin-top: 16px;">
+          <thead><tr><th>Cấp</th><th>Tên</th><th>Người dùng làm gì</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill acc">L1</span></td><td><strong>Configure</strong></td><td>Bật/tắt agents, set variables (<code>stack</code>, <code>language</code>, <code>team</code>) trong config</td><td>5 phút</td></tr>
+            <tr><td><span class="pill">L2</span></td><td><strong>Override</strong></td><td>Thay thế từng phần: policies, templates, checklist, từng <code>step</code> trong workflow</td><td>30 phút</td></tr>
+            <tr><td><span class="pill warn">L3</span></td><td><strong>Extend</strong></td><td>Viết agent mới của riêng dự án, kế thừa (<code>extends</code>) agent có sẵn</td><td>1–2 giờ</td></tr>
+            <tr><td><span class="pill bad">L4</span></td><td><strong>Plug-in</strong></td><td>Viết adapter cho tool mới, hook vào build pipeline, publish preset cho team khác dùng</td><td>1–2 ngày</td></tr>
+          </tbody>
+        </table>
+
+        <doc-accordion title="7.2 L1 — Configure: zero-code example">
+<pre class="flow"><span class="c"># sdlc-agents.config.yaml</span>
+<span class="n">targets</span>: [universal, claude-code, copilot]   <span class="c"># universal phủ mọi tool còn lại</span>
+<span class="n">variables</span>:
+  <span class="n">language</span>: vi
+  <span class="n">stack</span>: nestjs-postgres
+  <span class="n">team</span>: payment-squad
+<span class="n">agents</span>:
+  <span class="n">enable</span>: [planner, coder, code-reviewer]
+  <span class="n">disable</span>: [ux-reviewer]</pre>
+        </doc-accordion>
+
+        <doc-accordion title="7.3 L2 — Override: patch-based, deep-merge">
+<p>Override chỉ chứa phần khác biệt → khi base cải tiến prompt, user hưởng cải tiến mà vẫn giữ tùy chỉnh riêng. Ba toán tử: <code>replace</code>, <code>append</code>/<code>prepend</code>, <code>insert_after</code>/<code>insert_before</code>.</p>
+<pre class="flow"><span class="c"># overrides/code-reviewer.yaml</span>
+<span class="n">agent</span>: code-reviewer
+<span class="n">patch</span>:
+  <span class="n">workflow</span>:
+    <span class="n">insert_after</span>: <span class="s">"Chạy checklist security"</span>
+    <span class="n">step</span>: <span class="s">"Kiểm tra naming theo quy ước payment-squad"</span>
+  <span class="n">output_template</span>: ./our-review-template.md
+  <span class="n">prompt_append</span>: |
+    Luôn kiểm tra idempotency cho mọi API thanh toán.</pre>
+        </doc-accordion>
+
+        <doc-accordion title="7.6 Escape hatch — không bao giờ bị kẹt">
+<table><thead><tr><th>Tình huống</th><th>Lối thoát</th></tr></thead><tbody>
+  <tr><td>DSL không biểu diễn được</td><td><code>tool_specific:</code> block — viết raw content cho riêng 1 tool</td></tr>
+  <tr><td>Muốn sửa trực tiếp file output</td><td><code>eject</code> mode: copy file generated thành file thường, <code>managed: false</code></td></tr>
+  <tr><td>File generated bị sửa tay</td><td>Build engine cảnh báo drift — SHA-256 manifest</td></tr>
+  <tr><td>Cần quay về mặc định</td><td><code>npx sdlc-agents reset &lt;agent&gt;</code></td></tr>
+</tbody></table>
+        </doc-accordion>
+      </section>
+
+      <!-- 8. Functional Requirements -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s8">8. Functional Requirements</h2>
+        <table>
+          <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr><td><code>FR-01</code></td><td>Định nghĩa agent bằng DSL chuẩn (YAML + Markdown), có JSON Schema validate</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-02</code></td><td><strong>Universal adapter</strong> (AGENTS.md + <code>.sdlc/</code>) — chuẩn mở dùng được trên mọi AI agent</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-02b</code></td><td>Native adapters đợt đầu: Claude Code, Copilot</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-03</code></td><td>CLI: <code>init</code>, <code>build</code>, <code>update</code>, <code>list</code>, <code>validate</code>, <code>doctor</code>, <code>eject</code>, <code>reset</code></td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-04</code></td><td>Config override nhiều lớp (base → org → team → project → local), deep-merge có thứ tự ưu tiên</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-05</code></td><td>Bộ 6 agents MVP hoạt động end-to-end</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-06</code></td><td>Patch-based override: <code>replace</code>/<code>append</code>/<code>insert_after</code> từng phần agent</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-07</code></td><td>Agent kế thừa: <code>extends</code> agent có sẵn, agent local trong <code>.sdlc-agents/agents/</code></td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-08</code></td><td>Escape hatch: <code>tool_specific</code> block + <code>eject</code>/<code>reset</code> command</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-09</code></td><td>Versioning theo SemVer, changelog tự động; patch fail rõ ràng khi base đổi cấu trúc</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-10</code></td><td>Template variables (<code>{{team}}</code>, <code>{{stack}}</code>, <code>{{language}}</code>)</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-11</code></td><td>Adapter plugin interface (npm package) + build hooks (pre/post/transform)</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-12</code></td><td><code>doctor</code> command: hiển thị layer merge, override active/mồ côi</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-13–16</code></td><td>Preset publishing, adapters đợt 2, eval harness, web catalog</td><td><span class="pill">Could (v1.1+)</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 9. NFR -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s9">9. Non-Functional Requirements</h2>
+        <table>
+          <thead><tr><th>ID</th><th>Requirement</th><th>Tiêu chí</th></tr></thead>
+          <tbody>
+            <tr><td><code>NFR-01</code></td><td><strong>Portability</strong></td><td>Không phụ thuộc runtime đặc thù; output là plain text files commit được vào git</td></tr>
+            <tr><td><code>NFR-02</code></td><td><strong>Idempotency</strong></td><td><code>build</code> chạy lại cho output giống hệt — diff sạch trong PR</td></tr>
+            <tr><td><code>NFR-03</code></td><td><strong>Security</strong></td><td>Không chứa secrets trong agent files; lint chặn pattern nhạy cảm</td></tr>
+            <tr><td><code>NFR-04</code></td><td><strong>Maintainability</strong></td><td>Thêm 1 agent mới chỉ cần thêm 1 file YAML + templates, không sửa engine</td></tr>
+            <tr><td><code>NFR-05</code></td><td><strong>Extensibility</strong></td><td>Adapter là plugin interface — bên thứ ba viết adapter mới không sửa core</td></tr>
+            <tr><td><code>NFR-06</code></td><td><strong>Backward compat</strong></td><td>Update minor version không phá config của team</td></tr>
+            <tr><td><code>NFR-07</code></td><td><strong>Offline-friendly</strong></td><td>Build engine chạy local, không gọi network (trừ <code>update</code>)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 10. Tech Stack -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s10">10. Tech Stack</h2>
+        <table>
+          <thead><tr><th>Layer</th><th>Lựa chọn</th><th>Lý do</th></tr></thead>
+          <tbody>
+            <tr><td>CLI / Build engine</td><td><strong>TypeScript + Node.js</strong></td><td>Hệ sinh thái npm; team dev nào cũng chạy được <code>npx</code></td></tr>
+            <tr><td>Schema validation</td><td><strong>Zod</strong></td><td>Type-safe, error message tốt; sinh JSON Schema qua <code>zod-to-json-schema</code></td></tr>
+            <tr><td>YAML parsing</td><td><strong>eemeli/yaml</strong></td><td>Giữ comment + vị trí dòng → báo lỗi "file X dòng Y"</td></tr>
+            <tr><td>Template rendering</td><td>Handlebars / Eta</td><td>Logic-less, an toàn</td></tr>
+            <tr><td>Monorepo</td><td><strong>pnpm workspaces</strong></td><td>Nhẹ hơn turborepo, đủ cho scale này</td></tr>
+            <tr><td>Testing</td><td><strong>Vitest</strong></td><td>Unit + snapshot tests; output là text → snapshot rất hợp</td></tr>
+            <tr><td>Lint + Format</td><td><strong>Biome</strong></td><td>Thay ESLint+Prettier, 1 tool, nhanh</td></tr>
+            <tr><td>Config merge</td><td><code>deepmerge-ts</code> / custom</td><td>Kiểm soát thứ tự ưu tiên + array strategy</td></tr>
+            <tr><td>Eval (Phase 2)</td><td>promptfoo + Langfuse</td><td>Eval harness + trace regression chất lượng</td></tr>
+            <tr><td>Distribution</td><td>npm + git tags</td><td>Versioning sẵn có</td></tr>
+          </tbody>
+        </table>
+        <doc-alert type="success" title="Zero backend">
+          Sản phẩm này <strong>không cần backend/database</strong> ở MVP. Toàn bộ là static files + CLI. Chi phí vận hành ≈ 0.
+        </doc-alert>
+      </section>
+
+      <!-- 11. Roadmap -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s11">11. Roadmap &amp; Milestones</h2>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-done"></div>
+            <div class="tl-title">Phase 0 — Foundation (Tuần 1–2) ✅</div>
+            <div class="tl-detail">Chốt DSL schema, setup monorepo, Zod schema + validator, spike: render 2 agents sang Claude Code + Universal — output valid ✅</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-done"></div>
+            <div class="tl-title">Phase 1 — MVP (Tuần 3–6) ✅ tech complete</div>
+            <div class="tl-detail">Build engine + 3 adapters (universal, claude-code, copilot), CLI init/build/validate, 6 agents MVP, CI xanh, README, drift detection, adapter contract doc. Còn lại: dogfood + pilot team.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-medium"></div>
+            <div class="tl-title">Phase 2 — Hardening (Tuần 7–10) ⬜</div>
+            <div class="tl-detail">Multi-layer override, patch-based override, <code>extends</code> agent, escape hatch, CLI <code>update</code> + SemVer, snapshot test toàn bộ output, eval harness cơ bản, thêm agents: test-strategist, security-auditor, release-manager.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-low"></div>
+            <div class="tl-title">Phase 3 — Scale (Quý sau) ⬜</div>
+            <div class="tl-detail">Native adapters đợt 2 (Cursor, Windsurf, Gemini CLI, Cline/Roo), compatibility matrix, docs site + catalog, telemetry opt-in, marketplace/registry nội bộ.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. Metrics -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s12">12. Success Metrics</h2>
+        <div class="score-grid">
+          <div class="score-card">
+            <div class="score-card-label">Teams adopt (3 tháng)</div>
+            <div class="score-row"><span class="score-after">≥ 3</span><span class="score-arrow">teams</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Time-to-setup team mới</div>
+            <div class="score-row"><span class="score-after">&lt; 30</span><span class="score-arrow">phút</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Agent dùng hàng tuần</div>
+            <div class="score-row"><span class="score-after">≥ 60%</span><span class="score-arrow">MVP</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Giảm thời gian viết tài liệu</div>
+            <div class="score-row"><span class="score-after">≥ 40%</span><span class="score-arrow">khảo sát</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">PR có review-agent trước human</div>
+            <div class="score-row"><span class="score-after">≥ 70%</span><span class="score-arrow">PRs</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13. Risks -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s13">13. Risks &amp; Mitigations</h2>
+        <div>
+          <div class="risk-row">
+            <span class="risk-num">R1</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>AI tool thay đổi format config liên tục</strong><br><span style="color:var(--muted)">Mitigation: Adapter pattern cô lập thay đổi; contract test theo từng tool version; theo dõi changelog</span></div>
+            <span class="risk-like-high">Cao</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R2</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Lowest common denominator</strong>: feature mạnh của 1 tool không map được sang tool khác<br><span style="color:var(--muted)">Mitigation: DSL có section <code>tool_specific</code> cho phép khai báo phần riêng từng tool</span></div>
+            <span class="risk-like-high">Cao</span>
+            <span class="risk-impact-mid">Trung bình</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R3</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Chất lượng output agent không ổn định</strong> giữa các model<br><span style="color:var(--muted)">Mitigation: Eval harness + golden test cases; <code>model_hint</code> trong DSL</span></div>
+            <span class="risk-like-mid">Trung bình</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R4</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Team không adopt</strong> vì "thêm một thứ phải học"<br><span style="color:var(--muted)">Mitigation: <code>init</code> 1 lệnh, zero-config; dogfooding + champion tại mỗi team</span></div>
+            <span class="risk-like-mid">Trung bình</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R5</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Prompt chứa thông tin nội bộ bị leak</strong> khi commit public<br><span style="color:var(--muted)">Mitigation: Lint rule + <code>.gitignore</code> guidance + phân tách policies internal</span></div>
+            <span class="risk-like-low">Thấp</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R7</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Supply-chain prompt injection</strong>: skill import từ cộng đồng có thể chứa chỉ dẫn độc hại ẩn<br><span style="color:var(--muted)">Mitigation: Human review bắt buộc khi vendor lần đầu + khi bump pin; lint scan pattern đáng ngờ; pin theo commit hash</span></div>
+            <span class="risk-like-low">Thấp</span>
+            <span class="risk-impact-veryhigh">Rất cao</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14. Open Questions -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s14">14. Open Questions</h2>
+        <div class="grid grid-2" style="gap: 10px;">
+          <div class="quote"><strong>Q1 — Ngôn ngữ prompt:</strong> ✅ CHỐT: Prompt viết tiếng Anh; output template theo config <code>language</code> (default <code>en</code>).</div>
+          <div class="quote"><strong>Q2 — Tool ưu tiên thứ 2:</strong> ✅ CHỐT: GitHub Copilot — native adapter Phase 1 là Claude Code + Copilot.</div>
+          <div class="note"><strong>Q3 — OSS vs Private:</strong> Đề xuất <strong>Open Core</strong> — engine + Universal + catalog cơ bản OSS; hosted policy management + eval harness + SLA commercial. Quyết định trước Phase 1.</div>
+          <div class="note"><strong>Q6 — Trigger trên tầng Universal:</strong> Claude Code có auto-trigger; tool chỉ đọc AGENTS.md dùng model tự đọc chỉ mục hoặc quy ước lệnh tay. Đây là ceiling chấp nhận được của tầng Universal.</div>
+          <div class="note"><strong>Q4 — Owner policies chuẩn org:</strong> Cần 1 owner (Engineering Excellence group) duyệt thay đổi checklist/convention. Chưa chốt.</div>
+          <div class="note"><strong>Q7 — Ngân sách eval:</strong> Eval harness gọi API model thật → quota, chi phí, phân bổ. Cần chốt trước Phase 2.</div>
+        </div>
+      </section>
+
+      <!-- 15. Positioning -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15">15. Positioning vs Skill Ecosystem</h2>
+        <p class="quote"><em>"Skill ngoài kia là bài hát lẻ; sản phẩm này là hãng phát hành album — có tuyển chọn, chuẩn hoá, đóng gói đa nền tảng, phân phối và cập nhật."</em></p>
+
+        <table style="margin-top: 16px;">
+          <thead><tr><th>Tiêu chí</th><th>Skill ngoài kia</th><th>Agentic SDLC Agents Set</th></tr></thead>
+          <tbody>
+            <tr><td>Phạm vi</td><td>1 kỹ năng đơn lẻ</td><td><strong>Bộ hoàn chỉnh phủ cả vòng SDLC</strong>, các agent nối với nhau</td></tr>
+            <tr><td>Tool support</td><td>Khoá vào 1 tool</td><td><strong>Một nguồn → build ra mọi tool</strong></td></tr>
+            <tr><td>Customization</td><td>Fork → mất khả năng update</td><td><strong>Patch-based override</strong>, update bản gốc không mất tùy chỉnh</td></tr>
+            <tr><td>Convention công ty</td><td>Không có chỗ nhúng</td><td><strong>Policy layer</strong> (org → team → project)</td></tr>
+            <tr><td>Versioning</td><td>Copy/paste thủ công</td><td>SemVer, <code>update</code> command, registry, changelog</td></tr>
+            <tr><td>Chất lượng</td><td>Không test được</td><td>Eval harness + golden cases + snapshot CI</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 16. Team & Effort -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s16">16. Team &amp; Effort (MVP)</h2>
+        <table>
+          <thead><tr><th>Role</th><th>Số lượng</th><th>Trách nhiệm</th></tr></thead>
+          <tbody>
+            <tr><td>Tech Lead / SA</td><td>1</td><td>DSL design, adapter architecture, review</td></tr>
+            <tr><td>Backend/Tooling Dev (TS)</td><td>1–2</td><td>Build engine, CLI, adapters, CI</td></tr>
+            <tr><td>Prompt Engineer / Senior Dev</td><td>1</td><td>Viết &amp; tune 6 agents MVP, eval cases</td></tr>
+            <tr><td>(Part-time) BA/QA</td><td>0.5</td><td>Test agent output với case thực tế, viết docs</td></tr>
+          </tbody>
+        </table>
+        <div class="note" style="margin-top: 14px;"><strong>Tổng effort MVP:</strong> ~6 tuần × 3 người ≈ 18 person-weeks.</div>
+      </section>
+
+      <footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
+        <span>Solution Architecture Document · Agentic SDLC Agents Set</span>
+        <span>Source of truth: <code>docs/sa-design/SA_DESIGN_Agentic_SDLC_Agents_Set.md</code></span>
+      </footer>
+
+    </main>
+
+    <!-- Right TOC sidebar (auto-populated) -->
+    <aside class="doc-toc-sidebar">
+      <div class="doc-toc-label">On this page</div>
+      <nav id="doc-toc-nav"></nav>
+    </aside>
+
+  </div>
+
+  <script src="../docs-core.js"></script>
+  <script src="../docs-layout.js" defer></script>
+</body>
+</html>

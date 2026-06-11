@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adapter Contract — sdlc-agent docs</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../docs-layout.css" />
+  <style>
+    .rule-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-num { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(108,142,245,0.12); border-radius: 4px; padding: 2px 8px; margin-top: 1px; }
+    .rule-text { flex: 1; color: #cbd5e1; font-size: 13.5px; line-height: 1.6; }
+    .step-list { counter-reset: step; list-style: none; padding: 0; }
+    .step-list li { counter-increment: step; display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    .step-list li:last-child { border-bottom: none; }
+    .step-list li::before { content: counter(step); flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: rgba(108,142,245,0.15); color: var(--accent); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .step-text { color: #cbd5e1; font-size: 13.5px; line-height: 1.6; }
+  </style>
+</head>
+<body class="page-doc" data-doc="adapter-contract">
+
+  <button class="doc-nav-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <div class="doc-nav-backdrop"></div>
+
+  <div class="doc-shell">
+
+    <!-- Left nav sidebar -->
+    <aside class="doc-nav-sidebar">
+      <a class="doc-nav-brand" href="../sa-design/sa-design.html">
+        <div class="doc-nav-brand-title">sdlc-agent</div>
+        <div class="doc-nav-brand-sub">Documentation</div>
+      </a>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Architecture</div>
+        <a class="doc-nav-link" href="../sa-design/sa-design.html" data-doc="sa-design">
+          <span class="doc-nav-link-icon">🏗</span> SA Design
+        </a>
+      </nav>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Reference</div>
+        <a class="doc-nav-link" href="../codebase-guide/codebase-guide.html" data-doc="codebase-guide">
+          <span class="doc-nav-link-icon">📁</span> Codebase Guide
+        </a>
+        <a class="doc-nav-link" href="adapter-contract.html" data-doc="adapter-contract">
+          <span class="doc-nav-link-icon">🔌</span> Adapter Contract
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="doc-main">
+
+      <div class="doc-badges">
+        <span class="doc-badge doc-badge-default">2026-06-11</span>
+        <span class="doc-badge doc-badge-default">Architecture · Adapters</span>
+        <span class="doc-badge doc-badge-success">Stable</span>
+      </div>
+      <h1>Adapter Contract</h1>
+      <p class="doc-subtitle">The contract every adapter must satisfy to be registered in the build engine. Defines interface, determinism rules, required output properties, and test requirements.</p>
+
+      <!-- Interface & Rules -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="interface">Interface</h2>
+        <p>An adapter implements <code>ToolAdapter</code> from <code>@sdlc-agents/core</code>:</p>
+        <pre class="flow" style="margin: 16px 0;"><span class="c">// packages/adapters/&lt;tool&gt;/src/index.ts</span>
+<span class="k">interface</span> ToolAdapter {
+  <span class="k">readonly</span> name: string;                                      <span class="c">// registry key, kebab-case</span>
+  render(agents: AgentDef[], ctx: BuildContext): OutputFile[];
+  validate?(outputs: OutputFile[]): Diagnostic[];             <span class="c">// optional self-check</span>
+}</pre>
+
+        <h2 class="doc-section-title" id="rules" style="margin-top: 28px;">Rules</h2>
+        <div>
+          <div class="rule-row">
+            <span class="rule-num">R1</span>
+            <span class="rule-text"><strong>Pure &amp; deterministic:</strong> same agents + same context → byte-identical output. No timestamps, no random ids, no network calls, no filesystem reads. Determinism is what makes drift detection and snapshot testing possible.</span>
+          </div>
+          <div class="rule-row">
+            <span class="rule-num">R2</span>
+            <span class="rule-text"><strong>Relative paths:</strong> <code>OutputFile.path</code> is relative to the consumer project root and must use <code>/</code> separators.</span>
+          </div>
+          <div class="rule-row">
+            <span class="rule-num">R3</span>
+            <span class="rule-text"><strong>No filesystem writes:</strong> an adapter must not write files itself — the build engine owns all filesystem writes and records each file's hash in <code>.sdlc/build-manifest.json</code> for drift detection.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Required Output Properties -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="required-output">Required Output Properties</h2>
+        <p>Every generated file must satisfy all three rules:</p>
+        <ol class="step-list">
+          <li><span class="step-text"><strong>Carry a generated footer</strong> so humans (and drift tooling) know it is machine-owned: the string <code>Generated by sdlc-agents</code> must appear (exact wording may vary per adapter).</span></li>
+          <li><span class="step-text"><strong>Render every load-bearing field</strong> of the agent definition: <code>description</code>, <code>inputs</code> (with required markers), <code>workflow</code> (ordered, with <code>ref</code> hints), <code>output_template</code> reference and <code>policies</code> references when present.</span></li>
+          <li><span class="step-text"><strong>Respect <code>model_variants</code>:</strong> if the agent declares a variant for this adapter's tool (e.g. <code>model_variants.claude.prompt_append</code>), include it; ignore other tools' variants.</span></li>
+        </ol>
+      </section>
+
+      <!-- Required Tests -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="required-tests">Required Tests</h2>
+        <p>Each adapter package must contain, under <code>src/__tests__/</code>:</p>
+
+        <div class="grid grid-3" style="margin-top: 16px;">
+          <doc-card title="Path contract test" badge="Required" badge-type="error">
+            Asserts the <strong>exact output paths</strong> for a representative agent — verifies the adapter targets the right file locations.
+          </doc-card>
+          <doc-card title="Content contract test" badge="Required" badge-type="error">
+            Asserts agent <code>id</code>, <code>phase</code>, and all <strong>workflow steps</strong> appear in the rendered output.
+          </doc-card>
+          <doc-card title="Snapshot test" badge="Required" badge-type="error">
+            At least one <code>toMatchSnapshot()</code> on a full rendered file — any format change shows up in review.
+          </doc-card>
+        </div>
+      </section>
+
+      <!-- Registered Adapters -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="registered-adapters">Registered Adapters</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Adapter</th>
+              <th><code>name</code></th>
+              <th>Output Paths</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Universal</strong></td>
+              <td><code>universal</code></td>
+              <td><code>AGENTS.md</code> (index) + <code>.sdlc/agents/&lt;id&gt;.md</code> (one per agent)</td>
+              <td>The baseline tier — plain Markdown readable by any AI tool (Codex, Cursor, Windsurf, Gemini CLI, Zed, …). <strong>Always keep this target enabled.</strong> No auto-routing: users invoke agents by name or by opening the file.</td>
+            </tr>
+            <tr>
+              <td><strong>Claude Code</strong></td>
+              <td><code>claude-code</code></td>
+              <td><code>.claude/agents/&lt;id&gt;.md</code> (one per agent)</td>
+              <td>YAML frontmatter: <code>name</code>, <code>description</code> (prefixed <code>[SDLC:&lt;phase&gt;]</code> — drives auto-routing), <code>model</code> (mapped from <code>model_hint</code>: fast → Haiku, balanced → Sonnet, high-reasoning → Opus), <code>tools</code>. Applies <code>model_variants.claude</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Copilot</strong></td>
+              <td><code>copilot</code></td>
+              <td><code>.github/copilot-instructions.md</code> (index) + <code>.github/prompts/&lt;id&gt;.prompt.md</code> (one per agent)</td>
+              <td>Prompt files use <code>mode: agent</code> frontmatter with a one-line <code>description</code>. Applies <code>model_variants.copilot</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <doc-alert type="info" title="Phase 2 note">
+          Phase 2 (per SA design FR-11) will replace the hardcoded <code>ADAPTERS</code> map in <code>packages/cli/src/commands/build.ts</code> with a plugin interface (<code>adapters: ["@org/sdlc-adapter-x"]</code> in config). Until then, adapters live in this monorepo.
+        </doc-alert>
+      </section>
+
+      <!-- Adding a New Adapter -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="adding-adapter">Adding a New Adapter</h2>
+        <ol class="step-list">
+          <li><span class="step-text">Create <code>packages/adapters/&lt;tool&gt;/</code> with <code>src/index.ts</code> exporting a <code>ToolAdapter</code>.</span></li>
+          <li><span class="step-text">Satisfy all output properties and tests above (path contract + content contract + snapshot).</span></li>
+          <li><span class="step-text">Register it in the <code>ADAPTERS</code> map in <code>packages/cli/src/commands/build.ts</code>.</span></li>
+          <li><span class="step-text">Add the target name to <code>sdlc.config.yaml</code> docs and the root <code>README.md</code>.</span></li>
+          <li><span class="step-text">Add a row to the Registered Adapters table above, including which tool versions were verified and any format caveats.</span></li>
+        </ol>
+      </section>
+
+      <footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
+        <span>Adapter Contract · sdlc-agents</span>
+        <span>Source of truth: <code>docs/adapter-contract/ADAPTER_CONTRACT.md</code></span>
+      </footer>
+
+    </main>
+
+    <!-- Right TOC sidebar (auto-populated) -->
+    <aside class="doc-toc-sidebar">
+      <div class="doc-toc-label">On this page</div>
+      <nav id="doc-toc-nav"></nav>
+    </aside>
+
+  </div>
+
+  <script src="../docs-core.js"></script>
+  <script src="../docs-layout.js" defer></script>
+</body>
+</html>
