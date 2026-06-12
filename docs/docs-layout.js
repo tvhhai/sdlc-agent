@@ -7,6 +7,22 @@
 
   const DocLayout = {
     init() {
+      if (window.parent !== window) {
+        document.querySelector('.doc-nav-sidebar')?.remove();
+        document.querySelector('.doc-toc-sidebar')?.remove();
+        document.querySelector('.doc-nav-toggle')?.remove();
+        document.querySelector('.doc-nav-backdrop')?.remove();
+        const headings = document.querySelectorAll('h2[id], h3[id]');
+        window.parent.postMessage({
+          type: 'doc-headings',
+          data: Array.from(headings).map(h => ({
+            id: h.id,
+            text: h.textContent.trim(),
+            level: parseInt(h.tagName[1], 10),
+          })),
+        }, '*');
+        return;
+      }
       this.markActiveDoc();
       this.buildToc();
       this.setupScrollSpy();
