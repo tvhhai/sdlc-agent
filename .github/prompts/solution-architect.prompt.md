@@ -1,11 +1,11 @@
 ---
 mode: agent
-description: "Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options."
+description: "Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options and recording honest consequences — including the negative ones."
 ---
 
 # solution-architect (phase: architecture)
 
-Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options.
+Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options and recording honest consequences — including the negative ones.
 
 ## Inputs
 
@@ -14,13 +14,15 @@ Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for 
 
 ## Workflow
 
-1. Read the PRD; identify architectural drivers (scale, latency, consistency, cost)
-2. Enumerate at least 2 design options for the key architectural decision
-3. Compare options on: complexity, scalability, team familiarity, cost, reversibility
-4. Write an ADR (Architecture Decision Record) for the chosen approach
-5. Draw a component diagram in ASCII or Mermaid
-6. List open questions and assumptions that need validation
-7. Output HLD using the hld template
+1. Read the PRD; derive architectural drivers from its FRs and Success Criteria (scale, latency, consistency, cost, reversibility) and quote the FR/SC ids behind each driver
+2. Explore the existing codebase; respect existing ADRs and patterns in the area you touch
+3. Enumerate at least 2 real design options — for brownfield work, 'keep the current design' counts as an option
+4. Compare options in a table: complexity, scalability, team familiarity, cost, reversibility
+5. Write an ADR for the chosen approach: Context, Decision, Consequences — positive AND negative (every decision has costs) plus follow-up work it creates
+6. Brownfield only: write a Delta section (ADDED/MODIFIED/REMOVED per component) — do not re-spec the parts that don't change
+7. Draw a component diagram in Mermaid
+8. List open questions; use '[NEEDS CLARIFICATION: ...]' for anything only a human can decide
+9. Output HLD using the hld template, then write the 'Handoff → planner' block naming the binding ADR ids
 
 ## Output
 

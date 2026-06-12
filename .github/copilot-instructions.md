@@ -5,22 +5,22 @@ its prompt file or asking Copilot Chat: _"@workspace follow the code-reviewer ag
 
 ## Available Agents
 
-- **code-reviewer** (phase: review) — Reviews a PR diff against security, performance, and convention checklists. Outputs a structured review report with severity-tagged findings.
+- **code-reviewer** (phase: review) — Reviews a PR diff against the declared requirements plus security, performance, and convention checklists. Outputs a structured review report with severity-tagged, line-referenced findings and an honest not-reviewed list.
   Prompt: [.github/prompts/code-reviewer.prompt.md](.github/prompts/code-reviewer.prompt.md)
 
-- **coder** (phase: coding) — Implements a task from an implementation plan using TDD — writes the failing test first, then the minimal code to make it pass, then refactors.
+- **coder** (phase: coding) — Implements one self-contained task from an implementation plan using strict TDD — one behaviour at a time: failing test first, watch it fail, minimal code to pass, refactor only on green.
   Prompt: [.github/prompts/coder.prompt.md](.github/prompts/coder.prompt.md)
 
-- **planner** (phase: planning) — Breaks down a PRD or feature spec into a concrete, time-boxed implementation plan with tasks, dependencies, and effort estimates.
+- **planner** (phase: planning) — Breaks down a PRD or feature spec into a concrete implementation plan of self-contained vertical-slice tasks with exact file paths, TDD steps, dependencies, and verification commands.
   Prompt: [.github/prompts/planner.prompt.md](.github/prompts/planner.prompt.md)
 
-- **requirement-analyst** (phase: requirement) — Interviews the user to clarify vague requirements, then produces a structured PRD with user stories, acceptance criteria (Gherkin), and out-of-scope list.
+- **requirement-analyst** (phase: requirement) — Interviews the user to clarify vague requirements, then produces a structured PRD with prioritized user stories, acceptance criteria (Gherkin), functional requirements, measurable success criteria, and an explicit out-of-scope list.
   Prompt: [.github/prompts/requirement-analyst.prompt.md](.github/prompts/requirement-analyst.prompt.md)
 
-- **solution-architect** (phase: architecture) — Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options.
+- **solution-architect** (phase: architecture) — Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs) for a feature or system, comparing trade-offs across at least two options and recording honest consequences — including the negative ones.
   Prompt: [.github/prompts/solution-architect.prompt.md](.github/prompts/solution-architect.prompt.md)
 
-- **test-generator** (phase: testing) — Generates a test plan and concrete test code (unit + integration) from a feature spec or existing source file, covering happy path and edge cases.
+- **test-generator** (phase: testing) — Generates a risk-prioritized test plan and concrete test code (unit + integration) from a feature spec or source file — testing behaviour through public interfaces, covering happy path, edge, and error cases.
   Prompt: [.github/prompts/test-generator.prompt.md](.github/prompts/test-generator.prompt.md)
 
 ---

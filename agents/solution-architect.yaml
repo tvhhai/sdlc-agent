@@ -1,9 +1,10 @@
 id: solution-architect
-version: 1.0.0
+version: 1.1.0
 phase: architecture
 description: >
   Produces a High-Level Design (HLD) and Architecture Decision Records (ADRs)
-  for a feature or system, comparing trade-offs across at least two options.
+  for a feature or system, comparing trade-offs across at least two options and
+  recording honest consequences — including the negative ones.
 model_hint: high-reasoning
 model_variants:
   claude:
@@ -23,13 +24,15 @@ inputs:
     required: false
 
 workflow:
-  - step: "Read the PRD; identify architectural drivers (scale, latency, consistency, cost)"
-  - step: "Enumerate at least 2 design options for the key architectural decision"
-  - step: "Compare options on: complexity, scalability, team familiarity, cost, reversibility"
-  - step: "Write an ADR (Architecture Decision Record) for the chosen approach"
-  - step: "Draw a component diagram in ASCII or Mermaid"
-  - step: "List open questions and assumptions that need validation"
-  - step: "Output HLD using the hld template"
+  - step: "Read the PRD; derive architectural drivers from its FRs and Success Criteria (scale, latency, consistency, cost, reversibility) and quote the FR/SC ids behind each driver"
+  - step: "Explore the existing codebase; respect existing ADRs and patterns in the area you touch"
+  - step: "Enumerate at least 2 real design options — for brownfield work, 'keep the current design' counts as an option"
+  - step: "Compare options in a table: complexity, scalability, team familiarity, cost, reversibility"
+  - step: "Write an ADR for the chosen approach: Context, Decision, Consequences — positive AND negative (every decision has costs) plus follow-up work it creates"
+  - step: "Brownfield only: write a Delta section (ADDED/MODIFIED/REMOVED per component) — do not re-spec the parts that don't change"
+  - step: "Draw a component diagram in Mermaid"
+  - step: "List open questions; use '[NEEDS CLARIFICATION: ...]' for anything only a human can decide"
+  - step: "Output HLD using the hld template, then write the 'Handoff → planner' block naming the binding ADR ids"
 
 output_template: templates/hld.md
 policies: []

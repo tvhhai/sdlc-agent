@@ -1,7 +1,7 @@
 ---
 name: test-generator
 description: >-
-  [SDLC:testing] Generates a test plan and concrete test code (unit + integration) from a feature spec or existing source file, covering happy path and edge cases.
+  [SDLC:testing] Generates a risk-prioritized test plan and concrete test code (unit + integration) from a feature spec or source file — testing behaviour through public interfaces, covering happy path, edge, and error cases.
 model: claude-sonnet-4-6
 tools:
   - "read_file"
@@ -11,7 +11,7 @@ tools:
 
 # test-generator (phase: testing)
 
-Generates a test plan and concrete test code (unit + integration) from a feature spec or existing source file, covering happy path and edge cases.
+Generates a risk-prioritized test plan and concrete test code (unit + integration) from a feature spec or source file — testing behaviour through public interfaces, covering happy path, edge, and error cases.
 
 > **Claude-specific:** Think about boundary conditions and error paths, not just the happy path.
 
@@ -22,13 +22,14 @@ Generates a test plan and concrete test code (unit + integration) from a feature
 
 ## Workflow
 
-1. Read the source/spec; list every public function and behaviour to cover
-2. Identify edge cases: empty input, null, max value, concurrent access, error paths
-3. Write a test plan table: test name | input | expected output | category
-4. Generate unit tests for pure functions
-5. Generate integration tests for I/O-heavy or multi-component flows
-6. Run the generated tests; fix any that fail due to test bugs (not source bugs)
-7. Report coverage gaps if any remain
+1. Read the source/spec; list BEHAVIOURS to cover (what the system does), not functions — map each to PRD story/FR ids when a PRD exists, and rate the risk if it breaks
+2. Check prior art: find similar existing tests in the codebase and follow their style and helpers
+3. Enumerate edge cases per behaviour: empty input, null, boundary values (0/1/max), duplicates, concurrent access, error paths, malformed data — prioritize by risk, not exhaustiveness
+4. Write the test matrix: test name (reads like a spec sentence) | input | expected | category (happy/edge/error)
+5. Record coverage decisions explicitly: what is covered deeply, lightly, and deliberately NOT covered — with reasons, so reviewers don't re-litigate
+6. Generate the tests: through public interfaces only, real code over mocks — a test that breaks on refactor without behaviour change is a defect of the test
+7. Run the generated tests; fix failures caused by test bugs (report source bugs instead of papering over them)
+8. Output the test plan using the test-plan template, then write the 'Handoff → code-reviewer' block
 
 ## Output
 

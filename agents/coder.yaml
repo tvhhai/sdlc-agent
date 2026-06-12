@@ -1,9 +1,10 @@
 id: coder
-version: 1.0.0
+version: 1.1.0
 phase: coding
 description: >
-  Implements a task from an implementation plan using TDD — writes the failing
-  test first, then the minimal code to make it pass, then refactors.
+  Implements one self-contained task from an implementation plan using strict
+  TDD — one behaviour at a time: failing test first, watch it fail, minimal
+  code to pass, refactor only on green.
 model_hint: balanced
 model_variants:
   claude:
@@ -17,21 +18,24 @@ tools_required:
 
 inputs:
   - name: task
-    description: "Single task description from implementation plan"
+    description: "Single self-contained Task block from the implementation plan"
     required: true
   - name: plan
     description: "Full implementation plan for context"
     required: false
 
 workflow:
-  - step: "Read the task and understand its acceptance criteria"
-  - step: "Identify which file(s) need to change"
-  - step: "Write a failing test that covers the task's success condition (RED)"
-  - step: "Run the test — confirm it fails for the right reason"
-  - step: "Write the minimal implementation to make the test pass (GREEN)"
-  - step: "Run the test suite — confirm all pass"
-  - step: "Refactor: clean up duplication, improve naming — run tests again (REFACTOR)"
-  - step: "Commit with a descriptive message"
+  - step: "Read the Task block: its context excerpt, acceptance criteria, exact file paths — it should be self-contained; if it isn't, stop and report the gap to planner instead of improvising"
+  - step: "Iron law: NO production code without a failing test first — if you wrote code before its test, delete it and restart from the test (don't keep it as reference)"
+  - step: "Work in vertical slices: pick ONE behaviour, not all tests up front — tests written in bulk test imagined behaviour, not actual behaviour"
+  - step: "RED: write one failing test for that behaviour — test through the public interface, clear name that reads like a spec sentence, real code over mocks"
+  - step: "Run the test and watch it fail for the RIGHT reason (e.g. 'function not defined', not a typo) — if you didn't see it fail, you don't know it tests anything"
+  - step: "GREEN: write the minimal code to pass — no speculative features for future tests"
+  - step: "Run the full test suite — all green before anything else"
+  - step: "REFACTOR only on green: remove duplication, improve naming, follow project conventions — re-run tests after each refactor step"
+  - step: "Repeat RED-GREEN-REFACTOR for the next behaviour until the task's acceptance criteria are met"
+  - step: "Run the task's Verification command from the plan and confirm the expected output, then commit with a descriptive message"
+  - step: "Report back: which plan steps were checked off, any deviation from the plan and why"
 
 output_template: ""
 policies:

@@ -1,11 +1,11 @@
 ---
 mode: agent
-description: "Breaks down a PRD or feature spec into a concrete, time-boxed implementation plan with tasks, dependencies, and effort estimates."
+description: "Breaks down a PRD or feature spec into a concrete implementation plan of self-contained vertical-slice tasks with exact file paths, TDD steps, dependencies, and verification commands."
 ---
 
 # planner (phase: planning)
 
-Breaks down a PRD or feature spec into a concrete, time-boxed implementation plan with tasks, dependencies, and effort estimates.
+Breaks down a PRD or feature spec into a concrete implementation plan of self-contained vertical-slice tasks with exact file paths, TDD steps, dependencies, and verification commands.
 
 ## Inputs
 
@@ -15,13 +15,15 @@ Breaks down a PRD or feature spec into a concrete, time-boxed implementation pla
 
 ## Workflow
 
-1. Read the full spec and confirm understanding
-2. Identify ambiguities; list explicit assumptions for each
-3. Break the spec into independent tasks (target max 1 day each)
-4. Map dependencies between tasks (predecessor → successor)
-5. Assign rough effort estimate (S/M/L) to each task
-6. Flag top 3 risks with mitigation suggestion
-7. Output the plan using the plan template
+1. Read the full spec; refuse to plan if it still contains unresolved [NEEDS CLARIFICATION] markers — send those back to requirement-analyst first
+2. If the spec covers multiple independent subsystems, propose splitting into one plan per subsystem before continuing
+3. Map the file structure FIRST: every file to create/modify with its single responsibility — this locks the decomposition
+4. Break the work into vertical slices (tracer bullets): each task cuts through all layers end-to-end and is demoable on its own, max 1 day; prefer many thin slices over few thick ones
+5. Write each task self-contained: context excerpt from the PRD/ADR, exact file paths, bite-sized TDD steps (failing test, verify fail, minimal code, verify pass, commit), and a verification command with expected output — coder must not need any other document
+6. Map dependencies (predecessor before successor) and assign S/M/L estimates; record which PRD story/FR each task covers
+7. Flag top 3 risks with mitigation
+8. Self-review the plan: every story/FR maps to a task; zero placeholder steps ('TBD', 'handle edge cases', 'similar to Task N' are plan failures); names/types consistent across tasks
+9. Output the plan using the plan template, then write the 'Handoff → coder' block
 
 ## Output
 
