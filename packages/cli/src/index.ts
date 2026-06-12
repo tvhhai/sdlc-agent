@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { runBuild } from "./commands/build.js";
 import { runInit } from "./commands/init.js";
+import { runList } from "./commands/list.js";
 import { runValidate } from "./commands/validate.js";
 
 const program = new Command();
@@ -25,6 +26,18 @@ program
 	.option("-C, --cwd <dir>", "project directory", process.cwd())
 	.action((opts: { cwd: string }) => {
 		const ok = runValidate(opts.cwd);
+		if (!ok) process.exit(1);
+	});
+
+program
+	.command("list")
+	.description("List all agent definitions as a table or JSON")
+	.option("-C, --cwd <dir>", "project directory", process.cwd())
+	.option("--json", "output a JSON array instead of a table")
+	.option("--format <fmt>", "output format: table | json")
+	.action((opts: { cwd: string; json?: boolean; format?: string }) => {
+		const json = Boolean(opts.json) || opts.format === "json";
+		const ok = runList(opts.cwd, { json });
 		if (!ok) process.exit(1);
 	});
 
