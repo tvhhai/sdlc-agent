@@ -1,0 +1,800 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SA Design â€” sdlc-agent docs</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../docs-layout.css" />
+  <style>
+    .phase-group { margin-bottom: 28px; }
+    .phase-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent2); margin-bottom: 10px; padding: 4px 10px; background: rgba(167,139,250,0.1); border-radius: 6px; display: inline-block; }
+    .risk-row { display: grid; grid-template-columns: 32px 1fr 80px 80px; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+    .risk-row:last-child { border-bottom: none; }
+    .risk-num { color: var(--accent); font-weight: 700; font-size: 12px; }
+    .risk-like-high { color: var(--red); font-size: 12px; font-weight: 700; }
+    .risk-like-mid  { color: var(--yellow); font-size: 12px; font-weight: 700; }
+    .risk-like-low  { color: var(--green); font-size: 12px; font-weight: 700; }
+    .risk-impact-high { color: var(--red); font-size: 12px; font-weight: 700; }
+    .risk-impact-veryhigh { color: #f43f5e; font-size: 12px; font-weight: 700; }
+    .risk-impact-mid  { color: var(--yellow); font-size: 12px; font-weight: 700; }
+    .tl-title { font-size: 14px !important; font-weight: 700 !important; color: #fff !important; }
+    .tl-detail { font-size: 13px !important; line-height: 1.6 !important; color: var(--muted) !important; }
+    .tl-dot { width: 12px !important; height: 12px !important; left: -21px !important; top: 6px !important; box-shadow: 0 0 8px currentColor !important; }
+  </style>
+</head>
+<body class="page-doc" data-doc="sa-design">
+
+  <button class="doc-nav-toggle" aria-label="Open navigation" aria-expanded="false">â˜°</button>
+  <div class="doc-nav-backdrop"></div>
+
+  <div class="doc-shell">
+
+    <!-- Left nav sidebar -->
+    <aside class="doc-nav-sidebar">
+      <a class="doc-nav-brand" href="sa-design.html">
+        <div class="doc-nav-brand-title">sdlc-agent</div>
+        <div class="doc-nav-brand-sub">Documentation</div>
+      </a>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Architecture</div>
+        <a class="doc-nav-link" href="sa-design.html" data-doc="sa-design">
+          <span class="doc-nav-link-icon">ðŸ—</span> SA Design
+        </a>
+      </nav>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Reference</div>
+        <a class="doc-nav-link" href="../reference/codebase-guide.html" data-doc="codebase-guide">
+          <span class="doc-nav-link-icon">ðŸ“</span> Codebase Guide
+        </a>
+        <a class="doc-nav-link" href="../reference/adapter-contract.html" data-doc="adapter-contract">
+          <span class="doc-nav-link-icon">ðŸ”Œ</span> Adapter Contract
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="doc-main">
+
+      <div class="doc-badges">
+        <span class="doc-badge doc-badge-default">2026-06-10</span>
+        <span class="doc-badge doc-badge-default">Kiáº¿n TrÃºc Giáº£i PhÃ¡p Â· Sáº£n Pháº©m</span>
+        <span class="doc-badge doc-badge-warning">Äang review</span>
+      </div>
+      <h1>Agentic SDLC Agents Set</h1>
+      <p class="doc-subtitle">Solution Architecture Document â€” bá»™ AI agent definitions tÃ¡i sá»­ dá»¥ng theo hÆ°á»›ng Hybrid: Builder core deterministic + Installer UX má»™t lá»‡nh cho toÃ n bá»™ vÃ²ng Ä‘á»i SDLC.</p>
+
+      <!-- 1. Executive Summary -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s1">1. Executive Summary</h2>
+        <p><strong>Agentic SDLC Agents Set</strong> lÃ  má»™t <strong>bá»™ AI Agent Ä‘Æ°á»£c Ä‘áº·c táº£ sáºµn</strong> (agent definitions, prompts, workflows, skills) cho tá»«ng giai Ä‘oáº¡n cá»§a Software Development Life Cycle (SDLC), Ä‘Æ°á»£c Ä‘Ã³ng gÃ³i theo chiáº¿n lÆ°á»£c <strong>Hybrid</strong>:</p>
+        <ol>
+          <li><strong>Builder core:</strong> duy trÃ¬ má»™t nguá»“n chuáº©n trong <code>agents/*.yaml</code>, validate báº±ng schema, vÃ  sau Ä‘Ã³ build ra nhiá»u Ä‘á»‹nh dáº¡ng thÃ´ng qua cÃ¡c adapter.</li>
+          <li><strong>Installer UX:</strong> cung cáº¥p tráº£i nghiá»‡m cÃ i Ä‘áº·t tÆ°Æ¡ng tá»± nhÆ° <code>npx skills</code> / <code>create-vue</code>: há»i ngÆ°á»i dÃ¹ng há» Ä‘ang sá»­ dá»¥ng tool nÃ o, muá»‘n kÃ­ch hoáº¡t nhá»¯ng agent nÃ o, scope dá»± Ã¡n hay user, cÃ¡c biáº¿n ngÃ´n ngá»¯/team, vÃ  sau Ä‘Ã³ tá»± Ä‘á»™ng sinh cáº¥u hÃ¬nh vÃ  cÃ¡c file Ä‘áº§u ra.</li>
+        </ol>
+        <p>CÆ¡ cháº¿ runtime váº«n lÃ  <strong>universal-first</strong>: luÃ´n build <code>AGENTS.md</code> + <code>.sdlc/agents/</code> Ä‘á»ƒ má»i AI tool Ä‘á»c Ä‘Æ°á»£c, cá»™ng thÃªm <strong>native adapter</strong> cho tool nÃ o cÃ³ format riÃªng máº¡nh hÆ¡n nhÆ° Claude Code hoáº·c GitHub Copilot.</p>
+
+        <div class="grid grid-3" style="margin-top: 20px;">
+          <doc-card title="Zero-to-productive" badge="Core Value" badge-type="success">
+            Team má»›i chá»‰ cáº§n <code>install</code> bá»™ agents lÃ  cÃ³ ngay quy trÃ¬nh SDLC chuáº©n cÃ³ AI há»— trá»£ â€” khÃ´ng pháº£i tá»± viáº¿t prompt/agent tá»« Ä‘áº§u.
+          </doc-card>
+          <doc-card title="Chuáº©n hoÃ¡ cháº¥t lÆ°á»£ng" badge="Core Value" badge-type="success">
+            CÃ¹ng coding convention, cÃ¹ng template tÃ i liá»‡u, cÃ¹ng quy trÃ¬nh review giá»¯a cÃ¡c team.
+          </doc-card>
+          <doc-card title="Single source of truth" badge="Core Value" badge-type="success">
+            Má»™t nguá»“n maintain duy nháº¥t â†’ build ra nhiá»u format cho tá»«ng tool. Giá»‘ng <em>Terraform modules</em> + <code>npx create-*</code> wizard nhÆ°ng cho AI agents.
+          </doc-card>
+        </div>
+      </section>
+
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s1-hybrid">1.1 Äá»‹nh hÆ°á»›ng Hybrid so vá»›i Agent Skills CLI</h2>
+        <p>Agent Skills CLI nhÆ° <code>npx skills</code> hoáº·c <code>gh skill</code> giáº£i tá»‘t bÃ i toÃ¡n discover/install: chá»n skill, chá»n agent host, rá»“i sinh file Ä‘Ãºng nÆ¡i nhÆ° <code>.claude/</code>, <code>.cursor/</code> hoáº·c <code>.github/</code>. Dá»± Ã¡n nÃ y khÃ´ng pivot hoÃ n toÃ n sang mÃ´ hÃ¬nh Ä‘Ã³ vÃ¬ bÃ i toÃ¡n chÃ­nh rá»™ng hÆ¡n má»™t skill Ä‘Æ¡n láº»: chuáº©n hÃ³a cáº£ agent catalog SDLC cÃ³ phase, template, policy, adapter contract, generated manifest vÃ  test suite.</p>
+        <div class="grid grid-3" style="margin-top: 16px;">
+          <doc-card title="Builder core" badge="Keep" badge-type="success">
+            Giá»¯ <code>agents/*.yaml</code> lÃ  source of truth, validate báº±ng schema, render deterministic qua adapters, cÃ³ tests vÃ  drift detection.
+          </doc-card>
+          <doc-card title="Installer UX" badge="Add" badge-type="info">
+            ThÃªm wizard há»i tool nÃ o, agents nÃ o, scope project hay user, language/team variables, rá»“i tá»± táº¡o config vÃ  build láº§n Ä‘áº§u.
+          </doc-card>
+          <doc-card title="Agent Skills target" badge="Phase 2" badge-type="warning">
+            CÃ³ thá»ƒ thÃªm output target dáº¡ng <code>SKILL.md</code> Ä‘á»ƒ tÆ°Æ¡ng thÃ­ch ecosystem, nhÆ°ng váº«n render tá»« canonical YAML.
+          </doc-card>
+        </div>
+        <table style="margin-top: 16px;">
+          <thead><tr><th>HÆ°á»›ng</th><th>Æ¯u</th><th>NhÆ°á»£c</th></tr></thead>
+          <tbody>
+            <tr><td>Build engine hiá»‡n táº¡i</td><td>Deterministic, test Ä‘Æ°á»£c, source of truth rÃµ</td><td>UX cÃ i Ä‘áº·t dÃ i, giá»‘ng dev tool hÆ¡n consumer tool</td></tr>
+            <tr><td>Agent Skills CLI thuáº§n</td><td>UX ngáº¯n, há»£p ecosystem, detect host tá»‘t</td><td>KhÃ³ biá»ƒu diá»…n Ä‘áº§y Ä‘á»§ SDLC catalog + template/policy/build contract náº¿u chá»‰ copy skill files</td></tr>
+            <tr><td><strong>Hybrid</strong></td><td>Giá»¯ ná»n ká»¹ thuáº­t cháº¯c vÃ  cÃ³ UX cÃ i Ä‘áº·t tá»‘t</td><td>Cáº§n thÃªm wizard, host detection, install scope, update/pin flow</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 2. Problem Statement -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s2">2. Problem Statement</h2>
+        <h3>2.1 Hiá»‡n tráº¡ng</h3>
+        <ul>
+          <li>Má»—i developer/team tá»± viáº¿t prompt, custom instructions vÃ  cáº¥u hÃ¬nh agent riÃªng â†’ cháº¥t lÆ°á»£ng khÃ´ng Ä‘á»“ng Ä‘á»u, trÃ¹ng láº·p cÃ´ng sá»©c.</li>
+          <li>Má»—i AI tool cÃ³ format cáº¥u hÃ¬nh riÃªng:
+            <ul>
+              <li><strong>Claude Code:</strong> <code>CLAUDE.md</code>, <code>.claude/agents/*.md</code>, <code>.claude/skills/</code>, slash commands, hooks, MCP</li>
+              <li><strong>GitHub Copilot:</strong> <code>.github/copilot-instructions.md</code>, <code>.github/prompts/*.prompt.md</code>, custom agents</li>
+              <li><strong>Codex CLI:</strong> <code>AGENTS.md</code></li>
+              <li><strong>Cursor:</strong> <code>.cursorrules</code>, <code>.cursor/rules/*.mdc</code></li>
+              <li><strong>Gemini CLI:</strong> <code>GEMINI.md</code></li>
+            </ul>
+          </li>
+          <li>Kiáº¿n thá»©c nghiá»‡p vá»¥ vÃ  quy trÃ¬nh cá»§a cÃ´ng ty (coding standard, review checklist, format tÃ i liá»‡u) khÃ´ng Ä‘Æ°á»£c nhÃºng nháº¥t quÃ¡n vÃ o AI workflow.</li>
+          <li>KhÃ´ng cÃ³ cÆ¡ cháº¿ versioning, testing, hoáº·c phÃ¢n phá»‘i cho prompt/agent.</li>
+        </ul>
+
+        <h3>2.2 BÃ i toÃ¡n cáº§n giáº£i</h3>
+        <div class="quote">
+          LÃ m sao Ä‘á»ƒ <strong>viáº¿t agent má»™t láº§n</strong>, <strong>dÃ¹ng Ä‘Æ°á»£c trÃªn má»i AI tool</strong>, <strong>phá»§ Ä‘á»§ cÃ¡c phase SDLC</strong>, vÃ  <strong>phÃ¢n phá»‘i/cáº­p nháº­t dá»… dÃ ng</strong> cho nhiá»u team?
+        </div>
+      </section>
+
+      <!-- 3. Goals -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s3">3. Goals &amp; Non-Goals</h2>
+        <h3>Goals (MVP â†’ v1.0)</h3>
+        <table>
+          <thead><tr><th>#</th><th>Goal</th><th>Äo lÆ°á»ng</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill acc">G1</span></td><td>Bá»™ agent phá»§ tá»‘i thiá»ƒu 6 phase SDLC (Requirement â†’ Maintain)</td><td>â‰¥ 12 agents hoáº¡t Ä‘á»™ng Ä‘Æ°á»£c</td></tr>
+            <tr><td><span class="pill acc">G2</span></td><td><strong>Universal-first:</strong> build ra chuáº©n má»Ÿ <code>AGENTS.md</code> cháº¡y Ä‘Æ°á»£c trÃªn Má»ŒI AI agent (Codex, Cursor, Windsurf, Gemini, Antigravity, Zed, Cline...) + native adapter cho cÃ¡c tool cÃ³ Ä‘á»‹nh dáº¡ng proprietary máº¡nh hÆ¡n (Claude Code, Copilot...)</td><td>Táº§ng Universal phá»§ 100% tools; thÃªm native adapter má»›i &lt; 1 tuáº§n</td></tr>
+            <tr><td><span class="pill acc">G3</span></td><td>CÃ i Ä‘áº·t 1 lá»‡nh qua interactive wizard</td><td><code>npx sdlc-agents init</code> xong &lt; 2 phÃºt; user khÃ´ng pháº£i nhá»› <code>validate</code>/<code>build</code></td></tr>
+            <tr><td><span class="pill acc">G4</span></td><td>Customize á»Ÿ má»i cáº¥p Ä‘á»™ mÃ  khÃ´ng fork toÃ n bá»™</td><td>Customization model 4 cáº¥p (má»¥c 7)</td></tr>
+            <tr><td><span class="pill acc">G5</span></td><td>Versioning + changelog + update mechanism</td><td>Semantic versioning, <code>update</code> command</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 20px;">Non-Goals (phase Ä‘áº§u)</h3>
+        <div class="grid grid-2" style="gap: 10px; margin-top: 10px;">
+          <div class="danger">âŒ KhÃ´ng build AI model riÃªng / fine-tune model.</div>
+          <div class="danger">âŒ KhÃ´ng build IDE plugin/extension riÃªng.</div>
+          <div class="danger">âŒ KhÃ´ng lÃ m orchestration platform cháº¡y multi-agent tá»± Ä‘á»™ng 24/7.</div>
+          <div class="danger">âŒ KhÃ´ng xá»­ lÃ½ billing/license cá»§a cÃ¡c AI tool bÃªn dÆ°á»›i.</div>
+        </div>
+      </section>
+
+      <!-- 4. Personas -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s4">4. Personas &amp; Use Cases</h2>
+        <table>
+          <thead><tr><th>Persona</th><th>Nhu cáº§u</th><th>Use case vÃ­ dá»¥</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Developer</strong></td><td>Code nhanh, Ä‘Ãºng convention</td><td>Gá»i <code>@code-agent</code> Ä‘á»ƒ implement feature theo plan, tá»± cháº¡y TDD workflow</td></tr>
+            <tr><td><strong>Tech Lead / SA</strong></td><td>Chuáº©n hoÃ¡ thiáº¿t káº¿, review</td><td><code>@design-agent</code> sinh ADR/HLD; <code>@review-agent</code> review PR theo checklist</td></tr>
+            <tr><td><strong>BA / PO</strong></td><td>Viáº¿t requirement chuáº©n</td><td><code>@requirement-agent</code> chuyá»ƒn Ã½ tÆ°á»Ÿng thÃ´ â†’ user story + acceptance criteria</td></tr>
+            <tr><td><strong>QA Engineer</strong></td><td>Sinh test case/test script</td><td><code>@test-agent</code> sinh test plan, unit/integration test tá»« spec</td></tr>
+            <tr><td><strong>DevOps</strong></td><td>CI/CD, release</td><td><code>@devops-agent</code> sinh pipeline config, release notes, rollback plan</td></tr>
+            <tr><td><strong>Engineering Manager</strong></td><td>Ãp quy trÃ¬nh cho nhiá»u team</td><td>CÃ i bá»™ agents chung, customize theo tá»«ng team qua config</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 5. Agent Catalog -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s5">5. Agent Catalog</h2>
+        <p>Bá»™ agents theo phase SDLC. Má»—i agent gá»“m: system prompt, workflow, input/output template, checklist, few-shot examples. <strong>MVP scope (6 agents):</strong> <code>requirement-analyst</code>, <code>solution-architect</code>, <code>planner</code>, <code>coder</code>, <code>test-generator</code>, <code>code-reviewer</code>.</p>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 1 â€” Planning &amp; Requirement</span>
+          <table><thead><tr><th>Agent</th><th>Chá»©c nÄƒng</th></tr></thead><tbody>
+            <tr><td><code>requirement-analyst</code> <span class="pill acc">MVP</span></td><td>Phá»ng váº¥n user, lÃ m rÃµ yÃªu cáº§u mÆ¡ há»“ â†’ BRD/PRD, user stories, acceptance criteria (Gherkin)</td></tr>
+            <tr><td><code>estimation-agent</code></td><td>Break down epic â†’ tasks, Æ°á»›c lÆ°á»£ng effort, identify dependency &amp; risk</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 2 â€” Design</span>
+          <table><thead><tr><th>Agent</th><th>Chá»©c nÄƒng</th></tr></thead><tbody>
+            <tr><td><code>solution-architect</code> <span class="pill acc">MVP</span></td><td>Sinh HLD/LLD, ADR (Architecture Decision Record), so sÃ¡nh trade-off cÃ´ng nghá»‡</td></tr>
+            <tr><td><code>api-designer</code></td><td>Thiáº¿t káº¿ API contract (OpenAPI/Protobuf), data model, ERD</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 3 â€” Implementation</span>
+          <table><thead><tr><th>Agent</th><th>Chá»©c nÄƒng</th></tr></thead><tbody>
+            <tr><td><code>planner</code> <span class="pill acc">MVP</span></td><td>Äá»c spec â†’ sinh implementation plan chia phase, má»—i bÆ°á»›c cÃ³ verify criteria</td></tr>
+            <tr><td><code>coder</code> <span class="pill acc">MVP</span></td><td>Implement theo plan, tuÃ¢n thá»§ convention Ä‘Æ°á»£c inject tá»« config, TDD-first</td></tr>
+            <tr><td><code>refactor-agent</code></td><td>PhÃ¡t hiá»‡n code smell, Ä‘á» xuáº¥t &amp; thá»±c hiá»‡n refactor an toÃ n</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 4 â€” Testing</span>
+          <table><thead><tr><th>Agent</th><th>Chá»©c nÄƒng</th></tr></thead><tbody>
+            <tr><td><code>test-generator</code> <span class="pill acc">MVP</span></td><td>Sinh unit/integration/E2E test code tá»« source + spec</td></tr>
+            <tr><td><code>bug-triager</code></td><td>PhÃ¢n tÃ­ch bug report, reproduce, root-cause analysis</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 5 â€” Review &amp; Release</span>
+          <table><thead><tr><th>Agent</th><th>Chá»©c nÄƒng</th></tr></thead><tbody>
+            <tr><td><code>code-reviewer</code> <span class="pill acc">MVP</span></td><td>Review PR theo checklist cÃ´ng ty: security, performance, correctness, convention</td></tr>
+            <tr><td><code>security-auditor</code></td><td>QuÃ©t OWASP top 10, secrets, dependency vulnerabilities</td></tr>
+            <tr><td><code>release-manager</code></td><td>Sinh release notes, deploy checklist, rollback plan</td></tr>
+          </tbody></table>
+        </div>
+
+        <div class="phase-group">
+          <span class="phase-label">Phase 6 â€” Operate &amp; Maintain</span>
+          <table><thead><tr><th>Agent</th><th>Chá»©c nÄƒng</th></tr></thead><tbody>
+            <tr><td><code>incident-responder</code></td><td>HÆ°á»›ng dáº«n triage incident, viáº¿t postmortem blameless</td></tr>
+            <tr><td><code>doc-writer</code></td><td>Sinh/cáº­p nháº­t README, runbook, API docs, onboarding guide</td></tr>
+            <tr><td><code>tech-debt-auditor</code></td><td>QuÃ©t vÃ  Æ°u tiÃªn hoÃ¡ technical debt</td></tr>
+          </tbody></table>
+        </div>
+      </section>
+
+      <!-- 6. Architecture -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s6">6. System Architecture</h2>
+
+        <h3>6.1 Kiáº¿n trÃºc tá»•ng thá»ƒ</h3>
+        <pre class="ascii">â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                  CANONICAL LAYER (Nguá»“n chuáº©n)          â”‚
+â”‚  agents/*.yaml  â€” Äá»‹nh nghÄ©a agent tool-agnostic        â”‚
+â”‚  skills/*.md    â€” Quy trÃ¬nh/ká»¹ nÄƒng chi tiáº¿t            â”‚
+â”‚  templates/*.md â€” Template Ä‘áº§u ra (ADR, PRD, test plan) â”‚
+â”‚  policies/*.yamlâ€” Quy chuáº©n & checklist cá»§a org/team     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                         â”‚
+                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”
+                â”‚   BUILD ENGINE  â”‚  (CLI: biÃªn dá»‹ch + validate)
+                â”‚  - schema check â”‚
+                â”‚  - lint prompts â”‚
+                â”‚  - render       â”‚
+                â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                         â”‚
+       â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+       â–¼                                          â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ Táº¦NG 0: UNIVERSAL       â”‚   â”‚ Táº¦NG 1: NATIVE ADAPTERS (TÃ¹y chá»n)  â”‚
+â”‚ (luÃ´n build, má»i tools) â”‚   â”‚                                     â”‚
+â”‚                         â”‚   â”‚ claude-code  copilot  cursor        â”‚
+â”‚ AGENTS.md + .sdlc/      â”‚   â”‚ windsurf     gemini   cline/roo ... â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+             â–¼                         â–¼
+   Codex, Windsurf, Antigravity,   .claude/agents/  .github/prompts/
+   Zed, Amp, Gemini CLI, Jules,    .cursor/rules/   .windsurf/rules/
+   Devin, + má»i cÃ´ng cá»¥ tÆ°Æ¡ng lai  GEMINI.md        ...</pre>
+
+        <h3 style="margin-top: 24px;">6.1b TrÃ¡ch nhiá»‡m cá»§a cÃ¡c lá»›p trong mÃ´ hÃ¬nh Hybrid</h3>
+        <div class="grid grid-2" style="margin-top: 12px;">
+          <doc-card title="Builder core" badge="Deterministic" badge-type="success">
+            <ul>
+              <li><strong>Schema validation:</strong> Kiá»ƒm tra tÃ­nh há»£p lá»‡ báº±ng JSON Schema Ä‘á»‘i vá»›i cÃ¡c Ä‘á»‹nh nghÄ©a agent.</li>
+              <li><strong>Reference resolution:</strong> PhÃ¢n giáº£i cÃ¡c tham chiáº¿u (policies, templates, skills).</li>
+              <li><strong>Multi-layer configuration merging:</strong> Há»£p nháº¥t cáº¥u hÃ¬nh Ä‘a lá»›p theo thá»© tá»± Æ°u tiÃªn <code>base &rarr; org &rarr; team &rarr; project &rarr; local</code> (5 lá»›p, xem má»¥c 7.3).</li>
+              <li><strong>Rendering:</strong> Káº¿t xuáº¥t ra cÃ¡c Ä‘á»‹nh dáº¡ng Ä‘áº·c thÃ¹ cá»§a tá»«ng cÃ´ng cá»¥ thÃ´ng qua cÃ¡c adapter tÆ°Æ¡ng á»©ng.</li>
+              <li><strong>Prompt linting:</strong> Kiá»ƒm tra prompt (vá» Ä‘á»™ dÃ i, cÃ¡c tá»« bá»‹ cáº¥m, cÃ¡c placeholder chÆ°a Ä‘Æ°á»£c phÃ¢n giáº£i).</li>
+            </ul>
+            <p style="margin-top: 8px; font-size: 12px; color: var(--muted);">Phá»¥c vá»¥ chá»§ yáº¿u cho cÃ¡c maintainer thÃ´ng qua lá»‡nh: <code>pnpm validate</code>, <code>pnpm build</code>, <code>pnpm test</code>, <code>pnpm typecheck</code>, <code>pnpm lint</code>.</p>
+          </doc-card>
+          <doc-card title="Installer / Wizard UX" badge="Interactive" badge-type="info">
+            <ul>
+              <li><strong>Host detection:</strong> PhÃ¡t hiá»‡n hoáº·c há»i ngÆ°á»i dÃ¹ng há» Ä‘ang sá»­ dá»¥ng AI host nÃ o: Claude Code, Cursor, Copilot, Codex, Windsurf, Gemini...</li>
+              <li><strong>Agent presets:</strong> Cho phÃ©p lá»±a chá»n cÃ¡c preset: full SDLC, planning+coding, review+testing, hoáº·c tÃ¹y chá»‰nh.</li>
+              <li><strong>Scope selection:</strong> Cho phÃ©p chá»n pháº¡m vi lÆ°u file: project-local hoáº·c user-global (náº¿u host há»— trá»£).</li>
+              <li><strong>Generate &amp; Build:</strong> Táº¡o file <code>sdlc.config.yaml</code>, cháº¡y validation vÃ  thá»±c thi báº£n build ban Ä‘áº§u.</li>
+              <li><strong>Command isolation:</strong> CÃ´ láº­p vÃ  dÃ nh riÃªng cÃ¡c lá»‡nh phÃ¡t triá»ƒn cho maintainers, ngÆ°á»i dÃ¹ng cuá»‘i khÃ´ng cáº§n nhá»› cÃ¡c lá»‡nh phá»©c táº¡p.</li>
+            </ul>
+            <p style="margin-top: 8px; font-size: 12px; color: var(--muted);">Phá»¥c vá»¥ ngÆ°á»i dÃ¹ng cuá»‘i thÃ´ng qua má»™t lá»‡nh duy nháº¥t: <code>npx sdlc-agents init</code>.</p>
+          </doc-card>
+        </div>
+
+        <h3 style="margin-top: 24px;">6.2 Adapter Strategy â€” 2 táº§ng</h3>
+        <div class="grid grid-2" style="margin-top: 12px;">
+          <doc-card title="Táº§ng 0 â€” Universal" badge="Always build" badge-type="success">
+            Dá»±a trÃªn chuáº©n má»Ÿ <strong>AGENTS.md</strong> â€” chuáº©n de-facto Ä‘Æ°á»£c Codex, Cursor, Windsurf, Gemini CLI, Zed, Amp, Roo, Cline, Jules, Devinâ€¦ cÃ¹ng há»— trá»£. Chá»‰ lÃ  Markdown thuáº§n + Ä‘Æ°á»ng dáº«n tÆ°Æ¡ng Ä‘á»‘i â€” má»i AI agent cÃ³ thá»ƒ Ä‘á»c file Ä‘á»u dÃ¹ng Ä‘Æ°á»£c.
+          </doc-card>
+          <doc-card title="Táº§ng 1 â€” Native Adapters" badge="Progressive enhancement" badge-type="info">
+            Chá»‰ viáº¿t khi tool cÃ³ cÆ¡ cháº¿ riÃªng Ä‘Ã¡ng giÃ¡ (subagents, slash commands, rule scopingâ€¦). Tool má»›i ra â†’ tá»± Ä‘á»™ng Ä‘Æ°á»£c há»— trá»£ á»Ÿ Táº§ng 0, khÃ´ng cáº§n code thÃªm.
+          </doc-card>
+        </div>
+
+        <h3 style="margin-top: 24px;">Báº£ng adapters</h3>
+        <table>
+          <thead><tr><th>Adapter</th><th>Output native</th><th>Lá»£i Ã­ch thÃªm</th></tr></thead>
+          <tbody>
+            <tr><td><code>claude-code</code></td><td><code>CLAUDE.md</code>, <code>.claude/agents/*.md</code>, <code>.claude/skills/</code>, <code>.claude/commands/</code>, hooks</td><td>Subagent tháº­t (context riÃªng biá»‡t), slash commands, auto-triggered skills, hooks</td></tr>
+            <tr><td><code>copilot</code></td><td><code>.github/copilot-instructions.md</code>, <code>.github/prompts/*.prompt.md</code>, <code>.github/agents/*.md</code></td><td>Prompt files gá»i nhanh, Copilot coding agent trÃªn GitHub.com</td></tr>
+            <tr><td><code>cursor</code></td><td><code>.cursor/rules/*.mdc</code></td><td>Rule scoping theo glob pattern, tá»± Ä‘á»™ng Ä‘Ã­nh kÃ¨m (auto-attach) theo active file</td></tr>
+            <tr><td><code>windsurf</code></td><td><code>.windsurf/rules/*.md</code>, <code>.windsurf/workflows/*.md</code></td><td>Cascade workflows, rule activation modes</td></tr>
+            <tr><td><code>gemini</code></td><td><code>GEMINI.md</code> (+ trá» tá»›i <code>.sdlc/</code>)</td><td>TÃ­ch há»£p native Gemini CLI</td></tr>
+            <tr><td><code>antigravity</code></td><td><code>AGENTS.md</code> (dÃ¹ng chung Universal) + cáº¥u hÃ¬nh <code>.agent/</code> náº¿u cÃ³</td><td>Antigravity Ä‘á»c trá»±c tiáº¿p file <code>AGENTS.md</code></td></tr>
+            <tr><td><code>codex</code></td><td><code>AGENTS.md</code> (dÃ¹ng chung Universal) + <code>~/.codex/prompts/</code></td><td>CÃ¡c prompt tÃ¹y chá»‰nh cho Codex CLI</td></tr>
+            <tr><td><code>cline</code> / <code>roo</code></td><td><code>.clinerules/</code>, <code>.roo/rules/</code></td><td>Mode-based rules (architect/code/debug)</td></tr>
+            <tr><td><code>zed</code> / <code>amp</code> / khÃ¡c</td><td><code>AGENTS.md</code> (dÃ¹ng chung Universal)</td><td>KhÃ´ng cáº§n adapter riÃªng â€” chi phÃ­ há»— trá»£ = 0</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 24px;">6.3 Developer Journey</h3>
+        <div class="timeline">
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">1. <code>npx sdlc-agents init</code></div><div class="tl-detail">Wizard há»i: tool nÃ o? agents nÃ o? scope project hay user? language/team variables? â†’ sinh <code>sdlc.config.yaml</code> + build láº§n Ä‘áº§u</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">2. Commit generated files</div><div class="tl-detail">Files Ä‘Æ°á»£c generate vÃ o repo (<code>.claude/</code>, <code>.github/</code>, â€¦) â†’ commit vÃ o git nhÆ° code bÃ¬nh thÆ°á»ng</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-done"></div><div class="tl-title">3. Dev dÃ¹ng agent trong tool quen thuá»™c</div><div class="tl-detail">Claude Code: <code>/plan "thÃªm tÃ­nh nÄƒng X"</code> â†’ planner agent<br>Copilot: <code>@workspace /review-pr</code> â†’ code-reviewer prompt</div></div>
+          <div class="tl-item"><div class="tl-dot tl-dot-medium"></div><div class="tl-title">4. Org cáº­p nháº­t bá»™ agents</div><div class="tl-detail"><code>npx sdlc-agents update</code> â†’ re-build â†’ PR tá»± Ä‘á»™ng</div></div>
+        </div>
+      </section>
+
+      <!-- 7. Customization -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s7">7. Customization &amp; Extensibility Model</h2>
+        <p><em>"Convention over configuration, but everything is overridable."</em> â€” zero-config cho ngÆ°á»i má»›i, override tá»«ng dÃ²ng prompt cho ngÆ°á»i nÃ¢ng cao, khÃ´ng bao giá» pháº£i fork repo gá»‘c.</p>
+
+        <table style="margin-top: 16px;">
+          <thead><tr><th>Cáº¥p</th><th>TÃªn</th><th>NgÆ°á»i dÃ¹ng lÃ m gÃ¬</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill acc">L1</span></td><td><strong>Configure</strong></td><td>Báº­t/táº¯t agents, set variables (<code>stack</code>, <code>language</code>, <code>team</code>) trong config</td><td>5 phÃºt</td></tr>
+            <tr><td><span class="pill">L2</span></td><td><strong>Override</strong></td><td>Thay tháº¿ tá»«ng pháº§n: policies, templates, checklist, tá»«ng <code>step</code> trong workflow</td><td>30 phÃºt</td></tr>
+            <tr><td><span class="pill warn">L3</span></td><td><strong>Extend</strong></td><td>Viáº¿t agent má»›i cá»§a riÃªng dá»± Ã¡n, káº¿ thá»«a (<code>extends</code>) agent cÃ³ sáºµn</td><td>1â€“2 giá»</td></tr>
+            <tr><td><span class="pill bad">L4</span></td><td><strong>Plug-in</strong></td><td>Viáº¿t adapter cho tool má»›i, hook vÃ o build pipeline, publish preset cho team khÃ¡c dÃ¹ng</td><td>1â€“2 ngÃ y</td></tr>
+          </tbody>
+        </table>
+
+        <doc-accordion title="7.2 L1 â€” Configure: zero-code example">
+<pre class="flow"><span class="c"># sdlc-agents.config.yaml</span>
+<span class="n">extends</span>: <span class="s">"@org/sdlc-agents-base"</span>        <span class="c"># hoáº·c preset cá»™ng Ä‘á»“ng: "@sdlc-agents/preset-fintech"</span>
+<span class="n">targets</span>: [universal, claude-code, copilot]   <span class="c"># universal phá»§ má»i tool cÃ²n láº¡i</span>
+
+<span class="n">variables</span>:
+  <span class="n">language</span>: vi
+  <span class="n">stack</span>: nestjs-postgres
+  <span class="n">team</span>: payment-squad
+
+<span class="n">agents</span>:
+  <span class="n">enable</span>: [planner, coder, code-reviewer]
+  <span class="n">disable</span>: [ux-reviewer]</pre>
+        </doc-accordion>
+
+        <doc-accordion title="7.3 L2 â€” Override: patch-based, deep-merge">
+          <p>CÆ¡ cháº¿ <strong>deep-merge</strong> cÃ³ Ä‘á»™ Æ°u tiÃªn rÃµ rÃ ng (tÆ°Æ¡ng tá»± cáº¥u hÃ¬nh ESLint/Tailwind):</p>
+          <pre class="flow">Base package (@org/sdlc-agents-base)     â† Ä‘á»™ Æ°u tiÃªn tháº¥p nháº¥t
+  â†‘ ghi Ä‘Ã¨ bá»Ÿi
+Org preset (quy chuáº©n chung cá»§a tá»• chá»©c)
+  â†‘ ghi Ä‘Ã¨ bá»Ÿi
+Team preset (quy Æ°á»›c cá»§a tá»«ng team)
+  â†‘ ghi Ä‘Ã¨ bá»Ÿi
+Project config (sdlc-agents.config.yaml) â† Ä‘á»™ Æ°u tiÃªn cao nháº¥t
+  â†‘ ghi Ä‘Ã¨ bá»Ÿi
+Local overrides (sdlc-agents.local.yaml â€” Ä‘Æ°á»£c gitignore, phá»¥c vá»¥ test cÃ¡ nhÃ¢n)</pre>
+          <p style="margin-top: 14px;">Override chá»‰ chá»©a pháº§n khÃ¡c biá»‡t &rarr; khi base cáº£i tiáº¿n prompt, user hÆ°á»Ÿng cáº£i tiáº¿n mÃ  váº«n giá»¯ tÃ¹y chá»‰nh riÃªng. Ba toÃ¡n tá»­ chÃ­nh Ä‘Æ°á»£c há»— trá»£: <code>replace</code> (tháº¿ toÃ n bá»™), <code>append</code>/<code>prepend</code> (thÃªm vÃ o cuá»‘i/Ä‘áº§u), vÃ  <code>insert_after</code>/<code>insert_before</code> (chÃ¨n vÃ o vá»‹ trÃ­ cá»¥ thá»ƒ trong workflow).</p>
+          <pre class="flow"><span class="c"># overrides/code-reviewer.yaml</span>
+<span class="n">agent</span>: code-reviewer
+<span class="n">patch</span>:
+  <span class="n">workflow</span>:
+    <span class="n">insert_after</span>: <span class="s">"Cháº¡y checklist security"</span>
+    <span class="n">step</span>: <span class="s">"Kiá»ƒm tra naming theo quy Æ°á»›c payment-squad"</span>
+  <span class="n">output_template</span>: ./our-review-template.md
+  <span class="n">prompt_append</span>: |
+    LuÃ´n kiá»ƒm tra idempotency cho má»i API thanh toÃ¡n.</pre>
+        </doc-accordion>
+
+        <doc-accordion title="7.6 Escape hatch â€” khÃ´ng bao giá» bá»‹ káº¹t">
+          <table>
+            <thead><tr><th>TÃ¬nh huá»‘ng (Scenario)</th><th>Lá»‘i thoÃ¡t (Escape Route)</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>DSL khÃ´ng biá»ƒu diá»…n Ä‘Æ°á»£c yÃªu cáº§u Ä‘áº·c thÃ¹</td>
+                <td>Sá»­ dá»¥ng block <code>tool_specific:</code> trong file agent YAML â€” viáº¿t raw content dÃ nh riÃªng cho 1 tool, cÃ¡c tool khÃ¡c sáº½ bá» qua block nÃ y.</td>
+              </tr>
+              <tr>
+                <td>Muá»‘n sá»­a Ä‘á»•i thá»§ cÃ´ng file Ä‘Æ°á»£c sinh ra (output file)</td>
+                <td>Cháº¿ Ä‘á»™ <code>eject</code>: cháº¡y <code>npx sdlc-agents eject code-reviewer</code> â€” copy file generated thÃ nh file thÆ°á»ng, Ä‘Ã¡nh dáº¥u <code>managed: false</code> Ä‘á»ƒ build engine khÃ´ng ghi Ä‘Ã¨ lÃªn ná»¯a.</td>
+              </tr>
+              <tr>
+                <td>File generated vÃ´ tÃ¬nh bá»‹ sá»­a Ä‘á»•i thá»§ cÃ´ng</td>
+                <td>Build engine chÃ¨n header <code># generated â€” do not edit</code> vÃ  cháº¡y cÃ¡c cÃ¢u lá»‡nh <code>diff</code> Ä‘á»ƒ cáº£nh bÃ¡o vá» sá»± sai lá»‡ch (drift) giá»¯a file gá»‘c vÃ  file Ä‘áº§u ra.</td>
+              </tr>
+              <tr>
+                <td>Cáº§n quay láº¡i tráº¡ng thÃ¡i máº·c Ä‘á»‹nh ban Ä‘áº§u</td>
+                <td>Cháº¡y <code>npx sdlc-agents reset &lt;agent&gt;</code> â€” xÃ³a cÃ¡c overrides vÃ  khÃ´i phá»¥c láº¡i tráº¡ng thÃ¡i cá»§a base agent ban Ä‘áº§u.</td>
+              </tr>
+            </tbody>
+          </table>
+        </doc-accordion>
+      </section>
+
+      <!-- 8. Functional Requirements -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s8">8. Functional Requirements</h2>
+        <table>
+          <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr><td><code>FR-01</code></td><td>Äá»‹nh nghÄ©a agent báº±ng DSL chuáº©n (YAML + Markdown), cÃ³ JSON Schema validate</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-02</code></td><td><strong>Universal adapter</strong> (AGENTS.md + <code>.sdlc/</code>) â€” chuáº©n má»Ÿ dÃ¹ng Ä‘Æ°á»£c trÃªn má»i AI agent</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-02b</code></td><td>Native adapters Ä‘á»£t Ä‘áº§u: Claude Code, Copilot</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-03</code></td><td>CLI + Hybrid installer UX: interactive <code>init</code>, <code>build</code>, <code>update</code>, <code>list</code>, <code>validate</code>, <code>doctor</code>, <code>eject</code>, <code>reset</code>; non-interactive flags cho CI</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-04</code></td><td>Config override nhiá»u lá»›p (base â†’ org â†’ team â†’ project â†’ local), deep-merge cÃ³ thá»© tá»± Æ°u tiÃªn</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-05</code></td><td>Bá»™ 6 agents MVP hoáº¡t Ä‘á»™ng end-to-end</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-06</code></td><td>Patch-based override: <code>replace</code>/<code>append</code>/<code>insert_after</code> tá»«ng pháº§n agent</td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-07</code></td><td>Agent káº¿ thá»«a: <code>extends</code> agent cÃ³ sáºµn, agent local trong <code>.sdlc-agents/agents/</code></td><td><span class="pill acc">Must</span></td></tr>
+            <tr><td><code>FR-08</code></td><td>Escape hatch: <code>tool_specific</code> block + <code>eject</code>/<code>reset</code> command</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-09</code></td><td>Versioning theo SemVer, changelog tá»± Ä‘á»™ng; patch fail rÃµ rÃ ng khi base Ä‘á»•i cáº¥u trÃºc</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-10</code></td><td>Template variables (<code>{{team}}</code>, <code>{{stack}}</code>, <code>{{language}}</code>)</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-11</code></td><td>Adapter plugin interface (npm package) + build hooks (pre/post/transform)</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-12</code></td><td>Lá»‡nh <code>doctor</code>: hiá»ƒn thá»‹ layer merge, override Ä‘ang active hoáº·c má»“ cÃ´i (orphaned)</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-13</code></td><td>Preset publishing: Ä‘Ã³ng gÃ³i cÃ¡c tÃ¹y chá»‰nh thÃ nh preset tÃ¡i sá»­ dá»¥ng Ä‘á»ƒ cÃ¡c team khÃ¡c cÃ³ thá»ƒ <code>extends</code></td><td><span class="pill">Could (v1.1)</span></td></tr>
+            <tr><td><code>FR-14</code></td><td>Há»— trá»£ cÃ¡c native adapters Ä‘á»£t 2: Cursor, Windsurf, Gemini, Cline/Roo (Codex, Antigravity, Zed, Amp Ä‘Ã£ Ä‘Æ°á»£c phá»§ bá»Ÿi Universal)</td><td><span class="pill">Could (v1.1)</span></td></tr>
+            <tr><td><code>FR-15</code></td><td>Eval harness: ÄÃ¡nh giÃ¡ cháº¥t lÆ°á»£ng Ä‘áº§u ra cá»§a agent báº±ng bá»™ kiá»ƒm thá»­ tá»± Ä‘á»™ng</td><td><span class="pill">Could (v1.1)</span></td></tr>
+            <tr><td><code>FR-16</code></td><td>XÃ¢y dá»±ng web catalog/tÃ i liá»‡u Ä‘á»ƒ browse cÃ¡c agent trong catalog</td><td><span class="pill">Could (v1.2)</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 9. NFR -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s9">9. Non-Functional Requirements</h2>
+        <table>
+          <thead><tr><th>ID</th><th>Requirement</th><th>TiÃªu chÃ­</th></tr></thead>
+          <tbody>
+            <tr><td><code>NFR-01</code></td><td><strong>Portability</strong></td><td>KhÃ´ng phá»¥ thuá»™c runtime Ä‘áº·c thÃ¹; output lÃ  plain text files commit Ä‘Æ°á»£c vÃ o git</td></tr>
+            <tr><td><code>NFR-02</code></td><td><strong>Idempotency</strong></td><td><code>build</code> cháº¡y láº¡i cho output giá»‘ng há»‡t â€” diff sáº¡ch trong PR</td></tr>
+            <tr><td><code>NFR-03</code></td><td><strong>Security</strong></td><td>KhÃ´ng chá»©a secrets trong agent files; lint cháº·n pattern nháº¡y cáº£m</td></tr>
+            <tr><td><code>NFR-04</code></td><td><strong>Maintainability</strong></td><td>ThÃªm 1 agent má»›i chá»‰ cáº§n thÃªm 1 file YAML + templates, khÃ´ng sá»­a engine</td></tr>
+            <tr><td><code>NFR-05</code></td><td><strong>Extensibility</strong></td><td>Adapter lÃ  plugin interface â€” bÃªn thá»© ba viáº¿t adapter má»›i khÃ´ng sá»­a core</td></tr>
+            <tr><td><code>NFR-06</code></td><td><strong>Backward compat</strong></td><td>Update minor version khÃ´ng phÃ¡ config cá»§a team</td></tr>
+            <tr><td><code>NFR-07</code></td><td><strong>Offline-friendly</strong></td><td>Build engine cháº¡y local, khÃ´ng gá»i network (trá»« <code>update</code>)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 10. Tech Stack -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s10">10. Tech Stack</h2>
+        <table>
+          <thead><tr><th>Layer</th><th>Lá»±a chá»n</th><th>LÃ½ do</th></tr></thead>
+          <tbody>
+            <tr><td>CLI / Build engine</td><td><strong>TypeScript + Node.js</strong></td><td>Há»‡ sinh thÃ¡i npm; team dev nÃ o cÅ©ng cháº¡y Ä‘Æ°á»£c <code>npx</code></td></tr>
+            <tr><td>Schema validation</td><td><strong>Zod</strong></td><td>Type-safe, error message tá»‘t; sinh JSON Schema qua <code>zod-to-json-schema</code></td></tr>
+            <tr><td>YAML parsing</td><td><strong>eemeli/yaml</strong></td><td>Giá»¯ comment + vá»‹ trÃ­ dÃ²ng â†’ bÃ¡o lá»—i "file X dÃ²ng Y"</td></tr>
+            <tr><td>Template rendering</td><td>Handlebars / Eta</td><td>Logic-less, an toÃ n</td></tr>
+            <tr><td>Monorepo</td><td><strong>pnpm workspaces</strong></td><td>Nháº¹ hÆ¡n turborepo, Ä‘á»§ cho scale nÃ y</td></tr>
+            <tr><td>Testing</td><td><strong>Vitest</strong></td><td>Unit + snapshot tests; output lÃ  text â†’ snapshot ráº¥t há»£p</td></tr>
+            <tr><td>Lint + Format</td><td><strong>Biome</strong></td><td>Thay ESLint+Prettier, 1 tool, nhanh</td></tr>
+            <tr><td>Config merge</td><td><code>deepmerge-ts</code> / custom</td><td>Kiá»ƒm soÃ¡t thá»© tá»± Æ°u tiÃªn + array strategy</td></tr>
+            <tr><td>Eval (Phase 2)</td><td>promptfoo + Langfuse</td><td>Eval harness + trace regression cháº¥t lÆ°á»£ng</td></tr>
+            <tr><td>Distribution</td><td>npm + git tags</td><td><code>npx sdlc-agents init</code> cho user cuá»‘i, versioning/update qua npm tags</td></tr>
+          </tbody>
+        </table>
+        <doc-alert type="success" title="Zero backend">
+          Sáº£n pháº©m nÃ y <strong>khÃ´ng cáº§n backend/database</strong> á»Ÿ MVP. ToÃ n bá»™ lÃ  static files + CLI. Chi phÃ­ váº­n hÃ nh â‰ˆ 0.
+        </doc-alert>
+      </section>
+
+      <!-- 11. Roadmap -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s11">11. Roadmap &amp; Milestones</h2>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-done"></div>
+            <div class="tl-title">Phase 0 â€” Foundation (Tuáº§n 1â€“2) âœ…</div>
+            <div class="tl-detail">Chá»‘t DSL schema, setup monorepo, Zod schema + validator, spike: render 2 agents sang Claude Code + Universal â€” output valid âœ…</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-done"></div>
+            <div class="tl-title">Phase 1 â€” MVP (Tuáº§n 3â€“6) âœ… tech complete</div>
+            <div class="tl-detail">Build engine + 3 adapters (universal, claude-code, copilot), CLI init/build/validate, 6 agents MVP, CI xanh, README, drift detection, adapter contract doc. CÃ²n láº¡i: dogfood + pilot team.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-medium"></div>
+            <div class="tl-title">Phase 2 â€” Hardening (Tuáº§n 7â€“10) â¬œ</div>
+            <div class="tl-detail">Multi-layer override, patch-based override, <code>extends</code> agent, escape hatch, CLI <code>update</code> + SemVer, snapshot test toÃ n bá»™ output, eval harness cÆ¡ báº£n, thÃªm agents: test-strategist, security-auditor, release-manager.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot tl-dot-low"></div>
+            <div class="tl-title">Phase 3 â€” Scale (QuÃ½ sau) â¬œ</div>
+            <div class="tl-detail">Native adapters Ä‘á»£t 2 (Cursor, Windsurf, Gemini CLI, Cline/Roo), compatibility matrix, docs site + catalog, telemetry opt-in, marketplace/registry ná»™i bá»™.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. Metrics -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s12">12. Success Metrics</h2>
+        <div class="score-grid">
+          <div class="score-card">
+            <div class="score-card-label">Teams adopt (3 thÃ¡ng)</div>
+            <div class="score-row"><span class="score-after">â‰¥ 3</span><span class="score-arrow">teams</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Time-to-setup team má»›i</div>
+            <div class="score-row"><span class="score-after">&lt; 30</span><span class="score-arrow">phÃºt</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Agent dÃ¹ng hÃ ng tuáº§n</div>
+            <div class="score-row"><span class="score-after">â‰¥ 60%</span><span class="score-arrow">MVP</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">Giáº£m thá»i gian viáº¿t tÃ i liá»‡u</div>
+            <div class="score-row"><span class="score-after">â‰¥ 40%</span><span class="score-arrow">kháº£o sÃ¡t</span></div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-label">PR cÃ³ review-agent trÆ°á»›c human</div>
+            <div class="score-row"><span class="score-after">â‰¥ 70%</span><span class="score-arrow">PRs</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13. Risks -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s13">13. Risks &amp; Mitigations</h2>
+        <div>
+          <div class="risk-row">
+            <span class="risk-num">R1</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>AI tool thay Ä‘á»•i format config liÃªn tá»¥c</strong><br><span style="color:var(--muted)">Mitigation: Adapter pattern cÃ´ láº­p thay Ä‘á»•i; contract test theo tá»«ng tool version; theo dÃµi changelog</span></div>
+            <span class="risk-like-high">Cao</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R2</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Lowest common denominator</strong>: feature máº¡nh cá»§a 1 tool khÃ´ng map Ä‘Æ°á»£c sang tool khÃ¡c<br><span style="color:var(--muted)">Mitigation: DSL cÃ³ section <code>tool_specific</code> cho phÃ©p khai bÃ¡o pháº§n riÃªng tá»«ng tool</span></div>
+            <span class="risk-like-high">Cao</span>
+            <span class="risk-impact-mid">Trung bÃ¬nh</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R3</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Cháº¥t lÆ°á»£ng output agent khÃ´ng á»•n Ä‘á»‹nh</strong> giá»¯a cÃ¡c model<br><span style="color:var(--muted)">Mitigation: Eval harness + golden test cases; <code>model_hint</code> trong DSL</span></div>
+            <span class="risk-like-mid">Trung bÃ¬nh</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R4</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Team khÃ´ng adopt</strong> vÃ¬ "thÃªm má»™t thá»© pháº£i há»c"<br><span style="color:var(--muted)">Mitigation: <code>init</code> 1 lá»‡nh, zero-config; dogfooding + champion táº¡i má»—i team</span></div>
+            <span class="risk-like-mid">Trung bÃ¬nh</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R5</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Prompt chá»©a thÃ´ng tin ná»™i bá»™ bá»‹ leak</strong> khi commit public<br><span style="color:var(--muted)">Mitigation: Lint rule + <code>.gitignore</code> guidance + phÃ¢n tÃ¡ch policies internal</span></div>
+            <span class="risk-like-low">Tháº¥p</span>
+            <span class="risk-impact-high">Cao</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-num">R7</span>
+            <div style="flex:1;color:#cbd5e1;font-size:13px;"><strong>Supply-chain prompt injection</strong>: skill import tá»« cá»™ng Ä‘á»“ng cÃ³ thá»ƒ chá»©a chá»‰ dáº«n Ä‘á»™c háº¡i áº©n<br><span style="color:var(--muted)">Mitigation: Human review báº¯t buá»™c khi vendor láº§n Ä‘áº§u + khi bump pin; lint scan pattern Ä‘Ã¡ng ngá»; pin theo commit hash</span></div>
+            <span class="risk-like-low">Tháº¥p</span>
+            <span class="risk-impact-veryhigh">Ráº¥t cao</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14. Open Questions -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s14">14. Open Questions</h2>
+        <p>CÃ¡c cÃ¢u há»i má»Ÿ cáº§n giáº£i quyáº¿t trÆ°á»›c khi chuyá»ƒn sang cÃ¡c giai Ä‘oáº¡n tiáº¿p theo:</p>
+
+        <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 16px;">
+          
+          <div class="quote">
+            <strong>Q1 â€” NgÃ´n ngá»¯ prompt:</strong> <span class="pill acc">ÄÃ£ chá»‘t</span>
+            <p style="margin-top: 8px;">Prompt Ä‘Æ°á»£c viáº¿t hoÃ n toÃ n báº±ng tiáº¿ng Anh Ä‘á»ƒ Ä‘áº£m báº£o cháº¥t lÆ°á»£ng suy luáº­n cao nháº¥t cá»§a model; cÃ¡c output template sáº½ tuÃ¢n theo cáº¥u hÃ¬nh <code>language</code> (máº·c Ä‘á»‹nh lÃ  <code>en</code>, cÃ³ thá»ƒ cáº¥u hÃ¬nh sang <code>vi</code>).</p>
+          </div>
+
+          <div class="quote">
+            <strong>Q2 â€” CÃ´ng cá»¥ Æ°u tiÃªn thá»© hai:</strong> <span class="pill acc">ÄÃ£ chá»‘t</span>
+            <p style="margin-top: 8px;">Chá»n <strong>GitHub Copilot</strong> â€” cÃ¡c native adapters Ä‘á»£t 1 bao gá»“m Claude Code vÃ  GitHub Copilot.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q3 â€” OSS vs Private â€” KhÃ¡c biá»‡t trong 3 Ä‘iá»ƒm kiáº¿n trÃºc cá»‘t lÃµi:</strong>
+            <table style="margin-top: 10px; font-size: 13px;">
+              <thead>
+                <tr>
+                  <th>KhÃ­a cáº¡nh áº£nh hÆ°á»Ÿng</th>
+                  <th>Open Source (MÃ£ nguá»“n má»Ÿ)</th>
+                  <th>Private-only (Ná»™i bá»™)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Plugin interface</strong></td>
+                  <td>Pháº£i á»•n Ä‘á»‹nh, Ä‘Ã¡nh phiÃªn báº£n (SemVer), cÃ³ tÃ i liá»‡u Ä‘áº§y Ä‘á»§ vÃ¬ sáº½ Ä‘Ã³ng vai trÃ² public API. Breaking changes yÃªu cáº§u tÄƒng major version.</td>
+                  <td>Chá»‰ phá»¥c vá»¥ ná»™i bá»™, thoáº£i mÃ¡i thay Ä‘á»•i cáº¥u trÃºc mÃ£ nguá»“n (refactoring) khi cáº§n.</td>
+                </tr>
+                <tr>
+                  <td><strong>Policy layer</strong></td>
+                  <td>KhÃ´ng thá»ƒ nhÃºng cÃ¡c chÃ­nh sÃ¡ch báº£o máº­t/nghiá»‡p vá»¥ riÃªng cá»§a doanh nghiá»‡p vÃ o repo chÃ­nh; báº¯t buá»™c pháº£i tÃ¡ch biá»‡t thÃ nh <code>packages/policies-private</code>.</td>
+                  <td>NhÃºng trá»±c tiáº¿p vÃ o monorepo, Ä‘Æ¡n giáº£n vÃ  Ä‘á»“ng bá»™ hÆ¡n.</td>
+                </tr>
+                <tr>
+                  <td><strong>Adapter code</strong></td>
+                  <td>ÄÃ²i há»i cÃ³ tÃ i liá»‡u kiá»ƒm thá»­ E2E Ä‘áº§y Ä‘á»§ + cam káº¿t tÆ°Æ¡ng thÃ­ch bá»n vá»¯ng cho cá»™ng Ä‘á»“ng phÃ¡t triá»ƒn.</td>
+                  <td>Chá»‰ cáº§n Ä‘áº£m báº£o cháº¡y Ä‘Ãºng nghiá»‡p vá»¥ ná»™i bá»™.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 10px; font-size: 13px;">Build engine, DSL schema, vÃ  cÆ¡ cháº¿ vendor sá»­ dá»¥ng mÃ£ nguá»“n giá»‘ng há»‡t nhau, khÃ´ng cÃ³ rá»§i ro phÃ¢n nhÃ¡nh kiáº¿n trÃºc.</p>
+            <p style="margin-top: 10px; font-size: 13px;"><strong>CÃ³ nÃªn thÆ°Æ¡ng máº¡i hÃ³a? Äá» xuáº¥t: Open Core.</strong></p>
+            <ul style="font-size: 13px; margin-left: 20px;">
+              <li><strong>OSS (miá»…n phÃ­):</strong> core engine + Universal adapter + bá»™ catalog agents cÆ¡ báº£n &rarr; táº¡o cá»™ng Ä‘á»“ng, tÄƒng Ä‘á»™ phá»§, nháº­n Ä‘Ã³ng gÃ³p adapter tá»« cá»™ng Ä‘á»“ng.</li>
+              <li><strong>Commercial (tráº£ phÃ­):</strong> giao diá»‡n hosted policy management (dashboard quáº£n lÃ½ team, audit log, vault chá»©a secret), bá»™ native adapters Ä‘áº§y Ä‘á»§, hosted eval harness, há»— trá»£ SLA, marketplace preset chuyÃªn ngÃ nh.</li>
+              <li>Tiá»n lá»‡: Terraform OSS &rarr; HCP, ESLint &rarr; cÃ´ng cá»¥ doanh nghiá»‡p, Biome &rarr; enterprise tier.</li>
+            </ul>
+            <p style="margin-top: 10px; font-size: 13px; color: var(--accent2);"><strong>Action item:</strong> Quyáº¿t Ä‘á»‹nh trÆ°á»›c Phase 1. Náº¿u chá»n OSS, thiáº¿t káº¿ giao diá»‡n plugin nhÆ° má»™t public API ngay tá»« Ä‘áº§u (SemVer + deprecation policies) vÃ  cÃ´ láº­p <code>packages/policies-private</code> ra khá»i repository chÃ­nh.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q4 â€” Ai sá»Ÿ há»¯u bá»™ quy chuáº©n chÃ­nh sÃ¡ch chung cá»§a tá»• chá»©c?</strong>
+            <p style="margin-top: 8px;">Cáº§n má»™t nhÃ³m chá»‹u trÃ¡ch nhiá»‡m (vÃ­ dá»¥: nhÃ³m Engineering Excellence) Ä‘á»ƒ kiá»ƒm duyá»‡t vÃ  phÃª duyá»‡t cÃ¡c thay Ä‘á»•i Ä‘á»‘i vá»›i checklist/convention chung cá»§a doanh nghiá»‡p.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q5 â€” Äá»™ sÃ¢u tÃ­ch há»£p MCP (Model Context Protocol):</strong>
+            <p style="margin-top: 8px;">ChÃºng ta nÃªn Ä‘i kÃ¨m cÃ¡c MCP server riÃªng (vÃ­ dá»¥: káº¿t ná»‘i Jira, Confluence) ngay trong bá»™ agents nÃ y hay Ä‘á»ƒ dÃ nh cho cÃ¡c phase sau?</p>
+          </div>
+
+          <div class="note">
+            <strong>Q6 â€” CÆ¡ cháº¿ kÃ­ch hoáº¡t á»Ÿ táº§ng Universal:</strong>
+            <p style="margin-top: 8px;">Claude Code há»— trá»£ tá»± Ä‘á»™ng kÃ­ch hoáº¡t ká»¹ nÄƒng dá»±a trÃªn mÃ´ táº£, nhÆ°ng Ä‘á»‘i vá»›i cÃ¡c cÃ´ng cá»¥ chá»‰ Ä‘á»c file <code>AGENTS.md</code> thÃ¬ agent Ä‘Æ°á»£c gá»i nhÆ° tháº¿ nÃ o? Model sáº½ tá»± Ä‘á»c file index hay ngÆ°á»i dÃ¹ng pháº£i hÆ°á»›ng dáº«n báº±ng lá»‡nh thá»§ cÃ´ng (vÃ­ dá»¥: "hÃ£y tuÃ¢n theo <code>.sdlc/agents/planner.md</code>")? Cáº§n thá»±c hiá»‡n spike thá»­ nghiá»‡m Phase 0 trÃªn 2-3 cÃ´ng cá»¥ thá»±c táº¿ vÃ¬ nÃ³ quyáº¿t Ä‘á»‹nh tráº£i nghiá»‡m ngÆ°á»i dÃ¹ng táº§ng Universal.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q7 â€” NgÃ¢n sÃ¡ch cháº¡y ÄÃ¡nh giÃ¡ (Evaluation):</strong>
+            <p style="margin-top: 8px;">Eval harness gá»i cÃ¡c API model thá»±c táº¿ (Claude/GPT/Gemini) â€” ai sáº½ tráº£ tiá»n, háº¡n má»©c cho má»—i láº§n cháº¡y CI ra sao? Cáº§n cÃ³ cÆ¡ cháº¿ kiá»ƒm soÃ¡t quota Ä‘á»ƒ trÃ¡nh viá»‡c CI bá» qua Ä‘Ã¡nh giÃ¡ do cáº¡n kiá»‡t tÃ i khoáº£n.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q8 â€” PhÃ¡p lÃ½ khi thÆ°Æ¡ng máº¡i hÃ³a:</strong>
+            <p style="margin-top: 8px;">YÃªu cáº§u ghi nháº­n báº£n quyá»n (attribution) Ä‘á»‘i vá»›i cÃ¡c ká»¹ nÄƒng tá»« cá»™ng Ä‘á»“ng sá»­ dá»¥ng giáº¥y phÃ©p MIT/Apache khi Ä‘Ã³ng gÃ³i vÃ o sáº£n pháº©m thÆ°Æ¡ng máº¡i. Äá»“ng thá»i, tÃªn sáº£n pháº©m cÃ³ xáº£y ra tranh cháº¥p thÆ°Æ¡ng hiá»‡u khÃ´ng? Cáº§n review phÃ¡p lÃ½ trÆ°á»›c khi release chÃ­nh thá»©c ra cÃ´ng chÃºng.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 15. Positioning -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15">15. Äá»‹nh vá»‹ vs Há»‡ sinh thÃ¡i Skill</h2>
+        <p>Hiá»‡n nay cÃ³ ráº¥t nhiá»u bá»™ quy táº¯c vÃ  ká»¹ nÄƒng ná»•i tiáº¿ng nhÆ° <code>obra/superpowers</code>, <code>anthropics/skills</code>, <code>awesome-claude-code</code>, <code>awesome-cursorrules</code>, <code>agent-rules</code>... Sáº£n pháº©m nÃ y <strong>khÃ´ng cáº¡nh tranh á»Ÿ cáº¥p Ä‘á»™ ná»™i dung cá»§a tá»«ng skill Ä‘Æ¡n láº»</strong> â€” nÃ³ cáº¡nh tranh á»Ÿ <strong>cáº¥p Ä‘á»™ há»‡ thá»‘ng</strong>:</p>
+        <p class="quote"><em>"Skill ngoÃ i kia lÃ  bÃ i hÃ¡t láº»; sáº£n pháº©m nÃ y lÃ  hÃ£ng phÃ¡t hÃ nh album â€” cÃ³ tuyá»ƒn chá»n, chuáº©n hoÃ¡, Ä‘Ã³ng gÃ³i Ä‘a ná»n táº£ng, phÃ¢n phá»‘i vÃ  cáº­p nháº­t."</em></p>
+
+        <table style="margin-top: 16px;">
+          <thead><tr><th>TiÃªu chÃ­</th><th>Skill ngoÃ i kia</th><th>Agentic SDLC Agents Set</th></tr></thead>
+          <tbody>
+            <tr><td>Pháº¡m vi</td><td>1 ká»¹ nÄƒng Ä‘Æ¡n láº»</td><td><strong>Bá»™ hoÃ n chá»‰nh phá»§ cáº£ vÃ²ng SDLC</strong>, cÃ¡c agent ná»‘i vá»›i nhau</td></tr>
+            <tr><td>Tool support</td><td>KhoÃ¡ vÃ o 1 tool</td><td><strong>Má»™t nguá»“n â†’ build ra má»i tool</strong> (Universal + native adapters)</td></tr>
+            <tr><td>Customization</td><td>Fork â†’ máº¥t kháº£ nÄƒng update</td><td><strong>Patch-based override</strong>, update báº£n gá»‘c khÃ´ng máº¥t tÃ¹y chá»‰nh</td></tr>
+            <tr><td>Convention cÃ´ng ty</td><td>KhÃ´ng cÃ³ chá»— nhÃºng</td><td><strong>Policy layer</strong> (org â†’ team â†’ project) Ä‘á»ƒ nhÃºng checklist/convention ná»™i bá»™</td></tr>
+            <tr><td>Versioning</td><td>Copy/paste thá»§ cÃ´ng</td><td>SemVer, <code>update</code> command, registry, changelog</td></tr>
+            <tr><td>Cháº¥t lÆ°á»£ng</td><td>KhÃ´ng test Ä‘Æ°á»£c</td><td>Eval harness + golden cases + snapshot tests trong CI</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 15.2 Reusing Existing Skills -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15-2">15.2 TÃ¡i sá»­ dá»¥ng Ká»¹ nÄƒng Sáºµn cÃ³</h2>
+        <p><strong>Chiáº¿n lÆ°á»£c: KHÃ”NG viáº¿t láº¡i nhá»¯ng gÃ¬ cá»™ng Ä‘á»“ng Ä‘Ã£ lÃ m tá»‘t.</strong> Thay vÃ o Ä‘Ã³, chÃºng ta xÃ¢y dá»±ng cÆ¡ cháº¿ <code>import</code> trá»±c tiáº¿p trong build engine:</p>
+
+        <pre class="flow"><span class="c"># agents/bug-triager.yaml</span>
+<span class="n">id</span>: bug-triager
+<span class="n">imports</span>:
+  - <span class="n">source</span>: github:obra/superpowers            <span class="c"># high-star GitHub skill</span>
+    <span class="n">path</span>: skills/systematic-debugging
+    <span class="n">pin</span>: v4.2.0                                <span class="c"># ghim cá»¥ thá»ƒ tag/commit â€” trÃ¡nh trÃ´i phiÃªn báº£n</span>
+    <span class="n">license</span>: MIT                                <span class="c"># build lá»—i náº¿u license khÃ´ng tÆ°Æ¡ng thÃ­ch</span>
+<span class="n">prompt_prepend</span>: |
+  Apply the systematic-debugging workflow below, outputting in {{language}}.</pre>
+
+        <ul style="margin-top: 14px;">
+          <li><strong>Vendor + pin:</strong> CÃ¡c skill Ä‘Æ°á»£c táº£i vá» vÃ  sao chÃ©p vÃ o thÆ° má»¥c <code>vendor/</code> khi build, Ä‘Æ°á»£c ghim cá»‘ Ä‘á»‹nh báº±ng commit hash/tag nháº±m Ä‘áº£m báº£o quÃ¡ trÃ¬nh build luÃ´n cÃ³ tÃ­nh deterministic vÃ  hoáº¡t Ä‘á»™ng offline tá»‘t, khÃ´ng phá»¥ thuá»™c vÃ o tráº¡ng thÃ¡i online cá»§a repo nguá»“n.</li>
+          <li><strong>Tá»± Ä‘á»™ng kiá»ƒm tra báº£n quyá»n:</strong> Chá»‰ cho phÃ©p import cÃ¡c skill cÃ³ license tÆ°Æ¡ng thÃ­ch (vÃ­ dá»¥: MIT/Apache-2.0); tá»± Ä‘á»™ng chÃ¨n ghi nháº­n báº£n quyá»n (attribution) vÃ o output Ä‘áº§u ra.</li>
+          <li><strong>Wrap, don't modify:</strong> Giá»¯ nguyÃªn váº¹n mÃ£ nguá»“n cá»§a skill gá»‘c, chá»‰ tÃ¹y biáº¿n qua cÃ¡c block <code>prompt_prepend</code> hoáº·c <code>prompt_append</code>. Khi repo nguá»“n phÃ¡t hÃ nh phiÃªn báº£n má»›i, ta chá»‰ viá»‡c nÃ¢ng chá»‰ sá»‘ <code>pin</code> lÃªn phiÃªn báº£n má»›i vÃ  cháº¡y láº¡i cÃ¡c evals test.</li>
+          <li><strong>CÃ¡c á»©ng viÃªn tiá»m nÄƒng Ä‘á»ƒ import cho MVP:</strong> Quy trÃ¬nh gá»¡ lá»—i há»‡ thá»‘ng (systematic-debugging) &amp; TDD workflow (tá»« repo <code>superpowers</code>, ~94k+ stars trÃªn Anthropic Marketplace), cÃ¡c ká»¹ nÄƒng lÃ m tÃ i liá»‡u tá»« <code>anthropics/skills</code> (~135k stars), cÃ¡c ká»¹ nÄƒng workflow ká»¹ thuáº­t cá»§a <code>mattpocock/skills</code> (~124k stars, giáº¥y phÃ©p MIT â€” xem Báº£ng 15.3), cÃ¡c agent riÃªng láº» tá»« <code>VoltAgent/awesome-claude-code-subagents</code> vÃ  <code>wshobson/agents</code>. Viá»‡c tÃ¡i sá»­ dá»¥ng nÃ y giÃºp giáº£m Ä‘Ã¡ng ká»ƒ cÃ´ng sá»©c tá»± viáº¿t 6 agent MVP â€” pháº§n chÃºng ta pháº£i tá»± phÃ¡t triá»ƒn chá»§ yáº¿u lÃ  cÃ¡c chÃ­nh sÃ¡ch riÃªng cá»§a cÃ´ng ty + template tiáº¿ng Viá»‡t + logic liÃªn káº¿t cÃ¡c tÃ¡c nhÃ¢n thÃ nh má»™t vÃ²ng khÃ©p kÃ­n.</li>
+        </ul>
+      </section>
+
+      <!-- 15.3 Mapping Community Skills -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15-3">15.3 Báº£ng Ãnh xáº¡ Community Skills vÃ o Agent Catalog</h2>
+        <p>ÄÃ¡nh giÃ¡ vÃ  phÃ¢n tÃ­ch kháº£ nÄƒng tÃ¡i sá»­ dá»¥ng ká»¹ nÄƒng tá»« cá»™ng Ä‘á»“ng vÃ o catalog cá»§a chÃºng ta (Dá»¯ liá»‡u Ä‘Ã¡nh giÃ¡ thÃ¡ng 06/2026):</p>
+
+        <table style="margin-top: 16px;">
+          <thead>
+            <tr>
+              <th>Catalog Agent</th>
+              <th>Skill Ä‘á»ƒ Import (Nguá»“n)</th>
+              <th>Ghi chÃº sá»­ dá»¥ng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>requirement-analyst</code></td>
+              <td><code>to-prd</code>, <code>grill-me</code>, <code>grill-with-docs</code> (mattpocock) + <code>brainstorming</code> (superpowers)</td>
+              <td><code>to-prd</code> cÃ³ sáºµn template PRD gá»“m 8 pháº§n (Problem, Solution, User Stories, Implementation/Testing Decisions, Out of Scope) vÃ  tá»± Ä‘á»™ng xuáº¥t báº£n lÃªn trÃ¬nh quáº£n lÃ½ cÃ´ng viá»‡c â€” sáºµn sÃ ng cháº¡y ngay.</td>
+            </tr>
+            <tr>
+              <td><code>estimation-agent</code></td>
+              <td><code>to-issues</code>, <code>triage</code> (mattpocock)</td>
+              <td><code>to-issues</code> chuyá»ƒn Ä‘áº·c táº£ thÃ nh cÃ¡c issue Ä‘á»™c láº­p cÃ³ thá»ƒ phÃ¢n cÃ´ng trá»±c tiáº¿p trÃªn GitHub/GitLab â€” tá»‘i Æ°u cho phÃ¢n tÃ¡ch task.</td>
+            </tr>
+            <tr>
+              <td><code>solution-architect</code></td>
+              <td><code>improve-codebase-architecture</code>, <code>zoom-out</code> (mattpocock) + máº«u cáº¥u trÃºc <code>docs/adr/</code> cá»§a repo Ä‘Ã³</td>
+              <td>Kho lÆ°u trá»¯ cá»§a mattpocock sá»­ dá»¥ng mÃ´ hÃ¬nh ADR â€” mÆ°á»£n trá»±c tiáº¿p cáº¥u trÃºc nÃ y cho thiáº¿t káº¿ giáº£i phÃ¡p.</td>
+            </tr>
+            <tr>
+              <td><code>planner</code></td>
+              <td><code>writing-plans</code>, <code>executing-plans</code> (superpowers) + <code>prototype</code> (mattpocock)</td>
+              <td>Tá»± Ä‘á»™ng lÃªn káº¿ hoáº¡ch vÃ  thá»±c thi káº¿ hoáº¡ch theo tá»«ng vertical slice.</td>
+            </tr>
+            <tr>
+              <td><code>coder</code></td>
+              <td><code>tdd</code> (cáº£ tá»« superpowers vÃ  mattpocock), <code>subagent-driven-development</code> (superpowers)</td>
+              <td>So sÃ¡nh vÃ  chá»n lá»c hoáº·c gá»™p hai cÆ¡ cháº¿ TDD Ä‘á»ƒ táº¡o ra quy trÃ¬nh coding tá»‘i Æ°u nháº¥t.</td>
+            </tr>
+            <tr>
+              <td><code>bug-triager</code></td>
+              <td><code>diagnose</code> (mattpocock) + <code>systematic-debugging</code> (superpowers)</td>
+              <td>Hai quy trÃ¬nh debug Ä‘á»™c láº­p nhÆ°ng cÃ³ chung triáº¿t lÃ½ â€” tÃ­n hiá»‡u tá»‘t chá»©ng minh pattern nÃ y chuáº©n má»±c vÃ  Ä‘Ã¡ng tin cáº­y.</td>
+            </tr>
+            <tr>
+              <td><code>code-reviewer</code></td>
+              <td><code>requesting/receiving-code-review</code> (superpowers), <code>git-guardrails</code>, <code>setup-pre-commit</code> (mattpocock)</td>
+              <td>Bá»c ngoÃ i thÃªm checklist quy chuáº©n cá»§a cÃ´ng ty thÃ´ng qua lá»›p chÃ­nh sÃ¡ch (policy layer).</td>
+            </tr>
+            <tr>
+              <td><code>doc-writer</code></td>
+              <td>CÃ¡c ká»¹ nÄƒng xá»­ lÃ½ tÃ i liá»‡u PDF/DOCX/XLSX/PPTX (anthropics/skills)</td>
+              <td>HÃ ng chÃ­nh chá»§ Anthropic, Ä‘Ã£ tá»‘i Æ°u hÃ³a vÃ  kiá»ƒm chá»©ng cháº¡y production tá»‘t.</td>
+            </tr>
+            <tr>
+              <td><strong>XuyÃªn suá»‘t (Cross-cutting)</strong></td>
+              <td><code>handoff</code> (mattpocock) â€” nÃ©n ngá»¯ cáº£nh khi chuyá»ƒn tiáº¿p agent &rarr; agent; <code>caveman</code> (mattpocock) â€” nÃ©n lÆ°á»£ng token Ä‘áº§u ra khoáº£ng 75%</td>
+              <td><code>handoff</code> lÃ  máº£nh ghÃ©p káº¿t ná»‘i cÃ¡c agent Ä‘Æ¡n láº» vÃ o vÃ²ng láº·p SDLC; <code>caveman</code> giáº£i quyáº¿t trá»±c tiáº¿p ná»—i Ä‘au chi phÃ­ vÃ  giá»›i háº¡n token.</td>
+            </tr>
+            <tr>
+              <td><strong>Há»‡ thá»‘ng (Meta)</strong></td>
+              <td><code>write-a-skill</code> (mattpocock), <code>writing-skills</code> (superpowers)</td>
+              <td>TÃ i liá»‡u tham kháº£o cho cáº¥u trÃºc DSL chuáº©n cá»§a cÃ¡c agent má»›i khi dev Ä‘Ã³ng gÃ³p ngÆ°á»£c láº¡i há»‡ thá»‘ng.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <doc-alert type="warning" title="Bá» qua cÃ¡c ká»¹ nÄƒng quÃ¡ Ä‘áº·c thÃ¹">
+          CÃ¡c ká»¹ nÄƒng sau tá»« <code>mattpocock/skills</code> khÃ´ng Ä‘Æ°á»£c import do quÃ¡ Ä‘áº·c thÃ¹ cÃ¡ nhÃ¢n hoáº·c náº±m ngoÃ i pháº¡m vi: <code>setup-matt-pocock-skills</code>, <code>scaffold-exercises</code>, <code>migrate-to-shoehorn</code>, <code>teach</code>.
+        </doc-alert>
+      </section>
+
+      <!-- 16. Team & Effort -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s16">16. Team &amp; Effort (MVP)</h2>
+        <table>
+          <thead><tr><th>Role</th><th>Sá»‘ lÆ°á»£ng</th><th>TrÃ¡ch nhiá»‡m</th></tr></thead>
+          <tbody>
+            <tr><td>Tech Lead / SA</td><td>1</td><td>DSL design, adapter architecture, review</td></tr>
+            <tr><td>Backend/Tooling Dev (TS)</td><td>1â€“2</td><td>Build engine, CLI, adapters, CI</td></tr>
+            <tr><td>Prompt Engineer / Senior Dev</td><td>1</td><td>Viáº¿t &amp; tune 6 agents MVP, eval cases</td></tr>
+            <tr><td>(Part-time) BA/QA</td><td>0.5</td><td>Test agent output vá»›i case thá»±c táº¿, viáº¿t docs</td></tr>
+          </tbody>
+        </table>
+        <div class="note" style="margin-top: 14px;"><strong>Tá»•ng effort MVP:</strong> ~6 tuáº§n Ã— 3 ngÆ°á»i â‰ˆ 18 person-weeks.</div>
+      </section>
+
+      <footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
+        <span>Solution Architecture Document Â· Agentic SDLC Agents Set</span>
+        <span>Source of truth: <code>docs/sa-design/SA_DESIGN_Agentic_SDLC_Agents_Set.md</code></span>
+      </footer>
+
+    </main>
+
+    <!-- Right TOC sidebar (auto-populated) -->
+    <aside class="doc-toc-sidebar">
+      <div class="doc-toc-label">On this page</div>
+      <nav id="doc-toc-nav"></nav>
+    </aside>
+
+  </div>
+
+  <script src="../docs-core.js"></script>
+  <script src="../docs-layout.js" defer></script>
+</body>
+</html>

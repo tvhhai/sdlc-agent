@@ -2,54 +2,86 @@
 
 ## Folder structure
 
-Each document lives in its own subfolder alongside its HTML viewer:
-
 ```
 docs/
-├── style.css              shared dark-mode design system (expense_tracker pattern)
-├── docs-core.js           custom web components: <doc-tabs>, <doc-card>, <doc-alert>, <doc-accordion>
-├── docs-layout.css        3-column sidebar layout: body.page-doc + .doc-shell grid
-├── docs-layout.js         DocLayoutManager: active-doc marking, auto TOC, scroll spy, mobile toggle
-├── _template.html         reference template — copy this when adding a new doc
-├── CLAUDE.md              this file
-├── sa-design/
+├── index.html              SPA shell — single entry point for all docs
+├── docs-manifest.js        nav source of truth → window.__DOCS_MANIFEST__
+├── docs-index.js           SPA logic (sidebar, routing, iframe, TOC, MD toggle)
+├── docs-index.css          3-column shell layout (page-index)
+├── marked.min.js           client-side markdown renderer (UMD build, local copy)
+├── style.css               shared dark-mode design system
+├── docs-core.js            custom web components: <doc-tabs>, <doc-card>, etc.
+├── docs-layout.css         3-column sidebar layout for individual doc pages
+├── docs-layout.js          iframe detection + auto TOC + scroll spy + mobile toggle
+├── _template.html          reference template — copy when adding a new HTML doc
+├── CLAUDE.md               this file
+│
+├── architecture/           Core architecture docs
 │   ├── SA_DESIGN_Agentic_SDLC_Agents_Set.md   ← source of truth
 │   └── sa-design.html
-├── codebase-guide/
+│
+├── reference/              Reference docs
 │   ├── CODEBASE_FOLDER_GUIDE.md               ← source of truth
-│   └── codebase-guide.html
-└── adapter-contract/
-    ├── ADAPTER_CONTRACT.md                    ← source of truth
-    └── adapter-contract.html
+│   ├── codebase-guide.html
+│   ├── ADAPTER_CONTRACT.md                    ← source of truth
+│   └── adapter-contract.html
+│
+├── work/                   AI-generated work artifacts (expandable in SPA)
+│   └── _index.js           sub-nav registry → window.__DOCS_INDEX__['work']
+│
+└── _superpowers/           Internal plans & specs (hidden from SPA nav)
+    ├── plans/
+    └── specs/
 ```
 
 ## Source of truth rule
 
-**MD files are source of truth. HTML files are rendered views.**
+**MD files are source of truth. HTML files are rendered views created by an AI agent.**
 
 When content changes:
 1. Edit the `.md` file first.
-2. Reflect the change in the `.html` file — do not let them drift.
-3. Never change HTML content without a matching MD update.
+2. Ask the AI agent to re-render the HTML from the MD using the existing styles and rules.
+3. Never edit HTML content directly without a matching MD update.
 
-## HTML layout — `page-doc` (3-column sidebar)
+## Navigation — manifest-driven
 
-All doc HTML files use `body.page-doc` + `.doc-shell` from `docs-layout.css`.
+All navigation is driven by `docs-manifest.js`. **Never hardcode nav across HTML files.**
+
+To add a doc to the SPA sidebar:
+1. Add an entry to the correct group in `docs/docs-manifest.js`:
+   ```js
+   { slug: 'my-doc', title: 'My Doc', icon: '📄',
+     file: 'architecture/my-doc.html',   // path relative to docs/
+     md:   'architecture/my-doc.md' }
+   ```
+2. That's it — the sidebar auto-rebuilds on page load.
+
+To add a doc under an expandable folder (e.g. `work/`):
+1. Add an entry in the folder's `_index.js` (e.g. `docs/work/_index.js`).
+2. Never edit `docs-manifest.js` for sub-entries.
+
+Folders starting with `_` are auto-hidden from the SPA nav (`autoHidePrefix: '_'` in manifest).
+
+## HTML doc layout — `page-doc`
+
+Individual doc HTML files use `body.page-doc` + `.doc-shell` from `docs-layout.css`.
+When loaded inside the SPA iframe, `docs-layout.js` auto-detects this and hides the
+standalone sidebar/TOC, then posts heading data to the parent shell via `postMessage`.
 
 ### Required structure
 
 ```html
 <body class="page-doc" data-doc="<slug>">
 
-  <!-- mobile toggle (always include) -->
+  <!-- mobile toggle (always include even though it hides in iframe) -->
   <button class="doc-nav-toggle" ...>☰</button>
   <div class="doc-nav-backdrop"></div>
 
   <div class="doc-shell">
 
-    <!-- LEFT: navigation sidebar (same across all docs) -->
+    <!-- LEFT: standalone nav (hidden by docs-layout.js when in iframe) -->
     <aside class="doc-nav-sidebar">
-      <a class="doc-nav-brand" href="...">...</a>
+      <a class="doc-nav-brand" href="../index.html">sdlc-agent</a>
       <nav class="doc-nav-group">
         <div class="doc-nav-group-label">Group label</div>
         <a class="doc-nav-link" href="..." data-doc="<slug>">
@@ -60,20 +92,17 @@ All doc HTML files use `body.page-doc` + `.doc-shell` from `docs-layout.css`.
 
     <!-- CENTER: main content -->
     <main class="doc-main">
-      <!-- hero: badges + h1 + subtitle -->
       <div class="doc-badges">...</div>
       <h1>Title</h1>
       <p class="doc-subtitle">...</p>
 
-      <!-- sections — h2[id] drives right TOC + scroll spy -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="unique-slug">Section Title</h2>
-        <!-- h3[id] also appears in TOC with indent -->
         <h3 class="doc-section-subtitle" id="sub-slug">Subsection</h3>
       </section>
     </main>
 
-    <!-- RIGHT: TOC sidebar (auto-populated by docs-layout.js) -->
+    <!-- RIGHT: TOC (auto-populated; also sent to parent via postMessage) -->
     <aside class="doc-toc-sidebar">
       <div class="doc-toc-label">On this page</div>
       <nav id="doc-toc-nav"></nav>
@@ -88,11 +117,11 @@ All doc HTML files use `body.page-doc` + `.doc-shell` from `docs-layout.css`.
 
 ### Key rules
 
-- `body[data-doc]` must match the `data-doc` on the corresponding `.doc-nav-link` — this is how the left sidebar highlights the current doc.
-- Every `<h2 class="doc-section-title">` **must have an `id`** for scroll spy and anchor links.
-- `h3[id]` headings appear in the right TOC with an indent (`.toc-depth-3`).
-- Asset paths are relative: `../style.css`, `../docs-layout.css`, `../docs-core.js`, `../docs-layout.js`.
-- Inline `<style>` blocks are for **doc-specific** classes only (e.g. `.rule-row`, `.phase-group`). Layout and typography are owned by `docs-layout.css`.
+- `body[data-doc]` must match `data-doc` on the nav link — drives standalone active-state.
+- Every `<h2 class="doc-section-title">` **must have an `id`** for scroll spy and TOC.
+- `h3[id]` headings appear in the TOC with indent (`.toc-depth-3`).
+- Asset paths are relative from the doc's subfolder: `../style.css`, `../docs-layout.css`, etc.
+- Brand `href` should point to `../index.html` (the SPA shell).
 
 ### Layout breakpoints
 
@@ -100,20 +129,22 @@ All doc HTML files use `body.page-doc` + `.doc-shell` from `docs-layout.css`.
 |----------|--------|
 | > 1200px | 3-column: left nav (240px) + main + right TOC (220px) |
 | ≤ 1200px | 2-column: left nav + main (right TOC hidden) |
-| ≤ 860px  | 1-column: main only; left nav slides in via hamburger button |
+| ≤ 860px  | 1-column: main only; left nav slides in via hamburger |
 
 ## Shared assets
 
-`style.css` and `docs-core.js` come from the expense_tracker docs system.
+`style.css` and `docs-core.js` come from the expense_tracker docs system — update together
+when the upstream design system is refreshed, never modify locally.
+
 `docs-layout.css` and `docs-layout.js` are local to sdlc-agent.
 
-Update `style.css` / `docs-core.js` together when the upstream design system is refreshed — do not modify them locally to avoid drift.
+`marked.min.js` is copied from `node_modules/marked/lib/marked.umd.js` — refresh by
+re-running `pnpm add -D marked -w` and copying the new UMD build.
 
-## Adding a new document
+## Adding a new document (full workflow)
 
-1. Create `docs/<slug>/` subfolder.
-2. Write `<slug>.md` (content first — source of truth).
-3. Copy `docs/_template.html` → `docs/<slug>/<slug>.html`.
-4. Set `body[data-doc]="<slug>"` and `data-doc="<slug>"` on the nav link.
-5. Add a nav link for the new doc in the `<aside class="doc-nav-sidebar">` of **all** existing HTML files.
-6. Add links in `README.md`.
+1. Create `docs/<category>/<slug>.md` — write content first (source of truth).
+2. Ask the AI agent to render `docs/<category>/<slug>.html` from the MD using
+   `docs/_template.html` as the structural template and the existing HTML files as style reference.
+3. Add an entry to `docs/docs-manifest.js` (or the relevant `_index.js` for expandable folders).
+4. Verify via `docs/index.html` in a browser (served with `npx serve docs`).

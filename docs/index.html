@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docs — sdlc-agent</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="docs-index.css" />
+  <!-- docs-manifest.js sets window.__DOCS_MANIFEST__ before SPA boots -->
+  <script src="docs-manifest.js"></script>
+</head>
+<body class="page-index">
+
+  <!-- Mobile hamburger (visible only ≤ 860px) -->
+  <button class="index-nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  <div class="index-nav-backdrop"></div>
+
+  <div class="index-shell">
+
+    <!-- ── Left sidebar (populated by docs-index.js) ───────────── -->
+    <aside class="index-sidebar" id="index-sidebar"></aside>
+
+    <!-- ── Center: topbar + content ───────────────────────────── -->
+    <div class="index-center">
+
+      <div class="index-topbar">
+        <span class="index-breadcrumb" id="index-breadcrumb">Loading…</span>
+        <div class="index-view-toggle">
+          <button class="view-btn active" id="btn-html">HTML</button>
+          <button class="view-btn" id="btn-md">MD</button>
+        </div>
+      </div>
+
+      <!-- HTML view: iframe embeds individual doc pages -->
+      <iframe
+        class="index-frame"
+        id="index-frame"
+        src="about:blank"
+        title="Document viewer"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      ></iframe>
+
+      <!-- MD view: rendered markdown (requires HTTP server) -->
+      <div class="index-md-view" id="index-md-view" hidden></div>
+
+    </div>
+
+    <!-- ── Right TOC (populated by postMessage / marked headings) ─ -->
+    <aside class="index-toc">
+      <div class="index-toc-label">On this page</div>
+      <nav id="index-toc-nav"></nav>
+    </aside>
+
+  </div>
+
+  <script src="docs-index.js"></script>
+</body>
+</html>

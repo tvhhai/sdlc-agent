@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quy Æ°á»›c Adapter â€” TÃ i liá»‡u sdlc-agent</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../docs-layout.css" />
+  <style>
+    .rule-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-num { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(108,142,245,0.12); border-radius: 4px; padding: 2px 8px; margin-top: 1px; }
+    .rule-text { flex: 1; color: #cbd5e1; font-size: 13.5px; line-height: 1.6; }
+    .step-list { counter-reset: step; list-style: none; padding: 0; }
+    .step-list li { counter-increment: step; display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    .step-list li:last-child { border-bottom: none; }
+    .step-list li::before { content: counter(step); flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: rgba(108,142,245,0.15); color: var(--accent); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .step-text { color: #cbd5e1; font-size: 13.5px; line-height: 1.6; }
+  </style>
+</head>
+<body class="page-doc" data-doc="adapter-contract">
+
+  <button class="doc-nav-toggle" aria-label="Open navigation" aria-expanded="false">â˜°</button>
+  <div class="doc-nav-backdrop"></div>
+
+  <div class="doc-shell">
+
+    <!-- Left nav sidebar -->
+    <aside class="doc-nav-sidebar">
+      <a class="doc-nav-brand" href="../architecture/sa-design.html">
+        <div class="doc-nav-brand-title">sdlc-agent</div>
+        <div class="doc-nav-brand-sub">TÃ i liá»‡u hÆ°á»›ng dáº«n</div>
+      </a>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Kiáº¿n trÃºc</div>
+        <a class="doc-nav-link" href="../architecture/sa-design.html" data-doc="sa-design">
+          <span class="doc-nav-link-icon">ðŸ—</span> SA Design
+        </a>
+      </nav>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Tham chiáº¿u</div>
+        <a class="doc-nav-link" href="codebase-guide.html" data-doc="codebase-guide">
+          <span class="doc-nav-link-icon">ðŸ“</span> Codebase Guide
+        </a>
+        <a class="doc-nav-link" href="adapter-contract.html" data-doc="adapter-contract">
+          <span class="doc-nav-link-icon">ðŸ”Œ</span> Adapter Contract
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="doc-main">
+
+      <div class="doc-badges">
+        <span class="doc-badge doc-badge-default">2026-06-11</span>
+        <span class="doc-badge doc-badge-default">Kiáº¿n trÃºc Â· Adapters</span>
+        <span class="doc-badge doc-badge-success">á»”n Ä‘á»‹nh</span>
+      </div>
+      <h1>Quy Æ°á»›c Adapter (Adapter Contract)</h1>
+      <p class="doc-subtitle">Bá»™ quy Æ°á»›c báº¯t buá»™c má»i adapter pháº£i Ä‘Ã¡p á»©ng Ä‘á»ƒ Ä‘Æ°á»£c Ä‘Äƒng kÃ½ vÃ o build engine. XÃ¡c Ä‘á»‹nh interface, quy táº¯c tÃ­nh báº¥t biáº¿n (determinism), thuá»™c tÃ­nh Ä‘áº§u ra báº¯t buá»™c vÃ  yÃªu cáº§u kiá»ƒm thá»­.</p>
+
+      <!-- Interface & Rules -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="interface">Interface</h2>
+        <p>Má»™t adapter sáº½ implement interface <code>ToolAdapter</code> tá»« package <code>@sdlc-agents/core</code>:</p>
+        <pre class="flow" style="margin: 16px 0;"><span class="c">// packages/adapters/&lt;tool&gt;/src/index.ts</span>
+<span class="k">interface</span> ToolAdapter {
+  <span class="k">readonly</span> name: string;                                      <span class="c">// registry key, dáº¡ng kebab-case</span>
+  render(agents: AgentDef[], ctx: BuildContext): OutputFile[];
+  validate?(outputs: OutputFile[]): Diagnostic[];             <span class="c">// tá»± kiá»ƒm tra (optional)</span>
+}</pre>
+
+        <h2 class="doc-section-title" id="rules" style="margin-top: 28px;">Quy táº¯c cá»‘t lÃµi</h2>
+        <div>
+          <div class="rule-row">
+            <span class="rule-num">R1</span>
+            <span class="rule-text"><strong>Báº¥t biáº¿n &amp; thuáº§n khiáº¿t (Pure &amp; deterministic):</strong> cÃ¹ng danh sÃ¡ch agents + cÃ¹ng context âž” káº¿t quáº£ Ä‘áº§u ra pháº£i giá»‘ng nhau Ä‘áº¿n tá»«ng byte. KhÃ´ng ghi timestamp, khÃ´ng sinh ID ngáº«u nhiÃªn, khÃ´ng gá»i network, khÃ´ng Ä‘á»c file ngoÃ i luá»“ng. TÃ­nh báº¥t biáº¿n lÃ  Ä‘iá»u kiá»‡n báº¯t buá»™c Ä‘á»ƒ cháº¡y cÆ¡ cháº¿ phÃ¡t hiá»‡n drift vÃ  kiá»ƒm thá»­ snapshot.</span>
+          </div>
+          <div class="rule-row">
+            <span class="rule-num">R2</span>
+            <span class="rule-text"><strong>ÄÆ°á»ng dáº«n tÆ°Æ¡ng Ä‘á»‘i:</strong> <code>OutputFile.path</code> lÃ  Ä‘Æ°á»ng dáº«n tÆ°Æ¡ng Ä‘á»‘i so vá»›i thÆ° má»¥c gá»‘c cá»§a dá»± Ã¡n ngÆ°á»i dÃ¹ng (consumer project root) vÃ  báº¯t buá»™c pháº£i sá»­ dá»¥ng dáº¥u phÃ¢n tÃ¡ch <code>/</code>.</span>
+          </div>
+          <div class="rule-row">
+            <span class="rule-num">R3</span>
+            <span class="rule-text"><strong>KhÃ´ng tá»± ghi tá»‡p tin:</strong> má»™t adapter tuyá»‡t Ä‘á»‘i khÃ´ng tá»± ghi file ra á»• Ä‘Ä©a â€” Build Engine sáº½ chá»‹u trÃ¡ch nhiá»‡m ghi toÃ n bá»™ file vÃ  lÆ°u mÃ£ hash cá»§a tá»«ng file vÃ o <code>.sdlc/build-manifest.json</code> Ä‘á»ƒ phá»¥c vá»¥ cÆ¡ cháº¿ phÃ¡t hiá»‡n drift.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Render Adapters vs Host Installers -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="render-vs-installer">Render adapters vs host installers</h2>
+        <p>Äá»‹nh hÆ°á»›ng Hybrid thÃªm tráº£i nghiá»‡m installer/wizard qua <code>npx sdlc-agents init</code>, nhÆ°ng khÃ´ng Ä‘á»•i ranh giá»›i trÃ¡ch nhiá»‡m cá»§a adapter.</p>
+        <div class="grid grid-2" style="margin-top: 16px;">
+          <doc-card title="Render adapter" badge="Pure" badge-type="success">
+            LÃ  hÃ m thuáº§n tá»« canonical agents + build context sang <code>OutputFile[]</code>. Adapter quyáº¿t Ä‘á»‹nh path vÃ  content cho má»™t target format, nhÆ°ng khÃ´ng Ä‘á»c host state vÃ  khÃ´ng tá»± ghi file.
+          </doc-card>
+          <doc-card title="Host installer / wizard" badge="Interactive" badge-type="info">
+            Há»i hoáº·c detect AI host, chá»n targets/presets/scope, ghi <code>sdlc.config.yaml</code>, rá»“i gá»i build engine Ä‘á»ƒ render output láº§n Ä‘áº§u.
+          </doc-card>
+        </div>
+        <doc-alert type="warning" title="KhÃ´ng trá»™n trÃ¡ch nhiá»‡m">
+          Logic installer khÃ´ng Ä‘Æ°á»£c náº±m trong <code>adapter.render()</code>. Ngay cáº£ target tÆ°Æ¡ng lai nhÆ° Agent Skills (<code>SKILL.md</code>) cÅ©ng nÃªn lÃ  render adapter deterministic; quyáº¿t Ä‘á»‹nh project-local hay user-global thuá»™c vá» wizard.
+        </doc-alert>
+      </section>
+
+      <!-- Required Output Properties -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="required-output">Thuá»™c tÃ­nh Ä‘áº§u ra báº¯t buá»™c</h2>
+        <p>Má»—i tá»‡p tin Ä‘Æ°á»£c táº¡o ra báº¯t buá»™c pháº£i Ä‘Ã¡p á»©ng cáº£ 3 quy Ä‘á»‹nh sau:</p>
+        <ol class="step-list">
+          <li><span class="step-text"><strong>Chá»©a footer Ä‘Ã¡nh dáº¥u tá»± Ä‘á»™ng:</strong> Ä‘á»ƒ láº­p trÃ¬nh viÃªn (vÃ  cÃ¡c cÃ´ng cá»¥ phÃ¡t hiá»‡n drift) biáº¿t Ä‘Ã¢y lÃ  file tá»± Ä‘á»™ng táº¡o ra â€” chuá»—i chá»¯ <code>Generated by sdlc-agents</code> báº¯t buá»™c pháº£i xuáº¥t hiá»‡n (cÃº phÃ¡p chÃ­nh xÃ¡c cÃ³ thá»ƒ khÃ¡c nhau tÃ¹y tá»«ng adapter).</span></li>
+          <li><span class="step-text"><strong>Hiá»ƒn thá»‹ Ä‘áº§y Ä‘á»§ cÃ¡c trÆ°á»ng thÃ´ng tin cá»‘t lÃµi</strong> cá»§a agent: <code>description</code>, <code>inputs</code> (kÃ¨m kÃ½ hiá»‡u báº¯t buá»™c), <code>workflow</code> (theo thá»© tá»±, kÃ¨m gá»£i Ã½ <code>ref</code>), tham chiáº¿u <code>output_template</code> vÃ  tham chiáº¿u <code>policies</code> náº¿u cÃ³.</span></li>
+          <li><span class="step-text"><strong>TuÃ¢n thá»§ <code>model_variants</code>:</strong> náº¿u agent cÃ³ khai bÃ¡o cáº¥u hÃ¬nh variant riÃªng cho cÃ´ng cá»¥ cá»§a adapter nÃ y (vÃ­ dá»¥ <code>model_variants.claude.prompt_append</code>), hÃ£y chÃ¨n nÃ³ vÃ o; bá» qua cáº¥u hÃ¬nh variant cá»§a cÃ¡c cÃ´ng cá»¥ khÃ¡c.</span></li>
+        </ol>
+      </section>
+
+      <!-- Required Tests -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="required-tests">YÃªu cáº§u kiá»ƒm thá»­</h2>
+        <p>Má»—i package adapter báº¯t buá»™c pháº£i cÃ³ cÃ¡c tá»‡p kiá»ƒm thá»­ trong thÆ° má»¥c <code>src/__tests__/</code>:</p>
+
+        <div class="grid grid-3" style="margin-top: 16px;">
+          <doc-card title="Kiá»ƒm thá»­ quy Æ°á»›c Ä‘Æ°á»ng dáº«n (Path)" badge="Báº¯t buá»™c" badge-type="error">
+            Kiá»ƒm tra Ä‘Æ°á»ng dáº«n Ä‘áº§u ra chÃ­nh xÃ¡c cho má»™t agent máº«u â€” Ä‘áº£m báº£o adapter xuáº¥t file Ä‘Ãºng vá»‹ trÃ­ thÆ° má»¥c quy Ä‘á»‹nh.
+          </doc-card>
+          <doc-card title="Kiá»ƒm thá»­ quy Æ°á»›c ná»™i dung (Content)" badge="Báº¯t buá»™c" badge-type="error">
+            Kiá»ƒm tra ná»™i dung chá»©a Ä‘áº§y Ä‘á»§ cÃ¡c trÆ°á»ng <code>id</code>, <code>phase</code>, vÃ  toÃ n bá»™ cÃ¡c bÆ°á»›c <code>workflow</code> cá»§a agent trong file káº¿t quáº£.
+          </doc-card>
+          <doc-card title="Kiá»ƒm thá»­ Snapshot" badge="Báº¯t buá»™c" badge-type="error">
+            Ãt nháº¥t má»™t kiá»ƒm thá»­ <code>toMatchSnapshot()</code> trÃªn toÃ n bá»™ file káº¿t quáº£ â€” giÃºp phÃ¡t hiá»‡n ngay láº­p tá»©c báº¥t ká»³ thay Ä‘á»•i Ä‘á»‹nh dáº¡ng nÃ o khi review.
+          </doc-card>
+        </div>
+      </section>
+
+      <!-- Registered Adapters -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="registered-adapters">Danh sÃ¡ch Adapter Ä‘Ã£ Ä‘Äƒng kÃ½</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Adapter</th>
+              <th><code>name</code></th>
+              <th>ÄÆ°á»ng dáº«n Ä‘áº§u ra</th>
+              <th>Ghi chÃº</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Universal</strong></td>
+              <td><code>universal</code></td>
+              <td><code>AGENTS.md</code> (index) + <code>.sdlc/agents/&lt;id&gt;.md</code> (má»—i file cho 1 agent)</td>
+              <td>Má»©c Ä‘á»™ cÆ¡ báº£n (baseline) â€” Markdown thuáº§n tÃºy cÃ³ thá»ƒ Ä‘Æ°á»£c Ä‘á»c bá»Ÿi báº¥t ká»³ cÃ´ng cá»¥ AI nÃ o (Codex, Cursor, Windsurf, Gemini CLI, Zed, ...). <strong>LuÃ´n giá»¯ adapter nÃ y hoáº¡t Ä‘á»™ng.</strong> KhÃ´ng tá»± Ä‘á»‹nh tuyáº¿n: ngÆ°á»i dÃ¹ng gá»i agent báº±ng tÃªn hoáº·c má»Ÿ trá»±c tiáº¿p tá»‡p tin.</td>
+            </tr>
+            <tr>
+              <td><strong>Claude Code</strong></td>
+              <td><code>claude-code</code></td>
+              <td><code>.claude/agents/&lt;id&gt;.md</code> (má»—i file cho 1 agent)</td>
+              <td>YAML frontmatter: chá»©a <code>name</code>, <code>description</code> (tiá»n tá»‘ <code>[SDLC:&lt;phase&gt;]</code> Ä‘á»ƒ tá»± Ä‘á»™ng Ä‘á»‹nh tuyáº¿n), <code>model</code> (Ã¡nh xáº¡ tá»« <code>model_hint</code>: fast âž” Haiku, balanced âž” Sonnet, high-reasoning âž” Opus), vÃ  <code>tools</code>. Ãp dá»¥ng <code>model_variants.claude</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Copilot</strong></td>
+              <td><code>copilot</code></td>
+              <td><code>.github/copilot-instructions.md</code> (index) + <code>.github/prompts/&lt;id&gt;.prompt.md</code> (má»—i file cho 1 agent)</td>
+              <td>CÃ¡c tá»‡p prompt sá»­ dá»¥ng frontmatter <code>mode: agent</code> kÃ¨m theo <code>description</code> tÃ³m táº¯t trÃªn má»™t dÃ²ng. Ãp dá»¥ng <code>model_variants.copilot</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <doc-alert type="info" title="LÆ°u Ã½ cho Phase 2">
+          á»ž Phase 2 (theo yÃªu cáº§u FR-11 cá»§a SA design), chÃºng ta sáº½ thay tháº¿ cáº¥u hÃ¬nh hardcode <code>ADAPTERS</code> trong <code>packages/cli/src/commands/build.ts</code> báº±ng má»™t há»‡ thá»‘ng plugin interface (sá»­ dá»¥ng <code>adapters: ["@org/sdlc-adapter-x"]</code> trong config). Cho tá»›i lÃºc Ä‘Ã³, cÃ¡c adapter táº¡m thá»i náº±m chung trong monorepo nÃ y.
+        </doc-alert>
+      </section>
+
+      <!-- Adding a New Adapter -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="adding-adapter">Quy trÃ¬nh thÃªm Adapter má»›i</h2>
+        <ol class="step-list">
+          <li><span class="step-text">Khá»Ÿi táº¡o thÆ° má»¥c <code>packages/adapters/&lt;tool&gt;/</code> vá»›i <code>src/index.ts</code> export má»™t class hiá»‡n thá»±c hÃ³a <code>ToolAdapter</code>.</span></li>
+          <li><span class="step-text">Äáº£m báº£o Ä‘Ã¡p á»©ng Ä‘áº§y Ä‘á»§ cÃ¡c thuá»™c tÃ­nh Ä‘áº§u ra vÃ  viáº¿t Ä‘á»§ cÃ¡c loáº¡i kiá»ƒm thá»­ nÃªu trÃªn (path contract + content contract + snapshot).</span></li>
+          <li><span class="step-text">ÄÄƒng kÃ½ adapter má»›i trong Ä‘á»‘i tÆ°á»£ng <code>ADAPTERS</code> táº¡i tá»‡p <code>packages/cli/src/commands/build.ts</code>.</span></li>
+          <li><span class="step-text">Khai bÃ¡o thÃªm tÃªn target vÃ o tÃ i liá»‡u cáº¥u hÃ¬nh <code>sdlc.config.yaml</code> vÃ  tá»‡p <code>README.md</code> á»Ÿ thÆ° má»¥c gá»‘c.</span></li>
+          <li><span class="step-text">Bá»• sung má»™t hÃ ng vÃ o báº£ng Danh sÃ¡ch Adapter Ä‘Ã£ Ä‘Äƒng kÃ½ á»Ÿ trÃªn, nÃªu rÃµ phiÃªn báº£n cÃ´ng cá»¥ Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c vÃ  cÃ¡c lÆ°u Ã½ vá» Ä‘á»‹nh dáº¡ng file.</span></li>
+          <li><span class="step-text">Náº¿u target cáº§n hÃ nh vi installer riÃªng, ghi rÃµ trong tÃ i liá»‡u CLI/wizard thay vÃ¬ Ä‘á»ƒ adapter Ä‘á»c tráº¡ng thÃ¡i host hoáº·c tá»± ghi file.</span></li>
+        </ol>
+      </section>
+
+      <footer style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
+        <span>Quy Æ°á»›c Adapter Â· sdlc-agents</span>
+        <span>Source of truth: <code>docs/adapter-contract/ADAPTER_CONTRACT.md</code></span>
+      </footer>
+
+    </main>
+
+    <!-- Right TOC sidebar (auto-populated) -->
+    <aside class="doc-toc-sidebar">
+      <div class="doc-toc-label">TrÃªn trang nÃ y</div>
+      <nav id="doc-toc-nav"></nav>
+    </aside>
+
+  </div>
+
+  <script src="../docs-core.js"></script>
+  <script src="../docs-layout.js" defer></script>
+</body>
+</html>
