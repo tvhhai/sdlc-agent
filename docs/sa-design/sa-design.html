@@ -67,7 +67,11 @@
       <!-- 1. Executive Summary -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s1">1. Executive Summary</h2>
-        <p><strong>Agentic SDLC Agents Set</strong> là một <strong>bộ AI Agent được đặc tả sẵn</strong> cho từng giai đoạn SDLC, được đóng gói theo chiến lược <strong>Hybrid</strong>: giữ một Builder core deterministic để validate/build từ canonical YAML, đồng thời cung cấp Installer UX ngắn như <code>npx sdlc-agents init</code> cho người dùng cuối.</p>
+        <p><strong>Agentic SDLC Agents Set</strong> là một <strong>bộ AI Agent được đặc tả sẵn</strong> (agent definitions, prompts, workflows, skills) cho từng giai đoạn của Software Development Life Cycle (SDLC), được đóng gói theo chiến lược <strong>Hybrid</strong>:</p>
+        <ol>
+          <li><strong>Builder core:</strong> duy trì một nguồn chuẩn trong <code>agents/*.yaml</code>, validate bằng schema, và sau đó build ra nhiều định dạng thông qua các adapter.</li>
+          <li><strong>Installer UX:</strong> cung cấp trải nghiệm cài đặt tương tự như <code>npx skills</code> / <code>create-vue</code>: hỏi người dùng họ đang sử dụng tool nào, muốn kích hoạt những agent nào, scope dự án hay user, các biến ngôn ngữ/team, và sau đó tự động sinh cấu hình và các file đầu ra.</li>
+        </ol>
         <p>Cơ chế runtime vẫn là <strong>universal-first</strong>: luôn build <code>AGENTS.md</code> + <code>.sdlc/agents/</code> để mọi AI tool đọc được, cộng thêm <strong>native adapter</strong> cho tool nào có format riêng mạnh hơn như Claude Code hoặc GitHub Copilot.</p>
 
         <div class="grid grid-3" style="margin-top: 20px;">
@@ -112,10 +116,18 @@
         <h2 class="doc-section-title" id="s2">2. Problem Statement</h2>
         <h3>2.1 Hiện trạng</h3>
         <ul>
-          <li>Mỗi developer/team tự viết prompt riêng → chất lượng không đồng đều, trùng lặp công sức.</li>
-          <li>Mỗi AI tool có format cấu hình riêng: Claude Code (<code>CLAUDE.md</code>, <code>.claude/agents/</code>), Copilot (<code>.github/prompts/</code>), Codex (<code>AGENTS.md</code>), Cursor (<code>.cursorrules</code>), Gemini (<code>GEMINI.md</code>)…</li>
-          <li>Kiến thức nghiệp vụ (coding standard, review checklist, tài liệu) không được nhúng nhất quán vào AI workflow.</li>
-          <li>Không có versioning, testing, phân phối cho prompt/agent.</li>
+          <li>Mỗi developer/team tự viết prompt, custom instructions và cấu hình agent riêng → chất lượng không đồng đều, trùng lặp công sức.</li>
+          <li>Mỗi AI tool có format cấu hình riêng:
+            <ul>
+              <li><strong>Claude Code:</strong> <code>CLAUDE.md</code>, <code>.claude/agents/*.md</code>, <code>.claude/skills/</code>, slash commands, hooks, MCP</li>
+              <li><strong>GitHub Copilot:</strong> <code>.github/copilot-instructions.md</code>, <code>.github/prompts/*.prompt.md</code>, custom agents</li>
+              <li><strong>Codex CLI:</strong> <code>AGENTS.md</code></li>
+              <li><strong>Cursor:</strong> <code>.cursorrules</code>, <code>.cursor/rules/*.mdc</code></li>
+              <li><strong>Gemini CLI:</strong> <code>GEMINI.md</code></li>
+            </ul>
+          </li>
+          <li>Kiến thức nghiệp vụ và quy trình của công ty (coding standard, review checklist, format tài liệu) không được nhúng nhất quán vào AI workflow.</li>
+          <li>Không có cơ chế versioning, testing, hoặc phân phối cho prompt/agent.</li>
         </ul>
 
         <h3>2.2 Bài toán cần giải</h3>
@@ -132,7 +144,7 @@
           <thead><tr><th>#</th><th>Goal</th><th>Đo lường</th></tr></thead>
           <tbody>
             <tr><td><span class="pill acc">G1</span></td><td>Bộ agent phủ tối thiểu 6 phase SDLC (Requirement → Maintain)</td><td>≥ 12 agents hoạt động được</td></tr>
-            <tr><td><span class="pill acc">G2</span></td><td><strong>Universal-first:</strong> build ra chuẩn mở AGENTS.md chạy được trên MỌI AI agent + native adapter cho tool có format riêng mạnh hơn</td><td>Tầng Universal phủ 100% tools; thêm native adapter mới &lt; 1 tuần</td></tr>
+            <tr><td><span class="pill acc">G2</span></td><td><strong>Universal-first:</strong> build ra chuẩn mở <code>AGENTS.md</code> chạy được trên MỌI AI agent (Codex, Cursor, Windsurf, Gemini, Antigravity, Zed, Cline...) + native adapter cho các tool có định dạng proprietary mạnh hơn (Claude Code, Copilot...)</td><td>Tầng Universal phủ 100% tools; thêm native adapter mới &lt; 1 tuần</td></tr>
             <tr><td><span class="pill acc">G3</span></td><td>Cài đặt 1 lệnh qua interactive wizard</td><td><code>npx sdlc-agents init</code> xong &lt; 2 phút; user không phải nhớ <code>validate</code>/<code>build</code></td></tr>
             <tr><td><span class="pill acc">G4</span></td><td>Customize ở mọi cấp độ mà không fork toàn bộ</td><td>Customization model 4 cấp (mục 7)</td></tr>
             <tr><td><span class="pill acc">G5</span></td><td>Versioning + changelog + update mechanism</td><td>Semantic versioning, <code>update</code> command</td></tr>
@@ -226,36 +238,55 @@
         <h2 class="doc-section-title" id="s6">6. System Architecture</h2>
 
         <h3>6.1 Kiến trúc tổng thể</h3>
-        <pre class="ascii">┌──────────────────────────────────────────────────────────┐
-│              CANONICAL LAYER (source of truth)            │
-│  agents/*.yaml  — định nghĩa agent tool-agnostic          │
-│  templates/*.md — template output (ADR, PRD, test plan)   │
-│  policies/*.md  — convention, checklist của org/team      │
-└──────────────────────────┬───────────────────────────────┘
-                           │
-                  ┌────────▼────────┐
-                  │   BUILD ENGINE  │  (CLI: compile + validate)
-                  │  - schema check │
-                  │  - resolve vars │
-                  │  - render       │
-                  └────────┬────────┘
-                           │
-        ┌──────────────────┴──────────────────────┐
-        ▼                                         ▼
-┌──────────────────────┐   ┌──────────────────────────────────┐
-│ TẦNG 0: UNIVERSAL    │   │ TẦNG 1: NATIVE ADAPTERS          │
-│ (luôn build)         │   │                                  │
-│ AGENTS.md + .sdlc/   │   │ claude-code  copilot  cursor     │
-└──────────────────────┘   │ windsurf     gemini   cline/roo  │
-                           └──────────────────────────────────┘</pre>
+        <pre class="ascii">┌─────────────────────────────────────────────────────────┐
+│                  CANONICAL LAYER (Nguồn chuẩn)          │
+│  agents/*.yaml  — Định nghĩa agent tool-agnostic        │
+│  skills/*.md    — Quy trình/kỹ năng chi tiết            │
+│  templates/*.md — Template đầu ra (ADR, PRD, test plan) │
+│  policies/*.yaml— Quy chuẩn & checklist của org/team     │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                ┌────────▼────────┐
+                │   BUILD ENGINE  │  (CLI: biên dịch + validate)
+                │  - schema check │
+                │  - lint prompts │
+                │  - render       │
+                └────────┬────────┘
+                         │
+       ┌─────────────────┴────────────────────────┐
+       ▼                                          ▼
+┌─────────────────────────┐   ┌─────────────────────────────────────┐
+│ TẦNG 0: UNIVERSAL       │   │ TẦNG 1: NATIVE ADAPTERS (Tùy chọn)  │
+│ (luôn build, mọi tools) │   │                                     │
+│                         │   │ claude-code  copilot  cursor        │
+│ AGENTS.md + .sdlc/      │   │ windsurf     gemini   cline/roo ... │
+└────────────┬────────────┘   └────────┬────────────────────────────┘
+             ▼                         ▼
+   Codex, Windsurf, Antigravity,   .claude/agents/  .github/prompts/
+   Zed, Amp, Gemini CLI, Jules,    .cursor/rules/   .windsurf/rules/
+   Devin, + mọi công cụ tương lai  GEMINI.md        ...</pre>
 
-        <h3 style="margin-top: 24px;">6.1b Hybrid layer responsibilities</h3>
+        <h3 style="margin-top: 24px;">6.1b Trách nhiệm của các lớp trong mô hình Hybrid</h3>
         <div class="grid grid-2" style="margin-top: 12px;">
           <doc-card title="Builder core" badge="Deterministic" badge-type="success">
-            Validate schema, resolve variables, check references, call adapters, write generated files and build manifest. Đây là luồng maintainer dùng qua <code>pnpm sdlc validate</code> / <code>pnpm sdlc build</code>.
+            <ul>
+              <li><strong>Schema validation:</strong> Kiểm tra tính hợp lệ bằng JSON Schema đối với các định nghĩa agent.</li>
+              <li><strong>Reference resolution:</strong> Phân giải các tham chiếu (policies, templates, skills).</li>
+              <li><strong>Multi-layer configuration merging:</strong> Hợp nhất cấu hình đa lớp theo thứ tự ưu tiên <code>base &rarr; org &rarr; team &rarr; project &rarr; local</code> (5 lớp, xem mục 7.3).</li>
+              <li><strong>Rendering:</strong> Kết xuất ra các định dạng đặc thù của từng công cụ thông qua các adapter tương ứng.</li>
+              <li><strong>Prompt linting:</strong> Kiểm tra prompt (về độ dài, các từ bị cấm, các placeholder chưa được phân giải).</li>
+            </ul>
+            <p style="margin-top: 8px; font-size: 12px; color: var(--muted);">Phục vụ chủ yếu cho các maintainer thông qua lệnh: <code>pnpm validate</code>, <code>pnpm build</code>, <code>pnpm test</code>, <code>pnpm typecheck</code>, <code>pnpm lint</code>.</p>
           </doc-card>
           <doc-card title="Installer / Wizard UX" badge="Interactive" badge-type="info">
-            Hỏi hoặc detect AI host, agent preset, install scope và variables; tạo <code>sdlc.config.yaml</code>, rồi gọi Builder core để user cuối chỉ cần <code>npx sdlc-agents init</code>.
+            <ul>
+              <li><strong>Host detection:</strong> Phát hiện hoặc hỏi người dùng họ đang sử dụng AI host nào: Claude Code, Cursor, Copilot, Codex, Windsurf, Gemini...</li>
+              <li><strong>Agent presets:</strong> Cho phép lựa chọn các preset: full SDLC, planning+coding, review+testing, hoặc tùy chỉnh.</li>
+              <li><strong>Scope selection:</strong> Cho phép chọn phạm vi lưu file: project-local hoặc user-global (nếu host hỗ trợ).</li>
+              <li><strong>Generate &amp; Build:</strong> Tạo file <code>sdlc.config.yaml</code>, chạy validation và thực thi bản build ban đầu.</li>
+              <li><strong>Command isolation:</strong> Cô lập và dành riêng các lệnh phát triển cho maintainers, người dùng cuối không cần nhớ các lệnh phức tạp.</li>
+            </ul>
+            <p style="margin-top: 8px; font-size: 12px; color: var(--muted);">Phục vụ người dùng cuối thông qua một lệnh duy nhất: <code>npx sdlc-agents init</code>.</p>
           </doc-card>
         </div>
 
@@ -273,12 +304,15 @@
         <table>
           <thead><tr><th>Adapter</th><th>Output native</th><th>Lợi ích thêm</th></tr></thead>
           <tbody>
-            <tr><td><code>claude-code</code></td><td><code>CLAUDE.md</code>, <code>.claude/agents/*.md</code>, skills, commands, hooks</td><td>Subagent thật (context riêng), slash commands, auto-trigger skills, hooks</td></tr>
-            <tr><td><code>copilot</code></td><td><code>.github/copilot-instructions.md</code>, <code>.github/prompts/*.prompt.md</code></td><td>Prompt files gọi nhanh, Copilot coding agent trên GitHub.com</td></tr>
-            <tr><td><code>cursor</code></td><td><code>.cursor/rules/*.mdc</code></td><td>Rule scoping theo glob, auto-attach theo file đang mở</td></tr>
-            <tr><td><code>windsurf</code></td><td><code>.windsurf/rules/*.md</code>, workflows</td><td>Cascade workflows, rule activation modes</td></tr>
-            <tr><td><code>gemini</code></td><td><code>GEMINI.md</code></td><td>Tích hợp Gemini CLI native</td></tr>
-            <tr><td>codex / antigravity / zed / amp</td><td><code>AGENTS.md</code> (dùng chung Universal)</td><td>Không cần adapter riêng — chi phí hỗ trợ = 0</td></tr>
+            <tr><td><code>claude-code</code></td><td><code>CLAUDE.md</code>, <code>.claude/agents/*.md</code>, <code>.claude/skills/</code>, <code>.claude/commands/</code>, hooks</td><td>Subagent thật (context riêng biệt), slash commands, auto-triggered skills, hooks</td></tr>
+            <tr><td><code>copilot</code></td><td><code>.github/copilot-instructions.md</code>, <code>.github/prompts/*.prompt.md</code>, <code>.github/agents/*.md</code></td><td>Prompt files gọi nhanh, Copilot coding agent trên GitHub.com</td></tr>
+            <tr><td><code>cursor</code></td><td><code>.cursor/rules/*.mdc</code></td><td>Rule scoping theo glob pattern, tự động đính kèm (auto-attach) theo active file</td></tr>
+            <tr><td><code>windsurf</code></td><td><code>.windsurf/rules/*.md</code>, <code>.windsurf/workflows/*.md</code></td><td>Cascade workflows, rule activation modes</td></tr>
+            <tr><td><code>gemini</code></td><td><code>GEMINI.md</code> (+ trỏ tới <code>.sdlc/</code>)</td><td>Tích hợp native Gemini CLI</td></tr>
+            <tr><td><code>antigravity</code></td><td><code>AGENTS.md</code> (dùng chung Universal) + cấu hình <code>.agent/</code> nếu có</td><td>Antigravity đọc trực tiếp file <code>AGENTS.md</code></td></tr>
+            <tr><td><code>codex</code></td><td><code>AGENTS.md</code> (dùng chung Universal) + <code>~/.codex/prompts/</code></td><td>Các prompt tùy chỉnh cho Codex CLI</td></tr>
+            <tr><td><code>cline</code> / <code>roo</code></td><td><code>.clinerules/</code>, <code>.roo/rules/</code></td><td>Mode-based rules (architect/code/debug)</td></tr>
+            <tr><td><code>zed</code> / <code>amp</code> / khác</td><td><code>AGENTS.md</code> (dùng chung Universal)</td><td>Không cần adapter riêng — chi phí hỗ trợ = 0</td></tr>
           </tbody>
         </table>
 
@@ -308,19 +342,32 @@
 
         <doc-accordion title="7.2 L1 — Configure: zero-code example">
 <pre class="flow"><span class="c"># sdlc-agents.config.yaml</span>
+<span class="n">extends</span>: <span class="s">"@org/sdlc-agents-base"</span>        <span class="c"># hoặc preset cộng đồng: "@sdlc-agents/preset-fintech"</span>
 <span class="n">targets</span>: [universal, claude-code, copilot]   <span class="c"># universal phủ mọi tool còn lại</span>
+
 <span class="n">variables</span>:
   <span class="n">language</span>: vi
   <span class="n">stack</span>: nestjs-postgres
   <span class="n">team</span>: payment-squad
+
 <span class="n">agents</span>:
   <span class="n">enable</span>: [planner, coder, code-reviewer]
   <span class="n">disable</span>: [ux-reviewer]</pre>
         </doc-accordion>
 
         <doc-accordion title="7.3 L2 — Override: patch-based, deep-merge">
-<p>Override chỉ chứa phần khác biệt → khi base cải tiến prompt, user hưởng cải tiến mà vẫn giữ tùy chỉnh riêng. Ba toán tử: <code>replace</code>, <code>append</code>/<code>prepend</code>, <code>insert_after</code>/<code>insert_before</code>.</p>
-<pre class="flow"><span class="c"># overrides/code-reviewer.yaml</span>
+          <p>Cơ chế <strong>deep-merge</strong> có độ ưu tiên rõ ràng (tương tự cấu hình ESLint/Tailwind):</p>
+          <pre class="flow">Base package (@org/sdlc-agents-base)     ← độ ưu tiên thấp nhất
+  ↑ ghi đè bởi
+Org preset (quy chuẩn chung của tổ chức)
+  ↑ ghi đè bởi
+Team preset (quy ước của từng team)
+  ↑ ghi đè bởi
+Project config (sdlc-agents.config.yaml) ← độ ưu tiên cao nhất
+  ↑ ghi đè bởi
+Local overrides (sdlc-agents.local.yaml — được gitignore, phục vụ test cá nhân)</pre>
+          <p style="margin-top: 14px;">Override chỉ chứa phần khác biệt &rarr; khi base cải tiến prompt, user hưởng cải tiến mà vẫn giữ tùy chỉnh riêng. Ba toán tử chính được hỗ trợ: <code>replace</code> (thế toàn bộ), <code>append</code>/<code>prepend</code> (thêm vào cuối/đầu), và <code>insert_after</code>/<code>insert_before</code> (chèn vào vị trí cụ thể trong workflow).</p>
+          <pre class="flow"><span class="c"># overrides/code-reviewer.yaml</span>
 <span class="n">agent</span>: code-reviewer
 <span class="n">patch</span>:
   <span class="n">workflow</span>:
@@ -332,12 +379,27 @@
         </doc-accordion>
 
         <doc-accordion title="7.6 Escape hatch — không bao giờ bị kẹt">
-<table><thead><tr><th>Tình huống</th><th>Lối thoát</th></tr></thead><tbody>
-  <tr><td>DSL không biểu diễn được</td><td><code>tool_specific:</code> block — viết raw content cho riêng 1 tool</td></tr>
-  <tr><td>Muốn sửa trực tiếp file output</td><td><code>eject</code> mode: copy file generated thành file thường, <code>managed: false</code></td></tr>
-  <tr><td>File generated bị sửa tay</td><td>Build engine cảnh báo drift — SHA-256 manifest</td></tr>
-  <tr><td>Cần quay về mặc định</td><td><code>npx sdlc-agents reset &lt;agent&gt;</code></td></tr>
-</tbody></table>
+          <table>
+            <thead><tr><th>Tình huống (Scenario)</th><th>Lối thoát (Escape Route)</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>DSL không biểu diễn được yêu cầu đặc thù</td>
+                <td>Sử dụng block <code>tool_specific:</code> trong file agent YAML — viết raw content dành riêng cho 1 tool, các tool khác sẽ bỏ qua block này.</td>
+              </tr>
+              <tr>
+                <td>Muốn sửa đổi thủ công file được sinh ra (output file)</td>
+                <td>Chế độ <code>eject</code>: chạy <code>npx sdlc-agents eject code-reviewer</code> — copy file generated thành file thường, đánh dấu <code>managed: false</code> để build engine không ghi đè lên nữa.</td>
+              </tr>
+              <tr>
+                <td>File generated vô tình bị sửa đổi thủ công</td>
+                <td>Build engine chèn header <code># generated — do not edit</code> và chạy các câu lệnh <code>diff</code> để cảnh báo về sự sai lệch (drift) giữa file gốc và file đầu ra.</td>
+              </tr>
+              <tr>
+                <td>Cần quay lại trạng thái mặc định ban đầu</td>
+                <td>Chạy <code>npx sdlc-agents reset &lt;agent&gt;</code> — xóa các overrides và khôi phục lại trạng thái của base agent ban đầu.</td>
+              </tr>
+            </tbody>
+          </table>
         </doc-accordion>
       </section>
 
@@ -359,8 +421,11 @@
             <tr><td><code>FR-09</code></td><td>Versioning theo SemVer, changelog tự động; patch fail rõ ràng khi base đổi cấu trúc</td><td><span class="pill warn">Should</span></td></tr>
             <tr><td><code>FR-10</code></td><td>Template variables (<code>{{team}}</code>, <code>{{stack}}</code>, <code>{{language}}</code>)</td><td><span class="pill warn">Should</span></td></tr>
             <tr><td><code>FR-11</code></td><td>Adapter plugin interface (npm package) + build hooks (pre/post/transform)</td><td><span class="pill warn">Should</span></td></tr>
-            <tr><td><code>FR-12</code></td><td><code>doctor</code> command: hiển thị layer merge, override active/mồ côi</td><td><span class="pill warn">Should</span></td></tr>
-            <tr><td><code>FR-13–16</code></td><td>Preset publishing, adapters đợt 2, eval harness, web catalog</td><td><span class="pill">Could (v1.1+)</span></td></tr>
+            <tr><td><code>FR-12</code></td><td>Lệnh <code>doctor</code>: hiển thị layer merge, override đang active hoặc mồ côi (orphaned)</td><td><span class="pill warn">Should</span></td></tr>
+            <tr><td><code>FR-13</code></td><td>Preset publishing: đóng gói các tùy chỉnh thành preset tái sử dụng để các team khác có thể <code>extends</code></td><td><span class="pill">Could (v1.1)</span></td></tr>
+            <tr><td><code>FR-14</code></td><td>Hỗ trợ các native adapters đợt 2: Cursor, Windsurf, Gemini, Cline/Roo (Codex, Antigravity, Zed, Amp đã được phủ bởi Universal)</td><td><span class="pill">Could (v1.1)</span></td></tr>
+            <tr><td><code>FR-15</code></td><td>Eval harness: Đánh giá chất lượng đầu ra của agent bằng bộ kiểm thử tự động</td><td><span class="pill">Could (v1.1)</span></td></tr>
+            <tr><td><code>FR-16</code></td><td>Xây dựng web catalog/tài liệu để browse các agent trong catalog</td><td><span class="pill">Could (v1.2)</span></td></tr>
           </tbody>
         </table>
       </section>
@@ -505,32 +570,198 @@
       <!-- 14. Open Questions -->
       <section class="doc-section">
         <h2 class="doc-section-title" id="s14">14. Open Questions</h2>
-        <div class="grid grid-2" style="gap: 10px;">
-          <div class="quote"><strong>Q1 — Ngôn ngữ prompt:</strong> ✅ CHỐT: Prompt viết tiếng Anh; output template theo config <code>language</code> (default <code>en</code>).</div>
-          <div class="quote"><strong>Q2 — Tool ưu tiên thứ 2:</strong> ✅ CHỐT: GitHub Copilot — native adapter Phase 1 là Claude Code + Copilot.</div>
-          <div class="note"><strong>Q3 — OSS vs Private:</strong> Đề xuất <strong>Open Core</strong> — engine + Universal + catalog cơ bản OSS; hosted policy management + eval harness + SLA commercial. Quyết định trước Phase 1.</div>
-          <div class="note"><strong>Q6 — Trigger trên tầng Universal:</strong> Claude Code có auto-trigger; tool chỉ đọc AGENTS.md dùng model tự đọc chỉ mục hoặc quy ước lệnh tay. Đây là ceiling chấp nhận được của tầng Universal.</div>
-          <div class="note"><strong>Q4 — Owner policies chuẩn org:</strong> Cần 1 owner (Engineering Excellence group) duyệt thay đổi checklist/convention. Chưa chốt.</div>
-          <div class="note"><strong>Q7 — Ngân sách eval:</strong> Eval harness gọi API model thật → quota, chi phí, phân bổ. Cần chốt trước Phase 2.</div>
+        <p>Các câu hỏi mở cần giải quyết trước khi chuyển sang các giai đoạn tiếp theo:</p>
+
+        <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 16px;">
+          
+          <div class="quote">
+            <strong>Q1 — Ngôn ngữ prompt:</strong> <span class="pill acc">Đã chốt</span>
+            <p style="margin-top: 8px;">Prompt được viết hoàn toàn bằng tiếng Anh để đảm bảo chất lượng suy luận cao nhất của model; các output template sẽ tuân theo cấu hình <code>language</code> (mặc định là <code>en</code>, có thể cấu hình sang <code>vi</code>).</p>
+          </div>
+
+          <div class="quote">
+            <strong>Q2 — Công cụ ưu tiên thứ hai:</strong> <span class="pill acc">Đã chốt</span>
+            <p style="margin-top: 8px;">Chọn <strong>GitHub Copilot</strong> — các native adapters đợt 1 bao gồm Claude Code và GitHub Copilot.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q3 — OSS vs Private — Khác biệt trong 3 điểm kiến trúc cốt lõi:</strong>
+            <table style="margin-top: 10px; font-size: 13px;">
+              <thead>
+                <tr>
+                  <th>Khía cạnh ảnh hưởng</th>
+                  <th>Open Source (Mã nguồn mở)</th>
+                  <th>Private-only (Nội bộ)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Plugin interface</strong></td>
+                  <td>Phải ổn định, đánh phiên bản (SemVer), có tài liệu đầy đủ vì sẽ đóng vai trò public API. Breaking changes yêu cầu tăng major version.</td>
+                  <td>Chỉ phục vụ nội bộ, thoải mái thay đổi cấu trúc mã nguồn (refactoring) khi cần.</td>
+                </tr>
+                <tr>
+                  <td><strong>Policy layer</strong></td>
+                  <td>Không thể nhúng các chính sách bảo mật/nghiệp vụ riêng của doanh nghiệp vào repo chính; bắt buộc phải tách biệt thành <code>packages/policies-private</code>.</td>
+                  <td>Nhúng trực tiếp vào monorepo, đơn giản và đồng bộ hơn.</td>
+                </tr>
+                <tr>
+                  <td><strong>Adapter code</strong></td>
+                  <td>Đòi hỏi có tài liệu kiểm thử E2E đầy đủ + cam kết tương thích bền vững cho cộng đồng phát triển.</td>
+                  <td>Chỉ cần đảm bảo chạy đúng nghiệp vụ nội bộ.</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 10px; font-size: 13px;">Build engine, DSL schema, và cơ chế vendor sử dụng mã nguồn giống hệt nhau, không có rủi ro phân nhánh kiến trúc.</p>
+            <p style="margin-top: 10px; font-size: 13px;"><strong>Có nên thương mại hóa? Đề xuất: Open Core.</strong></p>
+            <ul style="font-size: 13px; margin-left: 20px;">
+              <li><strong>OSS (miễn phí):</strong> core engine + Universal adapter + bộ catalog agents cơ bản &rarr; tạo cộng đồng, tăng độ phủ, nhận đóng góp adapter từ cộng đồng.</li>
+              <li><strong>Commercial (trả phí):</strong> giao diện hosted policy management (dashboard quản lý team, audit log, vault chứa secret), bộ native adapters đầy đủ, hosted eval harness, hỗ trợ SLA, marketplace preset chuyên ngành.</li>
+              <li>Tiền lệ: Terraform OSS &rarr; HCP, ESLint &rarr; công cụ doanh nghiệp, Biome &rarr; enterprise tier.</li>
+            </ul>
+            <p style="margin-top: 10px; font-size: 13px; color: var(--accent2);"><strong>Action item:</strong> Quyết định trước Phase 1. Nếu chọn OSS, thiết kế giao diện plugin như một public API ngay từ đầu (SemVer + deprecation policies) và cô lập <code>packages/policies-private</code> ra khỏi repository chính.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q4 — Ai sở hữu bộ quy chuẩn chính sách chung của tổ chức?</strong>
+            <p style="margin-top: 8px;">Cần một nhóm chịu trách nhiệm (ví dụ: nhóm Engineering Excellence) để kiểm duyệt và phê duyệt các thay đổi đối với checklist/convention chung của doanh nghiệp.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q5 — Độ sâu tích hợp MCP (Model Context Protocol):</strong>
+            <p style="margin-top: 8px;">Chúng ta nên đi kèm các MCP server riêng (ví dụ: kết nối Jira, Confluence) ngay trong bộ agents này hay để dành cho các phase sau?</p>
+          </div>
+
+          <div class="note">
+            <strong>Q6 — Cơ chế kích hoạt ở tầng Universal:</strong>
+            <p style="margin-top: 8px;">Claude Code hỗ trợ tự động kích hoạt kỹ năng dựa trên mô tả, nhưng đối với các công cụ chỉ đọc file <code>AGENTS.md</code> thì agent được gọi như thế nào? Model sẽ tự đọc file index hay người dùng phải hướng dẫn bằng lệnh thủ công (ví dụ: "hãy tuân theo <code>.sdlc/agents/planner.md</code>")? Cần thực hiện spike thử nghiệm Phase 0 trên 2-3 công cụ thực tế vì nó quyết định trải nghiệm người dùng tầng Universal.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q7 — Ngân sách chạy Đánh giá (Evaluation):</strong>
+            <p style="margin-top: 8px;">Eval harness gọi các API model thực tế (Claude/GPT/Gemini) — ai sẽ trả tiền, hạn mức cho mỗi lần chạy CI ra sao? Cần có cơ chế kiểm soát quota để tránh việc CI bỏ qua đánh giá do cạn kiệt tài khoản.</p>
+          </div>
+
+          <div class="note">
+            <strong>Q8 — Pháp lý khi thương mại hóa:</strong>
+            <p style="margin-top: 8px;">Yêu cầu ghi nhận bản quyền (attribution) đối với các kỹ năng từ cộng đồng sử dụng giấy phép MIT/Apache khi đóng gói vào sản phẩm thương mại. Đồng thời, tên sản phẩm có xảy ra tranh chấp thương hiệu không? Cần review pháp lý trước khi release chính thức ra công chúng.</p>
+          </div>
+
         </div>
       </section>
 
       <!-- 15. Positioning -->
       <section class="doc-section">
-        <h2 class="doc-section-title" id="s15">15. Positioning vs Skill Ecosystem</h2>
+        <h2 class="doc-section-title" id="s15">15. Định vị vs Hệ sinh thái Skill</h2>
+        <p>Hiện nay có rất nhiều bộ quy tắc và kỹ năng nổi tiếng như <code>obra/superpowers</code>, <code>anthropics/skills</code>, <code>awesome-claude-code</code>, <code>awesome-cursorrules</code>, <code>agent-rules</code>... Sản phẩm này <strong>không cạnh tranh ở cấp độ nội dung của từng skill đơn lẻ</strong> — nó cạnh tranh ở <strong>cấp độ hệ thống</strong>:</p>
         <p class="quote"><em>"Skill ngoài kia là bài hát lẻ; sản phẩm này là hãng phát hành album — có tuyển chọn, chuẩn hoá, đóng gói đa nền tảng, phân phối và cập nhật."</em></p>
 
         <table style="margin-top: 16px;">
           <thead><tr><th>Tiêu chí</th><th>Skill ngoài kia</th><th>Agentic SDLC Agents Set</th></tr></thead>
           <tbody>
             <tr><td>Phạm vi</td><td>1 kỹ năng đơn lẻ</td><td><strong>Bộ hoàn chỉnh phủ cả vòng SDLC</strong>, các agent nối với nhau</td></tr>
-            <tr><td>Tool support</td><td>Khoá vào 1 tool</td><td><strong>Một nguồn → build ra mọi tool</strong></td></tr>
+            <tr><td>Tool support</td><td>Khoá vào 1 tool</td><td><strong>Một nguồn → build ra mọi tool</strong> (Universal + native adapters)</td></tr>
             <tr><td>Customization</td><td>Fork → mất khả năng update</td><td><strong>Patch-based override</strong>, update bản gốc không mất tùy chỉnh</td></tr>
-            <tr><td>Convention công ty</td><td>Không có chỗ nhúng</td><td><strong>Policy layer</strong> (org → team → project)</td></tr>
+            <tr><td>Convention công ty</td><td>Không có chỗ nhúng</td><td><strong>Policy layer</strong> (org → team → project) để nhúng checklist/convention nội bộ</td></tr>
             <tr><td>Versioning</td><td>Copy/paste thủ công</td><td>SemVer, <code>update</code> command, registry, changelog</td></tr>
-            <tr><td>Chất lượng</td><td>Không test được</td><td>Eval harness + golden cases + snapshot CI</td></tr>
+            <tr><td>Chất lượng</td><td>Không test được</td><td>Eval harness + golden cases + snapshot tests trong CI</td></tr>
           </tbody>
         </table>
+      </section>
+
+      <!-- 15.2 Reusing Existing Skills -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15-2">15.2 Tái sử dụng Kỹ năng Sẵn có</h2>
+        <p><strong>Chiến lược: KHÔNG viết lại những gì cộng đồng đã làm tốt.</strong> Thay vào đó, chúng ta xây dựng cơ chế <code>import</code> trực tiếp trong build engine:</p>
+
+        <pre class="flow"><span class="c"># agents/bug-triager.yaml</span>
+<span class="n">id</span>: bug-triager
+<span class="n">imports</span>:
+  - <span class="n">source</span>: github:obra/superpowers            <span class="c"># high-star GitHub skill</span>
+    <span class="n">path</span>: skills/systematic-debugging
+    <span class="n">pin</span>: v4.2.0                                <span class="c"># ghim cụ thể tag/commit — tránh trôi phiên bản</span>
+    <span class="n">license</span>: MIT                                <span class="c"># build lỗi nếu license không tương thích</span>
+<span class="n">prompt_prepend</span>: |
+  Apply the systematic-debugging workflow below, outputting in {{language}}.</pre>
+
+        <ul style="margin-top: 14px;">
+          <li><strong>Vendor + pin:</strong> Các skill được tải về và sao chép vào thư mục <code>vendor/</code> khi build, được ghim cố định bằng commit hash/tag nhằm đảm bảo quá trình build luôn có tính deterministic và hoạt động offline tốt, không phụ thuộc vào trạng thái online của repo nguồn.</li>
+          <li><strong>Tự động kiểm tra bản quyền:</strong> Chỉ cho phép import các skill có license tương thích (ví dụ: MIT/Apache-2.0); tự động chèn ghi nhận bản quyền (attribution) vào output đầu ra.</li>
+          <li><strong>Wrap, don't modify:</strong> Giữ nguyên vẹn mã nguồn của skill gốc, chỉ tùy biến qua các block <code>prompt_prepend</code> hoặc <code>prompt_append</code>. Khi repo nguồn phát hành phiên bản mới, ta chỉ việc nâng chỉ số <code>pin</code> lên phiên bản mới và chạy lại các evals test.</li>
+          <li><strong>Các ứng viên tiềm năng để import cho MVP:</strong> Quy trình gỡ lỗi hệ thống (systematic-debugging) &amp; TDD workflow (từ repo <code>superpowers</code>, ~94k+ stars trên Anthropic Marketplace), các kỹ năng làm tài liệu từ <code>anthropics/skills</code> (~135k stars), các kỹ năng workflow kỹ thuật của <code>mattpocock/skills</code> (~124k stars, giấy phép MIT — xem Bảng 15.3), các agent riêng lẻ từ <code>VoltAgent/awesome-claude-code-subagents</code> và <code>wshobson/agents</code>. Việc tái sử dụng này giúp giảm đáng kể công sức tự viết 6 agent MVP — phần chúng ta phải tự phát triển chủ yếu là các chính sách riêng của công ty + template tiếng Việt + logic liên kết các tác nhân thành một vòng khép kín.</li>
+        </ul>
+      </section>
+
+      <!-- 15.3 Mapping Community Skills -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="s15-3">15.3 Bảng Ánh xạ Community Skills vào Agent Catalog</h2>
+        <p>Đánh giá và phân tích khả năng tái sử dụng kỹ năng từ cộng đồng vào catalog của chúng ta (Dữ liệu đánh giá tháng 06/2026):</p>
+
+        <table style="margin-top: 16px;">
+          <thead>
+            <tr>
+              <th>Catalog Agent</th>
+              <th>Skill để Import (Nguồn)</th>
+              <th>Ghi chú sử dụng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>requirement-analyst</code></td>
+              <td><code>to-prd</code>, <code>grill-me</code>, <code>grill-with-docs</code> (mattpocock) + <code>brainstorming</code> (superpowers)</td>
+              <td><code>to-prd</code> có sẵn template PRD gồm 8 phần (Problem, Solution, User Stories, Implementation/Testing Decisions, Out of Scope) và tự động xuất bản lên trình quản lý công việc — sẵn sàng chạy ngay.</td>
+            </tr>
+            <tr>
+              <td><code>estimation-agent</code></td>
+              <td><code>to-issues</code>, <code>triage</code> (mattpocock)</td>
+              <td><code>to-issues</code> chuyển đặc tả thành các issue độc lập có thể phân công trực tiếp trên GitHub/GitLab — tối ưu cho phân tách task.</td>
+            </tr>
+            <tr>
+              <td><code>solution-architect</code></td>
+              <td><code>improve-codebase-architecture</code>, <code>zoom-out</code> (mattpocock) + mẫu cấu trúc <code>docs/adr/</code> của repo đó</td>
+              <td>Kho lưu trữ của mattpocock sử dụng mô hình ADR — mượn trực tiếp cấu trúc này cho thiết kế giải pháp.</td>
+            </tr>
+            <tr>
+              <td><code>planner</code></td>
+              <td><code>writing-plans</code>, <code>executing-plans</code> (superpowers) + <code>prototype</code> (mattpocock)</td>
+              <td>Tự động lên kế hoạch và thực thi kế hoạch theo từng vertical slice.</td>
+            </tr>
+            <tr>
+              <td><code>coder</code></td>
+              <td><code>tdd</code> (cả từ superpowers và mattpocock), <code>subagent-driven-development</code> (superpowers)</td>
+              <td>So sánh và chọn lọc hoặc gộp hai cơ chế TDD để tạo ra quy trình coding tối ưu nhất.</td>
+            </tr>
+            <tr>
+              <td><code>bug-triager</code></td>
+              <td><code>diagnose</code> (mattpocock) + <code>systematic-debugging</code> (superpowers)</td>
+              <td>Hai quy trình debug độc lập nhưng có chung triết lý — tín hiệu tốt chứng minh pattern này chuẩn mực và đáng tin cậy.</td>
+            </tr>
+            <tr>
+              <td><code>code-reviewer</code></td>
+              <td><code>requesting/receiving-code-review</code> (superpowers), <code>git-guardrails</code>, <code>setup-pre-commit</code> (mattpocock)</td>
+              <td>Bọc ngoài thêm checklist quy chuẩn của công ty thông qua lớp chính sách (policy layer).</td>
+            </tr>
+            <tr>
+              <td><code>doc-writer</code></td>
+              <td>Các kỹ năng xử lý tài liệu PDF/DOCX/XLSX/PPTX (anthropics/skills)</td>
+              <td>Hàng chính chủ Anthropic, đã tối ưu hóa và kiểm chứng chạy production tốt.</td>
+            </tr>
+            <tr>
+              <td><strong>Xuyên suốt (Cross-cutting)</strong></td>
+              <td><code>handoff</code> (mattpocock) — nén ngữ cảnh khi chuyển tiếp agent &rarr; agent; <code>caveman</code> (mattpocock) — nén lượng token đầu ra khoảng 75%</td>
+              <td><code>handoff</code> là mảnh ghép kết nối các agent đơn lẻ vào vòng lặp SDLC; <code>caveman</code> giải quyết trực tiếp nỗi đau chi phí và giới hạn token.</td>
+            </tr>
+            <tr>
+              <td><strong>Hệ thống (Meta)</strong></td>
+              <td><code>write-a-skill</code> (mattpocock), <code>writing-skills</code> (superpowers)</td>
+              <td>Tài liệu tham khảo cho cấu trúc DSL chuẩn của các agent mới khi dev đóng góp ngược lại hệ thống.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <doc-alert type="warning" title="Bỏ qua các kỹ năng quá đặc thù">
+          Các kỹ năng sau từ <code>mattpocock/skills</code> không được import do quá đặc thù cá nhân hoặc nằm ngoài phạm vi: <code>setup-matt-pocock-skills</code>, <code>scaffold-exercises</code>, <code>migrate-to-shoehorn</code>, <code>teach</code>.
+        </doc-alert>
       </section>
 
       <!-- 16. Team & Effort -->
