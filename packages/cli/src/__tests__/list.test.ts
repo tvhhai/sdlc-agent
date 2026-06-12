@@ -226,7 +226,9 @@ describe("runList error handling", () => {
 		const ok = runList(dir, { json: true });
 		expect(ok).toBe(false);
 		expect(logSpy).not.toHaveBeenCalled(); // no partial JSON on stdout
-		const errOut = errSpy.mock.calls.map((c: unknown[]) => String(c[0])).join("\n");
+		const errOut = errSpy.mock.calls
+			.map((c: unknown[]) => String(c[0]))
+			.join("\n");
 		expect(errOut).toContain("Validation errors:");
 	});
 });
