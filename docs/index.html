@@ -6,57 +6,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Docs — sdlc-agent</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="highlight.min.css" />
-  <script src="marked.min.js"></script>
-  <script src="highlight.min.js"></script>
-  <!-- docs-manifest.js sets window.__DOCS_MANIFEST__ before SPA boots -->
   <script src="docs-manifest.js"></script>
+  <script src="work/_index.js"></script>
 </head>
 
 <body class="page-index">
-
-  <!-- Mobile hamburger (visible only ≤ 860px) -->
-  <button class="index-nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
-  <div class="index-nav-backdrop"></div>
-
-  <div class="index-shell">
-
-    <!-- ── Left sidebar (populated by docs-index.js) ───────────── -->
-    <aside class="index-sidebar" id="index-sidebar"></aside>
-
-    <!-- ── Center: topbar + content ───────────────────────────── -->
-    <div class="index-center">
-
-      <div class="index-topbar">
-        <span class="index-breadcrumb" id="index-breadcrumb">Loading…</span>
-        <div class="index-view-toggle">
-          <button class="view-btn active" id="btn-html">HTML</button>
-          <button class="view-btn" id="btn-md">MD</button>
-        </div>
+  <div class="doc-hub">
+    <header class="doc-hub-header">
+      <span class="doc-hub-logo">📚</span>
+      <div>
+        <h1 class="doc-hub-title">sdlc-agent</h1>
+        <p class="doc-hub-sub">Documentation</p>
       </div>
-
-      <!-- HTML view: iframe embeds individual doc pages -->
-      <iframe class="index-frame" id="index-frame" src="about:blank" title="Document viewer"></iframe>
-
-      <!-- Loading spinner -->
-      <div class="index-loader" id="index-loader" hidden>
-        <div class="spinner"></div>
-      </div>
-
-      <!-- MD view: rendered markdown (requires HTTP server) -->
-      <div class="index-md-view" id="index-md-view" hidden></div>
-
-    </div>
-
-    <!-- ── Right TOC (populated by postMessage / marked headings) ─ -->
-    <aside class="index-toc">
-      <div class="index-toc-label">On this page</div>
-      <nav id="index-toc-nav"></nav>
-    </aside>
-
+    </header>
+    <div id="doc-hub-groups"></div>
   </div>
 
-  <script src="docs.js"></script>
+  <script>
+    (function () {
+      var manifest = window.__DOCS_MANIFEST__;
+      var workIndex = (window.__DOCS_INDEX__ || {})['work'];
+      var root = document.getElementById('doc-hub-groups');
+
+      manifest.groups.forEach(function (group) {
+        var section = makeSection(group.label);
+        var cards = section.querySelector('.doc-cards');
+
+        var firstEntry = group.entries && group.entries[0];
+        if (firstEntry && firstEntry.expandable) {
+          // Expandable group: read sub-entries from __DOCS_INDEX__
+          var idx = (window.__DOCS_INDEX__ || {})[firstEntry.slug];
+          if (!idx) return;
+          idx.entries.forEach(function (parent) {
+            var sub = document.createElement('div');
+            sub.className = 'doc-card-subgroup';
+            sub.textContent = parent.title;
+            cards.appendChild(sub);
+            (parent.docs || []).forEach(function (doc) {
+              cards.appendChild(makeCard(doc));
+            });
+          });
+        } else {
+          group.entries.forEach(function (entry) {
+            cards.appendChild(makeCard(entry));
+          });
+        }
+
+        root.appendChild(section);
+      });
+
+      function makeSection(label) {
+        var s = document.createElement('section');
+        s.className = 'doc-hub-section';
+        s.innerHTML = '<h2 class="doc-hub-section-label">' + label + '</h2><div class="doc-cards"></div>';
+        return s;
+      }
+
+      function makeCard(entry) {
+        var href = entry.file || entry.md;
+        if (!href) return document.createDocumentFragment();
+        var a = document.createElement('a');
+        a.href = href;
+        a.className = 'doc-card';
+        var icon = entry.icon ? '<span class="doc-card-icon">' + entry.icon + '</span>' : '';
+        var badge = (!entry.file && entry.md) ? '<span class="doc-card-badge">MD</span>' : '';
+        a.innerHTML = icon + '<span class="doc-card-title">' + entry.title + '</span>' + badge;
+        return a;
+      }
+    })();
+  </script>
 </body>
 
 </html>

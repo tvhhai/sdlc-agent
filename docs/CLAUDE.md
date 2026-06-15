@@ -4,11 +4,11 @@
 
 ```
 docs/
-├── index.html              SPA shell — single entry point for all docs
+├── index.html              Nav hub — lists all docs with direct links (no iframe)
 ├── docs-manifest.js        nav source of truth → window.__DOCS_MANIFEST__
 ├── marked.min.js           client-side markdown renderer (UMD build, local copy)
 ├── style.css               shared design system & layouts (consolidated)
-├── docs.js                 custom web components, layout manager, and SPA logic
+├── docs.js                 layout manager for individual HTML doc pages
 ├── _template.html          reference template — copy when adding a new HTML doc
 ├── CLAUDE.md               this file
 │
@@ -22,13 +22,19 @@ docs/
 │   ├── ADAPTER_CONTRACT.md                    ← source of truth
 │   └── adapter-contract.html
 │
-├── work/                   AI-generated work artifacts (expandable in SPA)
+├── work/                   AI-generated work artifacts
 │   └── _index.js           sub-nav registry → window.__DOCS_INDEX__['work']
 │
-└── _superpowers/           Internal plans & specs (hidden from SPA nav)
+└── _superpowers/           Internal plans & specs (hidden from nav)
     ├── plans/
     └── specs/
 ```
+
+## How index.html works
+
+`index.html` is a **simple navigation hub** — it reads `docs-manifest.js` (and folder `_index.js` files) and renders clickable cards for each doc. Clicking a card navigates directly to the HTML file (full-page, same tab). No iframe, no SPA routing.
+
+This works with `file://` (open locally) and any HTTP server.
 
 ## Source of truth rule
 
@@ -36,46 +42,46 @@ docs/
 
 When content changes:
 1. Edit the `.md` file first.
-2. Ask the AI agent to re-render the HTML from the MD using the existing styles and rules.
+2. Ask the AI agent to re-render the HTML from the MD using `_template.html` as structure reference.
 3. Never edit HTML content directly without a matching MD update.
 
 ## Navigation — manifest-driven
 
-All navigation is driven by `docs-manifest.js`. **Never hardcode nav across HTML files.**
+All top-level navigation is driven by `docs-manifest.js`. Never hardcode links in `index.html`.
 
-To add a doc to the SPA sidebar:
+To add a doc:
 1. Add an entry to the correct group in `docs/docs-manifest.js`:
    ```js
    { slug: 'my-doc', title: 'My Doc', icon: '📄',
      file: 'architecture/my-doc.html',   // path relative to docs/
      md:   'architecture/my-doc.md' }
    ```
-2. That's it — the sidebar auto-rebuilds on page load.
+2. That's it — `index.html` auto-generates the card on next load.
+
+If only `md` is set (no `file`), the card links to the MD file and shows a `MD` badge.
 
 To add a doc under an expandable folder (e.g. `work/`):
 1. Add an entry in the folder's `_index.js` (e.g. `docs/work/_index.js`).
 2. Never edit `docs-manifest.js` for sub-entries.
 
-Folders starting with `_` are auto-hidden from the SPA nav (`autoHidePrefix: '_'` in manifest).
+Folders starting with `_` are auto-hidden (`autoHidePrefix: '_'` in manifest).
 
 ## HTML doc layout — `page-doc`
 
-Individual doc HTML files use `body.page-doc` + `.doc-shell` from `docs-layout.css`.
-When loaded inside the SPA iframe, `docs-layout.js` auto-detects this and hides the
-standalone sidebar/TOC, then posts heading data to the parent shell via `postMessage`.
+Individual doc HTML files use `body.page-doc` + `.doc-shell`. When opened directly in the browser, they show a 3-column layout (left nav + main content + right TOC). The left nav includes a brand link back to `../index.html`.
 
 ### Required structure
 
 ```html
 <body class="page-doc" data-doc="<slug>">
 
-  <!-- mobile toggle (always include even though it hides in iframe) -->
+  <!-- mobile toggle -->
   <button class="doc-nav-toggle" ...>☰</button>
   <div class="doc-nav-backdrop"></div>
 
   <div class="doc-shell">
 
-    <!-- LEFT: standalone nav (hidden by docs-layout.js when in iframe) -->
+    <!-- LEFT: standalone nav -->
     <aside class="doc-nav-sidebar">
       <a class="doc-nav-brand" href="../index.html">sdlc-agent</a>
       <nav class="doc-nav-group">
@@ -98,7 +104,7 @@ standalone sidebar/TOC, then posts heading data to the parent shell via `postMes
       </section>
     </main>
 
-    <!-- RIGHT: TOC (auto-populated; also sent to parent via postMessage) -->
+    <!-- RIGHT: TOC (auto-populated by docs.js) -->
     <aside class="doc-toc-sidebar">
       <div class="doc-toc-label">On this page</div>
       <nav id="doc-toc-nav"></nav>
@@ -112,11 +118,10 @@ standalone sidebar/TOC, then posts heading data to the parent shell via `postMes
 
 ### Key rules
 
-- `body[data-doc]` must match `data-doc` on the nav link — drives standalone active-state.
+- `body[data-doc]` must match `data-doc` on the nav link — drives active-state highlighting.
 - Every `<h2 class="doc-section-title">` **must have an `id`** for scroll spy and TOC.
 - `h3[id]` headings appear in the TOC with indent (`.toc-depth-3`).
 - Asset paths are relative from the doc's subfolder: `../style.css` and `../docs.js`.
-- Brand `href` should point to `../index.html` (the SPA shell).
 
 ### Layout breakpoints
 
@@ -128,8 +133,7 @@ standalone sidebar/TOC, then posts heading data to the parent shell via `postMes
 
 ## Shared assets
 
-`style.css` and `docs.js` contain all the style systems, layouts, custom components, and SPA logics. 
-Modify them locally as needed to improve typography, layouts, and interactive behaviors.
+`style.css` and `docs.js` contain all styles and layout logic.
 
 `marked.min.js` is copied from `node_modules/marked/lib/marked.umd.js` — refresh by
 re-running `pnpm add -D marked -w` and copying the new UMD build.
@@ -140,4 +144,4 @@ re-running `pnpm add -D marked -w` and copying the new UMD build.
 2. Ask the AI agent to render `docs/<category>/<slug>.html` from the MD using
    `docs/_template.html` as the structural template and the existing HTML files as style reference.
 3. Add an entry to `docs/docs-manifest.js` (or the relevant `_index.js` for expandable folders).
-4. Verify via `docs/index.html` in a browser (served with `npx serve docs`).
+4. Open `docs/index.html` in a browser to verify the card appears and the link works.
