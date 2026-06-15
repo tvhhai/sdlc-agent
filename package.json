@@ -13,7 +13,10 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.16",
+		"@highlightjs/cdn-assets": "^11.11.1",
 		"@types/node": "^25.9.2",
+		"highlight.js": "^11.11.1",
+		"marked": "^18.0.5",
 		"tsx": "^4.22.4",
 		"typescript": "6.0.3",
 		"vite": "^8.0.16",

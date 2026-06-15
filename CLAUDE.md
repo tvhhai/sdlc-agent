@@ -59,7 +59,7 @@ agents/*.yaml    ─► loadAgents (yaml parse) ─► Zod schema (packages/core
 
 MD files are the source of truth; each has a collocated HTML viewer that must be kept in sync. Full rules (layout structure, TOC ids, how to add a doc) live in [docs/CLAUDE.md](docs/CLAUDE.md) — read it before touching anything under `docs/`.
 
-Key docs: `docs/sa-design/` (full SA design + roadmap), `docs/adapter-contract/` (adapter rules), `docs/codebase-guide/` (per-file map of the repo).
+Key docs: docs/architecture/ (full SA design + roadmap), docs/reference/ (adapter rules, codebase guide).
 
 ## Conventions
 

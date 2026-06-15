@@ -6,13 +6,9 @@
 docs/
 ├── index.html              SPA shell — single entry point for all docs
 ├── docs-manifest.js        nav source of truth → window.__DOCS_MANIFEST__
-├── docs-index.js           SPA logic (sidebar, routing, iframe, TOC, MD toggle)
-├── docs-index.css          3-column shell layout (page-index)
 ├── marked.min.js           client-side markdown renderer (UMD build, local copy)
-├── style.css               shared dark-mode design system
-├── docs-core.js            custom web components: <doc-tabs>, <doc-card>, etc.
-├── docs-layout.css         3-column sidebar layout for individual doc pages
-├── docs-layout.js          iframe detection + auto TOC + scroll spy + mobile toggle
+├── style.css               shared design system & layouts (consolidated)
+├── docs.js                 custom web components, layout manager, and SPA logic
 ├── _template.html          reference template — copy when adding a new HTML doc
 ├── CLAUDE.md               this file
 │
@@ -110,8 +106,7 @@ standalone sidebar/TOC, then posts heading data to the parent shell via `postMes
 
   </div>
 
-  <script src="../docs-core.js"></script>
-  <script src="../docs-layout.js" defer></script>
+  <script src="../docs.js" defer></script>
 </body>
 ```
 
@@ -120,7 +115,7 @@ standalone sidebar/TOC, then posts heading data to the parent shell via `postMes
 - `body[data-doc]` must match `data-doc` on the nav link — drives standalone active-state.
 - Every `<h2 class="doc-section-title">` **must have an `id`** for scroll spy and TOC.
 - `h3[id]` headings appear in the TOC with indent (`.toc-depth-3`).
-- Asset paths are relative from the doc's subfolder: `../style.css`, `../docs-layout.css`, etc.
+- Asset paths are relative from the doc's subfolder: `../style.css` and `../docs.js`.
 - Brand `href` should point to `../index.html` (the SPA shell).
 
 ### Layout breakpoints
@@ -133,10 +128,8 @@ standalone sidebar/TOC, then posts heading data to the parent shell via `postMes
 
 ## Shared assets
 
-`style.css` and `docs-core.js` come from the expense_tracker docs system — update together
-when the upstream design system is refreshed, never modify locally.
-
-`docs-layout.css` and `docs-layout.js` are local to sdlc-agent.
+`style.css` and `docs.js` contain all the style systems, layouts, custom components, and SPA logics. 
+Modify them locally as needed to improve typography, layouts, and interactive behaviors.
 
 `marked.min.js` is copied from `node_modules/marked/lib/marked.umd.js` — refresh by
 re-running `pnpm add -D marked -w` and copying the new UMD build.

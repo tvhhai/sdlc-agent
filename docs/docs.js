@@ -208,6 +208,7 @@
   const DocLayout = {
     init() {
       if (window.parent !== window) {
+        document.body.classList.add('in-iframe');
         document.querySelector('.doc-nav-sidebar')?.remove();
         document.querySelector('.doc-toc-sidebar')?.remove();
         document.querySelector('.doc-nav-toggle')?.remove();
@@ -570,6 +571,35 @@
       const htmlFile = state.currentFile?.html;
       tocNav.innerHTML = '';
       frame.classList.remove('offline-md');
+
+      // On file:// protocol Chrome blocks cross-directory iframes.
+      // Open the HTML doc in a new tab and show an inline prompt.
+      if (htmlFile && window.location.protocol === 'file:') {
+        frame.setAttribute('hidden', '');
+        mdView.setAttribute('hidden', '');
+        if (loader) loader.setAttribute('hidden', '');
+        let msg = document.getElementById('index-file-msg');
+        if (!msg) {
+          msg = document.createElement('div');
+          msg.id = 'index-file-msg';
+          msg.className = 'file-proto-msg';
+          frame.parentNode.insertBefore(msg, frame.nextSibling);
+        }
+        const label = crumb.textContent || htmlFile.split('/').pop();
+        msg.innerHTML = `<div class="file-proto-inner">
+          <div class="file-proto-icon">📄</div>
+          <p class="file-proto-title">${label}</p>
+          <p class="file-proto-hint">Browser blocks cross-folder iframes on <code>file://</code>.</p>
+          <a class="file-proto-link" href="${htmlFile}" target="_blank">Open full page ↗</a>
+        </div>`;
+        msg.removeAttribute('hidden');
+        window.open(htmlFile, '_blank');
+        return;
+      }
+
+      // Hide the file:// message if switching back
+      const msg = document.getElementById('index-file-msg');
+      if (msg) msg.setAttribute('hidden', '');
 
       if (htmlFile) {
         if (loader) {
