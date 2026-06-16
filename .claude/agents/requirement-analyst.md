@@ -4,7 +4,7 @@ description: >-
   [SDLC:requirement] Interviews the user to clarify vague requirements, then produces a structured PRD with prioritized user stories, acceptance criteria (Gherkin), functional requirements, measurable success criteria, and an explicit out-of-scope list.
 model: claude-opus-4-8
 tools:
-  - "read_file"
+  - "Read"
 ---
 
 # requirement-analyst (phase: requirement)

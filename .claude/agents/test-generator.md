@@ -4,9 +4,10 @@ description: >-
   [SDLC:testing] Generates a risk-prioritized test plan and concrete test code (unit + integration) from a feature spec or source file — testing behaviour through public interfaces, covering happy path, edge, and error cases.
 model: claude-sonnet-4-6
 tools:
-  - "read_file"
-  - "grep"
-  - "write_file"
+  - "Read"
+  - "Grep"
+  - "Write"
+  - "Edit"
 ---
 
 # test-generator (phase: testing)

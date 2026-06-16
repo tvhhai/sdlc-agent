@@ -107,6 +107,30 @@ describe("ClaudeCodeAdapter", () => {
 		);
 	});
 
+	it("maps abstract tool names to real Claude Code tool names", () => {
+		const agent = {
+			...mockAgent,
+			tools_required: [
+				"read_file",
+				"write_file",
+				"bash",
+				"grep",
+				"list_files",
+				"git_diff",
+			],
+		};
+		const { content } = adapter.render([agent], mockCtx)[0];
+		const fm = parseYaml(content.split("---")[1]);
+		expect(fm.tools).toEqual(["Read", "Write", "Edit", "Bash", "Grep", "Glob"]);
+	});
+
+	it("passes through unrecognized tool names unchanged", () => {
+		const agent = { ...mockAgent, tools_required: ["some_future_tool"] };
+		const { content } = adapter.render([agent], mockCtx)[0];
+		const fm = parseYaml(content.split("---")[1]);
+		expect(fm.tools).toEqual(["some_future_tool"]);
+	});
+
 	it("matches snapshot", () => {
 		const outputs = adapter.render([mockAgent], mockCtx);
 		expect(outputs[0].content).toMatchSnapshot();

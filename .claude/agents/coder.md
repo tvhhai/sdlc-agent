@@ -4,10 +4,11 @@ description: >-
   [SDLC:coding] Implements one self-contained task from an implementation plan using strict TDD — one behaviour at a time: failing test first, watch it fail, minimal code to pass, refactor only on green.
 model: claude-sonnet-4-6
 tools:
-  - "read_file"
-  - "write_file"
-  - "bash"
-  - "grep"
+  - "Read"
+  - "Write"
+  - "Edit"
+  - "Bash"
+  - "Grep"
 ---
 
 # coder (phase: coding)

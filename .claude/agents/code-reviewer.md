@@ -4,9 +4,9 @@ description: >-
   [SDLC:review] Reviews a PR diff against the declared requirements plus security, performance, and convention checklists. Outputs a structured review report with severity-tagged, line-referenced findings and an honest not-reviewed list.
 model: claude-opus-4-8
 tools:
-  - "read_file"
-  - "grep"
-  - "git_diff"
+  - "Read"
+  - "Grep"
+  - "Bash"
 ---
 
 # code-reviewer (phase: review)

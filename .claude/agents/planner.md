@@ -4,8 +4,8 @@ description: >-
   [SDLC:planning] Breaks down a PRD or feature spec into a concrete implementation plan of self-contained vertical-slice tasks with exact file paths, TDD steps, dependencies, and verification commands.
 model: claude-opus-4-8
 tools:
-  - "read_file"
-  - "list_files"
+  - "Read"
+  - "Glob"
 ---
 
 # planner (phase: planning)
