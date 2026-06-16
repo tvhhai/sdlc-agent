@@ -232,3 +232,81 @@ describe("runList error handling", () => {
 		expect(errOut).toContain("Validation errors:");
 	});
 });
+
+describe("runList --phase filter", () => {
+	let logSpy: ReturnType<typeof vi.spyOn>;
+	const created: string[] = [];
+
+	beforeEach(() => {
+		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+	});
+	afterEach(() => {
+		logSpy.mockRestore();
+		while (created.length)
+			fs.rmSync(created.pop() as string, { recursive: true, force: true });
+	});
+
+	it("returns only rows matching the given phase in table mode", () => {
+		const dir = makeProject({ "a.yaml": AGENT_A, "b.yaml": AGENT_B });
+		created.push(dir);
+		const ok = runList(dir, { json: false, phase: "coding" });
+		expect(ok).toBe(true);
+		const lines = logSpy.mock.calls
+			.map((c: unknown[]) => String(c[0]))
+			.join("\n")
+			.split("\n")
+			.filter(Boolean);
+		expect(lines).toHaveLength(2);
+		expect(lines[0]).toMatch(/^id\s+version\s+phase\s+model_hint\s+targets/);
+		expect(lines[1]).toMatch(/^beta\s/);
+		expect(lines.some((l: string) => /^alpha\s/.test(l))).toBe(false);
+	});
+
+	it("returns only rows matching the given phase in json mode", () => {
+		const dir = makeProject({ "a.yaml": AGENT_A, "b.yaml": AGENT_B });
+		created.push(dir);
+		const ok = runList(dir, { json: true, phase: "planning" });
+		expect(ok).toBe(true);
+		const parsed = JSON.parse(String(logSpy.mock.calls[0][0]));
+		expect(parsed).toHaveLength(1);
+		expect(parsed[0].id).toBe("alpha");
+	});
+
+	it("prints 'No agents found.' when no agent matches the phase", () => {
+		const dir = makeProject({ "a.yaml": AGENT_A, "b.yaml": AGENT_B });
+		created.push(dir);
+		const ok = runList(dir, { json: false, phase: "testing" });
+		expect(ok).toBe(true);
+		expect(logSpy).toHaveBeenCalledWith("No agents found.");
+	});
+});
+
+describe("runList unknown phase", () => {
+	let logSpy: ReturnType<typeof vi.spyOn>;
+	let errSpy: ReturnType<typeof vi.spyOn>;
+	const created: string[] = [];
+
+	beforeEach(() => {
+		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+	});
+	afterEach(() => {
+		logSpy.mockRestore();
+		errSpy.mockRestore();
+		while (created.length)
+			fs.rmSync(created.pop() as string, { recursive: true, force: true });
+	});
+
+	it("fails with stderr and no stdout for an unrecognized phase", () => {
+		const dir = makeProject({ "a.yaml": AGENT_A, "b.yaml": AGENT_B });
+		created.push(dir);
+		const ok = runList(dir, { json: false, phase: "bogus" });
+		expect(ok).toBe(false);
+		expect(logSpy).not.toHaveBeenCalled();
+		const errOut = errSpy.mock.calls
+			.map((c: unknown[]) => String(c[0]))
+			.join("\n");
+		expect(errOut).toContain("bogus");
+		expect(errOut).toContain("coding");
+	});
+});

@@ -1,5 +1,10 @@
 import path from "node:path";
-import { type AgentDef, loadAgents, loadConfig } from "@sdlc-agents/core";
+import {
+	type AgentDef,
+	AgentSchema,
+	loadAgents,
+	loadConfig,
+} from "@sdlc-agents/core";
 import { ZodError } from "zod";
 
 export type Row = {
@@ -10,7 +15,9 @@ export type Row = {
 	targets: string[];
 };
 
-export type ListOptions = { json: boolean };
+export type ListOptions = { json: boolean; phase?: string };
+
+const VALID_PHASES = AgentSchema.shape.phase.options;
 
 const COLUMNS: { key: keyof Row; header: string }[] = [
 	{ key: "id", header: "id" },
@@ -63,19 +70,31 @@ function renderTable(rows: Row[]): string {
 
 export function runList(cwd: string, opts: ListOptions): boolean {
 	try {
+		if (
+			opts.phase !== undefined &&
+			!VALID_PHASES.includes(opts.phase as never)
+		) {
+			throw new Error(
+				`Unknown phase "${opts.phase}". Valid phases: ${VALID_PHASES.join(", ")}`,
+			);
+		}
+
 		const config = loadConfig(cwd);
 		const agents = loadAgents(path.join(cwd, config.agentsDir));
 		const rows = normalizeRows(agents, config.targets);
+		const filtered = opts.phase
+			? rows.filter((r) => r.phase === opts.phase)
+			: rows;
 
 		if (opts.json) {
-			console.log(JSON.stringify(rows, null, 2));
+			console.log(JSON.stringify(filtered, null, 2));
 			return true;
 		}
-		if (rows.length === 0) {
+		if (filtered.length === 0) {
 			console.log("No agents found.");
 			return true;
 		}
-		console.log(renderTable(rows));
+		console.log(renderTable(filtered));
 		return true;
 	} catch (err) {
 		if (err instanceof ZodError) {
