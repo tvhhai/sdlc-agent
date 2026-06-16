@@ -50,11 +50,13 @@ Cập nhật lần cuối: 2026-06-16
 ### Bước 3 — Dogfood & golden cases
 - [x] Chọn 1 feature thật của repo này cho dogfood đầu tiên: **self-contained Claude outputs** (2026-06-16)
 - [x] Lưu artifact chain vào `docs/work/2026-06-16/self-contained-claude-outputs/`
-- [ ] Chạy đủ chuỗi có coder implement thật bằng generated `/coder` command hoặc Claude Code subagent
-- [ ] Lưu mỗi cặp input/output thật vào `examples/golden/<agent-id>/` (≥ 1 case/agent)
-- [ ] Ghi lại chỗ prompt yếu → sửa → chạy lại
+- [x] Chạy đủ chuỗi có coder implement thật bằng generated `/coder` command hoặc Claude Code subagent (2026-06-16, `--phase` filter cho `sdlc list`)
+- [ ] Lưu mỗi cặp input/output thật vào `examples/golden/<agent-id>/` (≥ 1 case/agent) — đã có raw artifact trong `docs/work/`, chưa tách vào `examples/golden/`
+- [x] Ghi lại chỗ prompt yếu → sửa → chạy lại (xem ghi chú dưới)
 
-**Dogfood run 2026-06-16:** orchestrator-run, không implement code. Kết luận: trước wizard hoặc `skill-md`, nên làm **Self-Contained Claude Outputs** để `.claude/` chứa support bundle cho templates/policies được reference. Xem `docs/work/2026-06-16/self-contained-claude-outputs/06-evaluation.md`.
+**Dogfood run 2026-06-16 (lần 1):** orchestrator-run, không implement code. Kết luận: trước wizard hoặc `skill-md`, nên làm **Self-Contained Claude Outputs** để `.claude/` chứa support bundle cho templates/policies được reference. Xem `docs/work/2026-06-16/self-contained-claude-outputs/06-evaluation.md`.
+
+**Dogfood run 2026-06-16 (lần 2 — gọi subagent thật):** gọi `planner` thật qua Claude Code Agent tool → 0 tool call, không ra plan. Nguyên nhân: `tools_required` trong `agents/*.yaml` dùng tên trừu tượng (`read_file`, `write_file`...) không khớp tên tool thật của Claude Code → subagent không hành động được. Vá bằng `TOOL_MAP` trong claude-code adapter (commit `c859e36`). Sau khi vá và rebuild, chạy lại `planner` (session riêng của user) → đọc file thật, ra plan đúng với citation file:line chính xác (verify lại từng dòng). Tiếp tục chạy `coder` thật 2 lần (commit `6d4eba0`, `cac5050`) và `code-reviewer` thật (verdict Approve, 3 suggestion non-blocking) — chuỗi planner→coder→code-reviewer chạy end-to-end lần đầu tiên không giả lập. Artifact đầy đủ ở `docs/work/2026-06-16/phase-filter-golden-case/`.
 
 ### Bước 4 — Pilot
 - [ ] Đưa cho 1–2 team/người ngoài dùng thử 1 sprint

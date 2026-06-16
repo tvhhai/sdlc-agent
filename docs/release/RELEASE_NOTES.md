@@ -51,7 +51,15 @@ The actual product today is an **in-place renderer + canonical catalog** (run `p
 
 **Why.** The self-contained bundle (entry below) made `.claude/` copyable, but copying doesn't help if the subagents inside can't use any tools. This is a more fundamental blocker than the "coder: Not exercised" gap Codex's simulated dogfood flagged — it affected all 6 agents, not just `coder`, and a simulated run (no real subagent invocation) couldn't have caught it.
 
-**Impact.** `pnpm sdlc build` regenerates all 6 `.claude/agents/*.md` with real tool names; 143/143 tests pass (2 new tests added), typecheck + lint clean. **Open / not yet verified:** re-running the live `/planner` dogfood in the *same* session still showed 0 tool calls after the fix — the session's subagent registry may have been loaded before the rebuild and not picked up the change, or there is a second, unrelated issue. Needs a fresh Claude Code session to confirm the fix actually resolves the live failure; tracked as the next verification step.
+**Impact.** `pnpm sdlc build` regenerates all 6 `.claude/agents/*.md` with real tool names; 143/143 tests pass (2 new tests added), typecheck + lint clean. **Verified:** the same-session re-test still showing 0 tool calls right after the fix was a stale-cache artifact (the subagent registry was loaded before the rebuild) — a `planner` run in a fresh Claude Code session confirmed the fix works: real file reads, an implementation plan with accurate file:line citations. See the golden case entry above for the full chain.
+
+### 2026-06-16 · First real planner→coder→code-reviewer chain (golden case) · `feature`
+
+**Done.** Ran the full SDLC agent chain for real, through Claude Code's actual subagent dispatch, for the first time — not simulated/orchestrator-narrated. A `planner` run (fresh session, post tool-name-mapping fix) produced an implementation plan for adding `--phase <phase>` to `sdlc list`; two real `coder` subagent runs implemented it task-by-task with strict TDD (commits `6d4eba0`, `cac5050`); a real `code-reviewer` subagent reviewed the diff (verdict: Approve, 3 non-blocking suggestions, no Critical/Warning findings). Every citation and self-report from the subagents was independently re-verified (`git show --stat`, manual CLI re-runs, source file cross-checks) rather than trusted at face value. Full artifact chain saved to `docs/work/2026-06-16/phase-filter-golden-case/` (plan + review report + README; MD-only, no HTML render, to keep the artifact cheap).
+
+**Why.** Closes the "coder: Not exercised" gap flagged by the earlier simulated dogfood, and is the first end-to-end proof that the tool-name mapping fix (entry above) actually unblocks real subagent execution, not just unit tests.
+
+**Impact.** 147/147 tests passing, typecheck/lint clean, 2 real feature commits, 1 real review with no blocking findings. **Caveat:** this was a small, low-ambiguity CLI feature — `requirement-analyst` and `solution-architect` were not exercised in this run and remain unvalidated against a real subagent invocation.
 
 ### 2026-06-16 · Self-contained Claude outputs (Pilot Readiness Task 1) · `feature`
 
