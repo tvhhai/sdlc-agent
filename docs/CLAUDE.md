@@ -22,6 +22,10 @@ docs/
 │   ├── ADAPTER_CONTRACT.md                    ← source of truth
 │   └── adapter-contract.html
 │
+├── release/                Release & product evolution log
+│   ├── RELEASE_NOTES.md                       ← source of truth
+│   └── release-notes.html
+│
 ├── work/                   AI-generated work artifacts
 │   └── _index.js           sub-nav registry → window.__DOCS_INDEX__['work']
 │
@@ -44,6 +48,12 @@ When content changes:
 1. Edit the `.md` file first.
 2. Ask the AI agent to re-render the HTML from the MD using `_template.html` as structure reference.
 3. Never edit HTML content directly without a matching MD update.
+
+## Language convention
+
+**MD is English; HTML is Vietnamese.** The Markdown source is written in **English** because agents (and other AI tools) read it as context — English keeps it consistent with the codebase and the YAML/policy sources. The rendered **HTML is Vietnamese** for human readers. So a render is also a translation: take the English MD and produce a Vietnamese HTML view that keeps the same structure, ids, and code/identifiers (code, paths, command names stay verbatim — do not translate them).
+
+Applies to new docs (e.g. `release/RELEASE_NOTES.md`). Some older docs (`SA_DESIGN…`, `CODEBASE_FOLDER_GUIDE`) still have Vietnamese MD — convert them only when explicitly asked; don't mass-rewrite.
 
 ## Navigation — manifest-driven
 
@@ -137,6 +147,17 @@ Individual doc HTML files use `body.page-doc` + `.doc-shell`. When opened direct
 
 `marked.min.js` is copied from `node_modules/marked/lib/marked.umd.js` — refresh by
 re-running `pnpm add -D marked -w` and copying the new UMD build.
+
+## Release Notes — `release/RELEASE_NOTES.md` (special rules)
+
+This is a **living changelog**, not a write-once doc. It records the product baseline plus one entry per meaningful fix / audit / addition, so a reader grasps the project's evolution **without reading git log**.
+
+- **Source of truth is the MD.** `release-notes.html` is a rendered view — never hand-edit it. Edit the MD, then re-render.
+- **Newest-on-top, append-only.** Insert each new entry at the **head** of the "Nhật ký cải tiến" section (right under the `## Nhật ký cải tiến` heading), above the previous newest entry. Never reorder or rewrite old entries — they are a historical record.
+- **Token-cheap update.** Because entries go on top, you only need to read the **first ~40 lines** of the MD to insert a new one — don't read the whole file. Re-render only the changelog portion of the HTML; keep the baseline section untouched unless the product baseline itself changed.
+- **Entry format.** Heading: `### YYYY-MM-DD · <short title> · \`<type>\`` where `type ∈ {feature | fix | audit | refactor | docs | chore}`. Body covers **Đã làm / Vì sao / Tác động** (audit entries add **Kết quả kiểm chứng**). In HTML, map `type` to the matching `.rn-tag.<type>` colour class.
+- **Detail level is medium.** Deep architecture lives in SA Design; deep folder/code detail lives in Codebase Guide. Link to them rather than duplicating.
+- **When to add an entry.** A version bump, a new capability, an audit/review with verified findings, or a structural refactor — not routine commits.
 
 ## Adding a new document (full workflow)
 

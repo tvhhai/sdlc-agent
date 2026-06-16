@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Release Notes — sdlc-agent docs</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    .rn-meta { font-size: 13px; color: var(--muted); line-height: 1.7; background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 18px; margin: 14px 0 8px; }
+    .rn-meta strong { color: #cbd5e1; }
+    .rn-entry { border-bottom: 1px solid var(--line); padding: 18px 0; }
+    .rn-entry:last-child { border-bottom: none; }
+    .rn-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+    .rn-date { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 700; }
+    .rn-title { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+    .rn-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line); }
+    .rn-tag.feature { background: rgba(52,211,153,0.15); color: var(--green); border-color: rgba(52,211,153,0.3); }
+    .rn-tag.audit { background: rgba(251,191,36,0.15); color: var(--yellow); border-color: rgba(251,191,36,0.3); }
+    .rn-tag.refactor { background: rgba(96,165,250,0.15); color: #60a5fa; border-color: rgba(96,165,250,0.3); }
+    .rn-tag.fix { background: rgba(248,113,113,0.15); color: #f87171; border-color: rgba(248,113,113,0.3); }
+    .rn-tag.docs, .rn-tag.chore { background: rgba(148,163,184,0.12); color: var(--muted); }
+    .rn-entry p, .rn-entry ul { font-size: 13.5px; color: #cbd5e1; line-height: 1.7; }
+    .rn-entry ul { padding-left: 20px; }
+    .rn-label { color: #e2e8f0; font-weight: 700; }
+  </style>
+</head>
+<body class="page-doc" data-doc="release-notes">
+
+  <button class="doc-nav-toggle" aria-label="Mở điều hướng" aria-expanded="false">☰</button>
+  <div class="doc-nav-backdrop"></div>
+
+  <div class="doc-shell">
+
+    <!-- Left nav sidebar -->
+    <aside class="doc-nav-sidebar">
+      <a class="doc-nav-brand" href="../architecture/sa-design.html">
+        <div class="doc-nav-brand-title">sdlc-agent</div>
+        <div class="doc-nav-brand-sub">Tài liệu hướng dẫn</div>
+      </a>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Kiến trúc</div>
+        <a class="doc-nav-link" href="../architecture/sa-design.html" data-doc="sa-design">
+          <span class="doc-nav-link-icon">🏗</span> SA Design
+        </a>
+      </nav>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Tham chiếu</div>
+        <a class="doc-nav-link" href="../reference/codebase-guide.html" data-doc="codebase-guide">
+          <span class="doc-nav-link-icon">📁</span> Codebase Guide
+        </a>
+        <a class="doc-nav-link" href="../reference/adapter-contract.html" data-doc="adapter-contract">
+          <span class="doc-nav-link-icon">🔌</span> Adapter Contract
+        </a>
+      </nav>
+      <nav class="doc-nav-group">
+        <div class="doc-nav-group-label">Phát hành</div>
+        <a class="doc-nav-link" href="release-notes.html" data-doc="release-notes">
+          <span class="doc-nav-link-icon">📝</span> Release Notes
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="doc-main">
+
+      <div class="doc-badges">
+        <span class="doc-badge doc-badge-default">2026-06-16</span>
+        <span class="doc-badge doc-badge-default">Nhật ký sản phẩm</span>
+        <span class="doc-badge doc-badge-success">Đang cập nhật</span>
+      </div>
+      <h1>Release Notes — Nhật ký sản phẩm</h1>
+      <p class="doc-subtitle">Trạng thái nền của sản phẩm và nhật ký từng lần sửa / audit / bổ sung — để nắm tiến hóa của dự án mà không cần đọc git log.</p>
+
+      <div class="rn-meta">
+        <strong>Mục đích.</strong> Ghi lại sản phẩm gồm những phần nào, làm được gì; và nhật ký thay đổi có ý nghĩa.<br />
+        <strong>Quan hệ doc khác.</strong> Mức trung bình ở đây — chi tiết kiến trúc xem <a href="../architecture/sa-design.html">SA Design</a>, folder/code xem <a href="../reference/codebase-guide.html">Codebase Guide</a>, hợp đồng adapter xem <a href="../reference/adapter-contract.html">Adapter Contract</a>.<br />
+        <strong>Cách đọc.</strong> Phần <em>Sản phẩm nền</em> mô tả trạng thái ổn định. <em>Nhật ký cải tiến</em> xếp mới nhất lên đầu.<br />
+        <strong>Cập nhật.</strong> MD là nguồn chuẩn (<code>RELEASE_NOTES.md</code>); HTML là bản render. Chèn entry mới vào đầu nhật ký rồi re-render — không sửa HTML tay. Rule đầy đủ trong <a href="../CLAUDE.md">docs/CLAUDE.md</a>.
+      </div>
+
+      <!-- Sản phẩm nền -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="baseline">Sản phẩm nền (Baseline)</h2>
+        <p><code>sdlc-agent</code> là một <strong>build engine</strong>: biến một nguồn định nghĩa agent chuẩn (<code>agents/*.yaml</code>) thành nhiều định dạng cho từng AI tool. Một nguồn sự thật, nhiều target render ra deterministic.</p>
+
+        <h3 class="doc-section-subtitle" id="baseline-parts">Thành phần</h3>
+        <table>
+          <thead><tr><th>Phần</th><th>Vai trò</th></tr></thead>
+          <tbody>
+            <tr><td><code>agents/*.yaml</code></td><td><strong>Nguồn chuẩn.</strong> 6 agent phủ vòng đời SDLC: <code>requirement-analyst</code>, <code>planner</code>, <code>solution-architect</code>, <code>coder</code>, <code>test-generator</code>, <code>code-reviewer</code>. Mỗi file = role + workflow + inputs + tham chiếu policy + output template.</td></tr>
+            <tr><td><code>policies/*.md</code></td><td>Checklist theo lĩnh vực (security, performance, testing-patterns, debugging-and-recovery, conventions…), agent nạp qua trường <code>policies:</code>. Tái sử dụng giữa các agent.</td></tr>
+            <tr><td><code>templates/*.md</code></td><td>Khuôn artifact đầu ra (PRD, plan, ADR, test plan, review report…).</td></tr>
+            <tr><td><code>packages/core</code></td><td>Zod schema (strict: kebab-case id, semver, enum phase), loader YAML, resolver biến <code>{{var}}</code>, merger config, kiểu dùng chung.</td></tr>
+            <tr><td><code>packages/cli</code></td><td>Lệnh <code>sdlc init / validate / build / list</code>.</td></tr>
+            <tr><td><code>packages/adapters/*</code></td><td>Mỗi adapter (universal, claude-code, copilot) là một <code>ToolAdapter</code> thuần &amp; deterministic, render output cho một tool.</td></tr>
+            <tr><td>Output (generated)</td><td><code>AGENTS.md</code> + <code>.sdlc/</code> (universal), <code>.claude/agents/</code> + <code>.claude/commands/</code> + <code>.claude/sdlc/</code> (Claude Code), <code>.github/copilot-instructions.md</code> + <code>.github/prompts/</code> (Copilot). Commit có chủ đích, không sửa tay.</td></tr>
+            <tr><td><code>docs/</code></td><td>SA Design, Codebase Guide, Adapter Contract, và tài liệu này.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 class="doc-section-subtitle" id="baseline-fn">Chức năng</h3>
+        <ul>
+          <li><strong>validate</strong> — kiểm schema + tính toàn vẹn tham chiếu (mọi <code>output_template</code>/<code>policies</code> phải tồn tại) + tên target hợp lệ.</li>
+          <li><strong>build</strong> — render mọi target → ghi file + <code>.sdlc/build-manifest.json</code>; so hash để cảnh báo drift.</li>
+          <li><strong>list</strong> — liệt kê agent đã định nghĩa.</li>
+          <li><strong>init</strong> — scaffold <code>sdlc.config.yaml</code>.</li>
+          <li><strong>Drift detection</strong> — integration test fail nếu output đã commit lệch với output render lại, buộc rebuild + commit cùng nhau.</li>
+        </ul>
+
+        <h3 class="doc-section-subtitle" id="baseline-positioning">Định vị hiện tại</h3>
+        <p>Sản phẩm thực tế đang là <strong>in-place renderer + canonical catalog</strong> (chạy <code>pnpm sdlc build</code> trong chính repo này) — hoạt động đầy đủ. Tầm nhìn <strong>installable framework</strong> (<code>npx sdlc-agents init</code> cho team khác cài) vẫn là roadmap, chưa ship. Xem entry audit để biết khoảng cách cụ thể.</p>
+      </section>
+
+      <!-- Nhật ký cải tiến -->
+      <section class="doc-section">
+        <h2 class="doc-section-title" id="changelog">Nhật ký cải tiến (mới nhất lên đầu)</h2>
+
+        <div class="rn-entry">
+          <div class="rn-head">
+            <span class="rn-date">2026-06-16</span>
+            <span class="rn-title">Self-contained Claude outputs (Pilot Readiness Task 1)</span>
+            <span class="rn-tag feature">feature</span>
+          </div>
+          <p><span class="rn-label">Đã làm.</span> <code>ClaudeCodeAdapter</code> nay đóng gói mọi template + policy được tham chiếu vào <code>.claude/sdlc/templates/</code> và <code>.claude/sdlc/policies/</code>, và viết lại reference trong agent file từ <code>templates/…</code>/<code>policies/…</code> ở root sang <code>.claude/sdlc/…</code>. <code>.gitignore</code> track bundle mới. Thêm test adapter (emit bundle, bỏ qua khi vắng context, kiểm self-contained không còn root ref) và cập nhật test integration/drift để tách assertion "agent-shaped" khỏi file support thô.</p>
+          <p><span class="rn-label">Vì sao.</span> Copy riêng <code>.claude/</code> trước đây bị thiếu — agent file trỏ vào <code>templates/</code>/<code>policies/</code> ở root, không đi theo folder. Dogfood do Codex chạy (artifact ở <code>docs/work/2026-06-16/self-contained-claude-outputs/</code>) xếp đây là blocker pilot #1, trước <code>skill-md</code> adapter và wizard <code>init</code>.</p>
+          <p><span class="rn-label">Tác động.</span> <code>pnpm sdlc build</code> → claude-code xuất 22 file (6 agent + 6 command + 10 support: 5 template + 5 policy); 141/141 test pass; typecheck + lint sạch. <code>.claude/</code> nay copy sang repo khác là dùng được độc lập. Còn mở: một lần chạy <code>/coder</code> tự động thật sự viết code trong Claude Code (feature này được orchestrator thực thi theo plan, chưa qua chuỗi subagent biệt lập).</p>
+        </div>
+
+        <div class="rn-entry">
+          <div class="rn-head">
+            <span class="rn-date">2026-06-16</span>
+            <span class="rn-title">Audit ngoài — định vị "in-place vs installable"</span>
+            <span class="rn-tag audit">audit</span>
+          </div>
+          <p><span class="rn-label">Bối cảnh.</span> Một AI review độc lập chấm: build engine 7/10, agent content 6.5/10, installer/distribution 2/10; kết luận "chưa phải Agent Skills framework hoàn chỉnh".</p>
+          <p><span class="rn-label">Kết quả kiểm chứng (đã verify bằng code).</span> Các claim sự kiện <strong>đúng</strong>:</p>
+          <ul>
+            <li><code>package.json</code> để <code>private: true</code>, không có <code>dist</code> build, <code>bin</code> trỏ TS source → <code>npx sdlc-agents init</code> chưa chạy được như docs ngụ ý.</li>
+            <li><code>init</code> chỉ ghi <code>sdlc.config.yaml</code>, <strong>không</strong> copy <code>agents/</code>/<code>policies/</code>/<code>templates/</code> → repo trống không <code>build</code> được.</li>
+            <li>Output <strong>không self-contained</strong>: <code>.claude/agents/*.md</code> chỉ tham chiếu <code>policies/*.md</code>, adapter không copy nội dung vào bundle → copy riêng <code>.claude/agents/</code> sẽ gãy link. <em>(Đã xử lý 2026-06-16 — xem entry trên.)</em></li>
+            <li>Chưa có SKILL.md adapter; Bước 3 dogfood golden case chưa xong.</li>
+          </ul>
+          <p><span class="rn-label">Phân định.</span> "Không dùng được" chỉ đúng cho bản <strong>phân phối (installable)</strong>; bản <strong>in-place renderer</strong> dùng được ngay (validate/build/list/test/typecheck/lint đều pass). Khoảng cách là giữa <em>docs/vision</em> và <em>artifact thật</em>, không phải lỗi kiến trúc.</p>
+          <p><span class="rn-label">Tác động / hành động.</span> Hai fix nhỏ ROI cao: (1) <code>init</code> bootstrap luôn agent set; (2) bundle self-contained — <strong>đã làm 2026-06-16</strong>. Sau đó mới tới <code>dist</code> + bỏ <code>private</code> + publish. Trước mắt: chỉnh docs cho khớp thực tế (in-place catalog, pre-pilot).</p>
+        </div>
+
+        <div class="rn-entry">
+          <div class="rn-head">
+            <span class="rn-date">2026-06-16</span>
+            <span class="rn-title">Nâng cấp agent v1.2.0 + chiều sâu policy + vá VERIFY</span>
+            <span class="rn-tag feature">feature</span>
+          </div>
+          <p><span class="rn-label">Đã làm.</span> Theo thứ tự ROI:</p>
+          <ul>
+            <li><strong>Slash commands</strong> — adapter Claude Code render thêm <code>.claude/commands/&lt;id&gt;.md</code> cho mỗi agent (entry point <code>/coder</code>, <code>/planner</code>… với <code>$ARGUMENTS</code>). Sinh tự động từ cùng nguồn YAML, không cần file viết tay cho từng tool.</li>
+            <li><strong>Chiều sâu policy</strong> — thêm 3 checklist (<code>debugging-and-recovery</code>, <code>performance-checklist</code>, <code>testing-patterns</code>, phỏng theo addyosmani/agent-skills MIT); làm giàu <code>security-checklist</code> (Threat Modeling, AI/LLM Security, OWASP cross-check).</li>
+            <li><strong>Vá pha VERIFY</strong> — <code>coder</code> và <code>test-generator</code> thêm vòng diagnose→recover khi test fail bất thường (tham chiếu <code>debugging-and-recovery</code>).</li>
+            <li>Bump 3 agent <code>1.1.0 → 1.2.0</code>.</li>
+          </ul>
+          <p><span class="rn-label">Vì sao.</span> Khép lỗ hổng so với addyosmani (UX slash command, quality gate sâu hơn) và vá điểm yếu VERIFY (trước chỉ sinh test, không có vòng phục hồi khi test gãy).</p>
+          <p><span class="rn-label">Tác động.</span> <code>build</code> 26 files (claude-code tăng 6→12 do có commands), 136/136 test pass, typecheck + lint sạch. SHIP hoãn có chủ đích — kèm phụ lục §9 trong <code>AGENT_CONTENT_PLAN.md</code> mô tả cách thêm sau.</p>
+        </div>
+
+        <div class="rn-entry">
+          <div class="rn-head">
+            <span class="rn-date">2026-06-11</span>
+            <span class="rn-title">Tái cấu trúc docs — nav hub thay iframe SPA</span>
+            <span class="rn-tag refactor">refactor</span>
+          </div>
+          <p><span class="rn-label">Đã làm.</span> <code>docs/index.html</code> chuyển từ iframe SPA sang nav hub link trực tiếp; gộp asset (<code>style.css</code>, <code>docs.js</code>), sửa tương thích <code>file://</code> và lỗi iframe full-width.</p>
+          <p><span class="rn-label">Vì sao.</span> Đơn giản hóa, chạy được khi mở local không cần server.</p>
+          <p><span class="rn-label">Tác động.</span> Mọi doc dùng layout <code>page-doc</code> 3 cột (nav trái + nội dung + TOC phải), nav điều khiển bởi <code>docs-manifest.js</code>.</p>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Right TOC sidebar (auto-populated by docs.js) -->
+    <aside class="doc-toc-sidebar">
+      <div class="doc-toc-label">Trên trang này</div>
+      <nav id="doc-toc-nav"></nav>
+    </aside>
+
+  </div><!-- /.doc-shell -->
+
+  <script src="../docs.js" defer></script>
+</body>
+</html>

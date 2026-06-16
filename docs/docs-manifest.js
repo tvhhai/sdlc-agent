@@ -38,6 +38,18 @@ window.__DOCS_MANIFEST__ = {
 			],
 		},
 		{
+			label: 'Release',
+			entries: [
+				{
+					slug: 'release-notes',
+					title: 'Release Notes',
+					icon: '📝',
+					file: 'release/release-notes.html',
+					md: 'release/RELEASE_NOTES.md',
+				},
+			],
+		},
+		{
 			label: 'AI Work',
 			entries: [
 				{
