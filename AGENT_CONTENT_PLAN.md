@@ -51,7 +51,7 @@ Cập nhật lần cuối: 2026-06-16
 - [x] Chọn 1 feature thật của repo này cho dogfood đầu tiên: **self-contained Claude outputs** (2026-06-16)
 - [x] Lưu artifact chain vào `docs/work/2026-06-16/self-contained-claude-outputs/`
 - [x] Chạy đủ chuỗi có coder implement thật bằng generated `/coder` command hoặc Claude Code subagent (2026-06-16, `--phase` filter cho `sdlc list`)
-- [ ] Lưu mỗi cặp input/output thật vào `examples/golden/<agent-id>/` (≥ 1 case/agent) — đã có raw artifact trong `docs/work/`, chưa tách vào `examples/golden/`
+- [x] Lưu mỗi cặp input/output thật vào `examples/golden/<agent-id>/` (≥ 1 case/agent) — 4 case thật: `planner`, `coder` (x2 task), `code-reviewer`. `requirement-analyst`/`solution-architect`/`test-generator` chưa có case (chưa được thực thi thật), ghi rõ trong `examples/golden/README.md`
 - [x] Ghi lại chỗ prompt yếu → sửa → chạy lại (xem ghi chú dưới)
 
 **Dogfood run 2026-06-16 (lần 1):** orchestrator-run, không implement code. Kết luận: trước wizard hoặc `skill-md`, nên làm **Self-Contained Claude Outputs** để `.claude/` chứa support bundle cho templates/policies được reference. Xem `docs/work/2026-06-16/self-contained-claude-outputs/06-evaluation.md`.
