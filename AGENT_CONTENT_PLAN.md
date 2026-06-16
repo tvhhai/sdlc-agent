@@ -48,9 +48,13 @@ Cập nhật lần cuối: 2026-06-16
 - [x] `pnpm sdlc validate` OK · `pnpm sdlc build` 26 files (claude-code 12) · `pnpm test` 136/136 · typecheck + lint sạch
 
 ### Bước 3 — Dogfood & golden cases
-- [ ] Chọn 1 feature thật của repo này, chạy đủ chuỗi 6 agents
+- [x] Chọn 1 feature thật của repo này cho dogfood đầu tiên: **self-contained Claude outputs** (2026-06-16)
+- [x] Lưu artifact chain vào `docs/work/2026-06-16/self-contained-claude-outputs/`
+- [ ] Chạy đủ chuỗi có coder implement thật bằng generated `/coder` command hoặc Claude Code subagent
 - [ ] Lưu mỗi cặp input/output thật vào `examples/golden/<agent-id>/` (≥ 1 case/agent)
 - [ ] Ghi lại chỗ prompt yếu → sửa → chạy lại
+
+**Dogfood run 2026-06-16:** orchestrator-run, không implement code. Kết luận: trước wizard hoặc `skill-md`, nên làm **Self-Contained Claude Outputs** để `.claude/` chứa support bundle cho templates/policies được reference. Xem `docs/work/2026-06-16/self-contained-claude-outputs/06-evaluation.md`.
 
 ### Bước 4 — Pilot
 - [ ] Đưa cho 1–2 team/người ngoài dùng thử 1 sprint
