@@ -66,5 +66,7 @@ Desktop.ini
 .stylelintcache
 .parcel-cache/
 
-# Claude Code local config
-.claude/
+# Claude Code — ignore local settings, keep generated outputs (agents + commands)
+.claude/*
+!.claude/agents/
+!.claude/commands/

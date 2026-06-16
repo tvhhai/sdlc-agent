@@ -223,14 +223,20 @@ describe("ClaudeCodeAdapter — output_template and policies", () => {
 // ─── multi-agent render ───────────────────────────────────────────────────────
 
 describe("ClaudeCodeAdapter — multi-agent render", () => {
-	it("renders N files for N agents", () => {
+	it("renders 2N files for N agents (one agent file + one command file each)", () => {
 		const agents = [
 			makeAgent({ id: "alpha", phase: "planning" }),
 			makeAgent({ id: "beta", phase: "review" }),
 			makeAgent({ id: "gamma", phase: "coding" }),
 		];
 		const outputs = adapter.render(agents, mockCtx);
-		expect(outputs).toHaveLength(3);
+		expect(outputs).toHaveLength(6);
+		expect(
+			outputs.filter((o) => o.path.startsWith(".claude/agents/")),
+		).toHaveLength(3);
+		expect(
+			outputs.filter((o) => o.path.startsWith(".claude/commands/")),
+		).toHaveLength(3);
 	});
 
 	it("each file path uses the agent id as filename", () => {

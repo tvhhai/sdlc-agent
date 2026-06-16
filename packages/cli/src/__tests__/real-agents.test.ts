@@ -108,18 +108,29 @@ describe("real agents — loading", () => {
 
 describe("real agents — claude-code adapter", () => {
 	let outputs: OutputFile[];
+	let agentFiles: OutputFile[];
+	let commandFiles: OutputFile[];
 
 	beforeAll(() => {
 		outputs = new ClaudeCodeAdapter().render(loadRealAgents(), makeCtx());
+		agentFiles = outputs.filter((o) => o.path.startsWith(".claude/agents/"));
+		commandFiles = outputs.filter((o) =>
+			o.path.startsWith(".claude/commands/"),
+		);
 	});
 
-	it("produces exactly 6 files — one per agent", () => {
-		expect(outputs).toHaveLength(6);
+	it("produces 12 files: 6 agents + 6 commands", () => {
+		expect(outputs).toHaveLength(12);
+		expect(agentFiles).toHaveLength(6);
+		expect(commandFiles).toHaveLength(6);
 	});
 
-	it("all paths match .claude/agents/<id>.md pattern", () => {
-		for (const f of outputs) {
+	it("agent paths match .claude/agents/<id>.md, command paths .claude/commands/<id>.md", () => {
+		for (const f of agentFiles) {
 			expect(f.path).toMatch(/^\.claude\/agents\/[a-z][a-z0-9-]+\.md$/);
+		}
+		for (const f of commandFiles) {
+			expect(f.path).toMatch(/^\.claude\/commands\/[a-z][a-z0-9-]+\.md$/);
 		}
 	});
 
@@ -132,35 +143,43 @@ describe("real agents — claude-code adapter", () => {
 		}
 	});
 
-	it("frontmatter description has [SDLC:<phase>] prefix", () => {
+	it("frontmatter description has [SDLC:<phase>] prefix on every file", () => {
 		for (const f of outputs) {
 			const fm = parseYaml(f.content.split("---")[1]);
 			expect(fm.description, f.path).toMatch(/^\[SDLC:[a-z]+\] /);
 		}
 	});
 
-	it("each file declares at least one tool", () => {
-		for (const f of outputs) {
+	it("each agent file declares at least one tool", () => {
+		for (const f of agentFiles) {
 			const fm = parseYaml(f.content.split("---")[1]);
 			expect(Array.isArray(fm.tools), f.path).toBe(true);
 			expect(fm.tools.length, f.path).toBeGreaterThan(0);
 		}
 	});
 
+	it("each command dispatches to the subagent of the same name with $ARGUMENTS", () => {
+		for (const f of commandFiles) {
+			const id = path.basename(f.path, ".md");
+			expect(f.content, f.path).toContain(`Use the **${id}** subagent`);
+			expect(f.content, f.path).toContain("$ARGUMENTS");
+		}
+	});
+
 	it("code-reviewer maps to claude-opus-4-8 (high-reasoning)", () => {
-		const f = outputs.find((o) => o.path.endsWith("code-reviewer.md"))!;
+		const f = agentFiles.find((o) => o.path.endsWith("code-reviewer.md"))!;
 		expect(parseYaml(f.content.split("---")[1]).model).toBe("claude-opus-4-8");
 	});
 
 	it("coder maps to claude-sonnet-4-6 (balanced)", () => {
-		const f = outputs.find((o) => o.path.endsWith("coder.md"))!;
+		const f = agentFiles.find((o) => o.path.endsWith("coder.md"))!;
 		expect(parseYaml(f.content.split("---")[1]).model).toBe(
 			"claude-sonnet-4-6",
 		);
 	});
 
 	it("code-reviewer body contains Claude-specific extended thinking note", () => {
-		const f = outputs.find((o) => o.path.endsWith("code-reviewer.md"))!;
+		const f = agentFiles.find((o) => o.path.endsWith("code-reviewer.md"))!;
 		expect(f.content).toContain("Claude-specific");
 		expect(f.content).toContain("extended thinking");
 	});
@@ -173,12 +192,11 @@ describe("real agents — claude-code adapter", () => {
 		}
 	});
 
-	it("rendered output matches committed .claude/agents/ files (no drift)", () => {
-		const dir = path.join(REPO_ROOT, ".claude", "agents");
+	it("rendered output matches committed .claude/ files (no drift)", () => {
 		for (const f of outputs) {
-			const committed = path.join(dir, path.basename(f.path));
+			const committed = path.join(REPO_ROOT, f.path);
 			if (!fs.existsSync(committed)) continue;
-			expect(f.content, `drift in ${path.basename(f.path)}`).toBe(
+			expect(f.content, `drift in ${f.path}`).toBe(
 				fs.readFileSync(committed, "utf8"),
 			);
 		}
