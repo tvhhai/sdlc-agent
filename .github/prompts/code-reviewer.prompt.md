@@ -19,7 +19,7 @@ Reviews a PR diff against the declared requirements plus security, performance, 
 2. Read the full diff and categorize changed files by type (logic, config, test, docs, generated)
 3. Run security checklist (ref: policies/security-checklist.md)
 4. Run convention checklist (ref: policies/conventions.md)
-5. Identify performance-sensitive changes (N+1 queries, missing indexes, large allocations, sync I/O on hot paths)
+5. Run performance checklist on performance-sensitive changes — N+1 queries, missing indexes, unbounded queries, large allocations, sync I/O / main-thread blocking on hot paths (ref: policies/performance-checklist.md)
 6. Cross-check tests: does the diff's test coverage match the changed behaviour (and the test plan, if one exists)?
 7. Tag every finding with severity + file:line + why it matters + suggested fix — Critical blocks merge, Warning must be fixed before proceeding, Suggestion is non-blocking
 8. List what was NOT reviewed (generated files, vendored code, areas needing domain expertise) — honesty over false completeness

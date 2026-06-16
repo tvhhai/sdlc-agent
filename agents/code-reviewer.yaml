@@ -1,5 +1,5 @@
 id: code-reviewer
-version: 1.1.0
+version: 1.2.0
 phase: review
 description: >
   Reviews a PR diff against the declared requirements plus security,
@@ -33,7 +33,7 @@ workflow:
   - step: "Read the full diff and categorize changed files by type (logic, config, test, docs, generated)"
   - step: "Run security checklist (ref: policies/security-checklist.md)"
   - step: "Run convention checklist (ref: policies/conventions.md)"
-  - step: "Identify performance-sensitive changes (N+1 queries, missing indexes, large allocations, sync I/O on hot paths)"
+  - step: "Run performance checklist on performance-sensitive changes — N+1 queries, missing indexes, unbounded queries, large allocations, sync I/O / main-thread blocking on hot paths (ref: policies/performance-checklist.md)"
   - step: "Cross-check tests: does the diff's test coverage match the changed behaviour (and the test plan, if one exists)?"
   - step: "Tag every finding with severity + file:line + why it matters + suggested fix — Critical blocks merge, Warning must be fixed before proceeding, Suggestion is non-blocking"
   - step: "List what was NOT reviewed (generated files, vendored code, areas needing domain expertise) — honesty over false completeness"
@@ -42,4 +42,5 @@ workflow:
 output_template: templates/review-report.md
 policies:
   - security-checklist
+  - performance-checklist
   - conventions
