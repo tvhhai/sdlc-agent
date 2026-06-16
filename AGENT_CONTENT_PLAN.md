@@ -4,7 +4,7 @@
 > **Mọi lần copy / adapt / lấy ý tưởng từ nguồn ngoài đều PHẢI ghi một dòng vào Attribution Ledger (mục 6)** — đây là cơ chế để chủ dự án kiểm soát những gì AI assistant đã làm.
 > File này không thuộc hệ thống docs/ (không cần HTML viewer). Cập nhật liên tục trong quá trình làm.
 
-Cập nhật lần cuối: 2026-06-12
+Cập nhật lần cuối: 2026-06-16
 
 ---
 
@@ -40,6 +40,13 @@ Cập nhật lần cuối: 2026-06-12
 - [x] `code-reviewer` — review against declared requirements, severity discipline, not-reviewed honesty
 - [x] `pnpm sdlc validate` OK · `pnpm sdlc build` 20 files · `pnpm test` 124/124 pass
 
+### Bước 2.1 — Vòng làm sâu thứ 2 ✅ (2026-06-16, version 1.1.0 → 1.2.0)
+> Phát sinh sau khi phát hiện repo [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) (S7) — đối chiếu thấy 2 lỗ hổng (slash-command, VERIFY nông) + thiếu policy depth.
+- [x] **Slash commands** (ROI #1): claude-code adapter render thêm `.claude/commands/<id>.md` — mỗi command là entry point do user gọi (`/coder …`), dispatch tới subagent cùng tên. 1 thay đổi adapter, sinh tự động từ 6 agent. `.gitignore` mở exception `!.claude/commands/`.
+- [x] **Policy depth** (ROI #2): thêm `policies/performance-checklist.md` + `policies/testing-patterns.md`; làm giàu `policies/security-checklist.md` (Threat Modeling, AI/LLM Security, OWASP). Reference từ `code-reviewer` (performance) + `test-generator` (testing-patterns).
+- [x] **Vá VERIFY** (ROI #3): thêm `policies/debugging-and-recovery.md` (loop reproduce→isolate→fix→verify); reference từ `coder` + `test-generator`; bước "watch-it-fail → diagnose → recover" thay cho "chỉ fix test bug".
+- [x] `pnpm sdlc validate` OK · `pnpm sdlc build` 26 files (claude-code 12) · `pnpm test` 136/136 · typecheck + lint sạch
+
 ### Bước 3 — Dogfood & golden cases
 - [ ] Chọn 1 feature thật của repo này, chạy đủ chuỗi 6 agents
 - [ ] Lưu mỗi cặp input/output thật vào `examples/golden/<agent-id>/` (≥ 1 case/agent)
@@ -61,6 +68,7 @@ Cập nhật lần cuối: 2026-06-12
 | S4 | [bmad-code-org/BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) (v6, 46.7k★) | MIT | **Cơ chế story-file** (mỗi task tự chứa context: requirements trích đoạn + architecture trích đoạn + AC), file-based handoff giữa agents, elicitation techniques của agent Analyst, checklists của agent QA/PO | KHÔNG học cấu trúc persona/party-mode — hệ sinh thái khép kín của họ. v6 có "Cross Platform Agent Team" — đáng đọc cách họ render đa tool |
 | S5 | [github/spec-kit](https://github.com/github/spec-kit) (90k★) | MIT | `constitution.md` (nguyên tắc dự án → map vào policy layer), marker `[NEEDS CLARIFICATION]`, gated progression (specify → plan → tasks → implement), cấu trúc template spec/plan | Đọc thư mục `templates/` của họ kỹ hơn đọc prompt |
 | S6 | [OpenSpec](https://github.com/Fission-AI/OpenSpec) (52k★, 06/2026) | Kiểm tra | Proposal-centered workflow + **delta markers** cho brownfield (chỉ spec phần thay đổi) | MỚI PHÁT HIỆN 06/2026 — SA doc chưa có. Phù hợp cho agent `solution-architect` xử lý thay đổi trên codebase có sẵn |
+| S7 | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | MIT | `references/performance-checklist.md`, `references/testing-patterns.md`, `references/security-checklist.md` (phần Threat Modeling + AI/LLM + OWASP); ý tưởng `debugging-and-error-recovery` skill; mô hình 6-pha DEFINE→…→SHIP (xác nhận hướng + lấp pha SHIP) | MỚI PHÁT HIỆN 2026-06-16. Cùng concept với set này (6-pha SDLC cho agent), kế thừa DNA superpowers (anti-rationalization tables, red flags). Đầy đủ hơn ở pha SHIP. KHÔNG copy persona/multi-tool folder (engine của ta làm tốt hơn) |
 
 ### Quy tắc khi tham khảo
 
@@ -82,6 +90,10 @@ Cập nhật lần cuối: 2026-06-12
 | `test-generator` | S1 `test-driven-development` (phần test design) + S4 QA checklists | Ma trận test (happy/edge/error); tiêu chí coverage theo risk | `agents/test-generator.yaml`, `templates/test-plan.md` |
 | `code-reviewer` | S1 `requesting/receiving-code-review` + policy layer riêng | Quy trình review 2 chiều; severity tagging; đối chiếu `policies/security-checklist.md` + `policies/conventions.md` (phần RIÊNG của mình — không nguồn nào có) | `agents/code-reviewer.yaml`, `templates/review-report.md` |
 | **Cross-cutting** | S2 `handoff` | Cách nén context khi chuyển artifact giữa 2 agents — đưa vào cuối workflow của MỌI agent ("kết thúc bằng handoff block cho agent kế tiếp") | tất cả `agents/*.yaml` |
+| `code-reviewer` (v1.2.0) | S7 performance + security checklist | Checklist hiệu năng (N+1, unbounded query, main-thread blocking); làm giàu security (Threat Modeling, AI/LLM, OWASP) | `policies/performance-checklist.md`, `policies/security-checklist.md`; `agents/code-reviewer.yaml` step 5 + policies |
+| `test-generator` (v1.2.0) | S7 testing-patterns + debugging skill | Patterns AAA/naming/mock-at-boundary/anti-patterns; loop diagnose→recover khi test fail | `policies/testing-patterns.md`, `policies/debugging-and-recovery.md`; `agents/test-generator.yaml` steps 6–7 + policies |
+| `coder` (v1.2.0) | S1 systematic-debugging + S7 debugging skill (idea) | Khi test fail sai lý do / suite vỡ: reproduce→hypothesis→minimal fix→verify | `policies/debugging-and-recovery.md`; `agents/coder.yaml` step 5 + policies |
+| **Slash commands** | S7 mô hình `/spec /plan /build…` (idea) | Entry point do user gọi, hiển thị; render tự động 1 command/agent dispatch tới subagent | claude-code adapter `renderCommand()`; output `.claude/commands/<id>.md` |
 
 ---
 
@@ -118,6 +130,7 @@ raw idea ──► requirement-analyst ──► docs/work/prd-<feature>.md
 > **Mức độ:** `copy` = copy nguyên văn (cần license MIT/Apache) · `adapt` = sửa đổi đáng kể từ nguồn · `idea` = chỉ lấy ý tưởng/cấu trúc, tự viết lời
 
 **Pin các nguồn (lấy 2026-06-12):** mattpocock/skills@`694fa30311e0` · obra/superpowers@`6fd450765978` (MIT, đã verify LICENSE) · github/spec-kit@`1b0556c711b6` (MIT)
+**Pin bổ sung (lấy 2026-06-16):** addyosmani/agent-skills@`a5f0b176381e` (MIT)
 
 | Ngày | Nguồn (repo@ref, đường dẫn file nguồn) | Mức độ | Phần lấy | Áp dụng tại (file : dòng/section) | Ghi chú |
 |------|----------------------------------------|--------|----------|-----------------------------------|---------|
@@ -133,6 +146,11 @@ raw idea ──► requirement-analyst ──► docs/work/prd-<feature>.md
 | 06-12 | Nygard ADR format (qua spec-kit + mattpocock `grill-with-docs/ADR-FORMAT.md`) | idea | ADR Context/Decision/Consequences — consequences bắt buộc có negative ("every decision has costs") + follow-ups | `templates/hld.md` section ADR; `agents/solution-architect.yaml` step 5 | Chuẩn công khai, tự viết lời |
 | 06-12 | Fission-AI/OpenSpec (concept, không copy text) | idea | Delta-spec cho brownfield: chỉ spec phần ADDED/MODIFIED/REMOVED, không re-spec phần không đổi; "keep current design" là 1 option hợp lệ | `templates/hld.md` section Delta; `agents/solution-architect.yaml` steps 3, 6 | Chỉ lấy ý tưởng |
 | 06-12 | mattpocock/skills@694fa30 `skills/productivity/handoff/SKILL.md` | idea | Artifact kết thúc bằng handoff block cho agent kế tiếp; không lặp lại nội dung đã có trong artifact khác — reference bằng path | Section "Handoff →" cuối cả 5 `templates/*.md`; bước cuối workflow của cả 6 `agents/*.yaml` | MIT. Lấy ý tưởng, format tự thiết kế |
+| 06-16 | addyosmani/agent-skills@a5f0b17 `references/performance-checklist.md` | adapt | Core Web Vitals targets, TTFB diagnosis, frontend/backend checklist (N+1, unbounded query, indexes, bundle/INP), anti-pattern table | `policies/performance-checklist.md` (toàn bộ); `agents/code-reviewer.yaml` step 5 | MIT. Trim font micro-items, thêm câu "apply sections relevant to the change" |
+| 06-16 | addyosmani/agent-skills@a5f0b17 `references/testing-patterns.md` | adapt | AAA structure, naming convention, common assertions, mock-at-boundary, anti-pattern table | `policies/testing-patterns.md` (toàn bộ); `agents/test-generator.yaml` step 6 | MIT. Bỏ code-block dài React/Playwright, giữ nguyên tắc |
+| 06-16 | addyosmani/agent-skills@a5f0b17 `references/security-checklist.md` | adapt | Threat Modeling, AI/LLM Security (model output untrusted, prompt injection, scope tool perms), OWASP Top 10 cross-check | `policies/security-checklist.md` (các section thêm vào sau "Logging") | MIT. Giữ nguyên phần security gốc của dự án, chỉ APPEND phần sâu hơn |
+| 06-16 | obra/superpowers@6fd4507 `skills/systematic-debugging` + addyosmani `skills/debugging-and-error-recovery` (concept) | idea | Loop reproduce → read real error → isolate/one-hypothesis → minimal fix → verify-for-right-reason → check siblings; red flags (swallow error, weaken assertion, permanent skip); escalation | `policies/debugging-and-recovery.md` (toàn bộ); `agents/coder.yaml` step 5; `agents/test-generator.yaml` step 7 | MIT cả 2. Chỉ lấy ý tưởng loop, tự viết lời |
+| 06-16 | addyosmani/agent-skills@a5f0b17 (mô hình slash command `/spec /plan /build …`) | idea | Có entry point do user gọi (hiển thị) song song với auto-routing; 1 command/agent | claude-code adapter `packages/adapters/claude-code/src/index.ts` `renderCommand()`; output `.claude/commands/<id>.md` | MIT. Tự thiết kế nội dung command (dispatch tới subagent), không copy text |
 
 ---
 
@@ -179,3 +197,46 @@ Nguồn khảo sát: [MarkTechPost 05/2026](https://www.marktechpost.com/2026/05
 | Q2 | Adapter `skill-md` (SKILL.md, phủ 32 tools) — làm ngay sau khi xong 6 agents, hay chờ pilot? | Chờ pilot xong mới làm | ✅ theo đề xuất (2026-06-12) |
 | Q3 | superpowers license — nếu không phải MIT thì chỉ `idea`, không `copy`? | Đúng vậy, check trước khi vendor | ✅ Đã verify: superpowers là MIT → adapt OK (2026-06-12) |
 | Q4 | Output language của artifact khi dogfood: en hay vi? | en (khớp `sdlc.config.yaml` hiện tại) | ✅ theo đề xuất (2026-06-12) |
+| Q5 | Có thêm output slash-command cho claude-code không? | Có — ROI cao nhất, sinh tự động từ engine | ✅ Đã làm (2026-06-16) |
+| Q6 | Pha SHIP (deploy/ci-cd/release/observability) — thêm agent hay out-of-scope? | Out-of-scope hiện tại, nhưng thiết kế để thêm dễ; chờ team discuss | ✅ theo đề xuất: hoãn, đã viết hướng dẫn thêm (mục 9) (2026-06-16) |
+
+---
+
+## 9. Phụ lục — Thêm pha SHIP sau này (để team discuss)
+
+> **Trạng thái hiện tại:** vòng đời 6 agent dừng ở `review`. SHIP (deploy, CI/CD, release, migration, observability) **chưa có**, là **out-of-scope có chủ đích** (Q6). Đối thủ gần nhất [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) có đủ SHIP — đây là khoảng cách lớn nhất nếu định vị sản phẩm là "design → production" thay vì "spec → tested-code có kiểm toán".
+>
+> SA_DESIGN đã phác sẵn SHIP trong tầm nhìn: **Phase 5 `release-manager`** (release notes, deployment checklist, rollback plan) và **Phase 6 Operate & Maintain**. Phần dưới là hướng dẫn thực thi cụ thể khi team quyết định bật.
+
+### 9.1 Vì sao thêm được "dễ" — kiến trúc đã sẵn sàng
+
+Engine tách nguồn (YAML) khỏi output (render). Thêm 1 agent SHIP = thêm 1 file YAML + policy, **không đụng engine**. Tất cả 3 adapter (universal, claude-code, copilot) tự render agent + command mới; slash-command `/release-manager` sinh tự động. Đây là lợi thế so với addyosmani (họ phải viết tay command cho từng tool).
+
+### 9.2 Phương án — chọn 1 trong 2
+
+| | A. Một agent `release-manager` (gộp) | B. Nhiều agent SHIP (tách) |
+|---|---|---|
+| Phạm vi | 1 agent lo release notes + deploy checklist + rollback | `release-manager` + `ci-cd-engineer` + `observability-engineer` + `migration-planner` |
+| Phase enum | dùng lại `review` HOẶC thêm `release`/`operate` | bắt buộc thêm phase mới |
+| Ưu | nhỏ, đúng tinh thần "không phình"; đủ cho đa số team | phủ sâu, sát addyosmani |
+| Nhược | nông ở từng mảng | 4 file, dễ trùng lặp, khó audit |
+| **Đề xuất** | ✅ **Bắt đầu bằng A**, tách sau nếu pilot cần | chỉ khi định vị "ship đầy đủ" |
+
+### 9.3 Checklist thực thi phương án A (ước lượng ~0.5 ngày)
+
+1. **Schema — thêm phase enum.** `packages/core/src/schema.ts`: enum hiện là `requirement|planning|architecture|coding|testing|review`. Thêm `release` (và `operate` nếu làm Phase 6). ⚠️ Đây là thay đổi schema → cập nhật mọi test giả định 6 phase/6 agent (`real-agents.test.ts` `EXPECTED_IDS` & counts, `model-map.test.ts` PHASES list).
+2. **Model map.** `release-manager` thiên về tổng hợp/checklist → `model_hint: balanced` (Sonnet). Adapter claude-code map sẵn, không cần sửa.
+3. **Agent YAML.** Tạo `agents/release-manager.yaml`: workflow gồm — đọc PRD/plan/review report đã merge → sinh release notes (theo Conventional Commits/changelog) → deployment checklist (env vars, migrations, feature flags, smoke test) → rollback triggers + plan → handoff. `inputs`: merged_changes, version, target_env. `output_template: templates/release-plan.md`.
+4. **Template mới.** `templates/release-plan.md` với ARTIFACT CHAIN CONTRACT (reads: review report + plan; consumed by: người deploy/CI). Tham khảo S7 `references/` + skill `ci-cd-and-automation`, `deprecation-and-migration`, `shipping-and-launch`.
+5. **Policy mới.** `policies/deploy-checklist.md` (pre-deploy gate: CI xanh, approvals, migration reversible, rollback documented, observability ready) + `policies/release-safety.md`. Có thể adapt từ S7 (MIT) + skill `engineering:deploy-checklist`.
+6. **Artifact chain.** Nối: `code-reviewer` (review report) → `release-manager` (release plan). Cập nhật sơ đồ mục 5 + handoff block của `code-reviewer` trỏ tới `release-manager`.
+7. **Validate + build + test.** `pnpm sdlc validate && pnpm sdlc build && pnpm test` — sửa các count test (7 agent, claude-code 14 files…).
+8. **Docs.** SA_DESIGN: tích Phase 5 checkbox; AGENT_CONTENT_PLAN: ledger rows cho nội dung lấy từ S7; nếu thêm phase enum → ghi rõ breaking change.
+
+### 9.4 Điểm cần team quyết trước khi làm
+
+- **Định vị sản phẩm:** "spec → tested-code (audit)" hay "design → production"? Quyết định này mới là gốc, không phải việc thêm agent.
+- **Phase enum:** dùng lại `review` hay thêm `release`/`operate`? (thêm enum = breaking cho test + manifest, nhưng đúng ngữ nghĩa hơn).
+- **CI/CD có thuộc agent không**, hay là tài liệu/checklist tĩnh? (deploy thật chạm hạ tầng — rủi ro cao, có thể chỉ nên sinh checklist + plan, KHÔNG để agent tự deploy).
+
+> Khi chốt, mở lại file này, thêm S-source cho nội dung copy và ledger rows tương ứng trước khi code.

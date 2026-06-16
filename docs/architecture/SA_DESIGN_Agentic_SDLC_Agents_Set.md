@@ -537,11 +537,18 @@ hooks:
 - Universal (AGENTS.md): trigger is manual instruction or naming the agent; no auto-routing — this is the ceiling of the Universal tier, and an acceptable trade-off given the coverage of 20+ tools
 
 ### Phase 1 — MVP (Weeks 3–6)
-- [ ] Build engine + adapter `universal` (AGENTS.md — highest priority) + adapter `claude-code` + adapter `copilot`
-- [ ] CLI `init` / `build` / `validate`
-- [ ] 6 MVP agents (Section 5) with completed prompts, workflows, and templates
-- [ ] Dogfooding: developer team uses this agents set to build the project itself
+- [x] Build engine + adapter `universal` (AGENTS.md — highest priority) + adapter `claude-code` + adapter `copilot`
+- [x] CLI `init` / `build` / `validate` (+ `list`, added via dogfood)
+- [x] 6 MVP agents (Section 5) with completed prompts, workflows, and templates (v1.2.0)
+- [x] Dogfooding: built the `sdlc list` command through the full agent chain (`docs/work/sdlc-list/`)
 - [ ] **Exit criteria:** 1 pilot team outside the core devs successfully installs and uses it in a sprint
+
+**Progress note (2026-06-16) — second content-deepening pass:**
+- **Slash commands**: the `claude-code` adapter now renders `.claude/commands/<id>.md` per agent — an explicit, user-invoked entry point (`/coder …`) alongside auto-routing. Generated automatically from the same YAML; no engine change.
+- **Policy layer deepened**: added `policies/performance-checklist.md`, `policies/testing-patterns.md`, `policies/debugging-and-recovery.md`, and enriched `policies/security-checklist.md` (Threat Modeling, AI/LLM security, OWASP). Referenced by `code-reviewer`, `test-generator`, `coder`.
+- **VERIFY hardened**: `coder` and `test-generator` now run a diagnose→recover loop on unexpected failures instead of only fixing test bugs.
+- Reference sources, exact copied/adapted parts, and target locations are tracked in `AGENT_CONTENT_PLAN.md` (Attribution Ledger).
+- **SHIP** (Phase 5 `release-manager`) remains deliberately out of scope for the MVP; a detailed "how to add it later" guide lives in `AGENT_CONTENT_PLAN.md` §9.
 
 ### Phase 2 — Hardening (Weeks 7–10)
 - [ ] Complete customization: multi-layer overrides, patch-based overrides, `extends` agents, and local agents
