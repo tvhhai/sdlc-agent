@@ -118,6 +118,17 @@
         <div class="rn-entry">
           <div class="rn-head">
             <span class="rn-date">2026-06-16</span>
+            <span class="rn-title">Dogfood thật phát hiện + vá lỗi sai tên tool</span>
+            <span class="rn-tag fix">fix</span>
+          </div>
+          <p><span class="rn-label">Đã làm.</span> Chạy dogfood thật: gọi trực tiếp subagent <code>planner</code> qua Agent tool của Claude Code (đúng cơ chế <code>/planner</code> dùng), không phải giả lập. Kết quả: 0 tool call thành công, không ra plan. Nguyên nhân gốc: <code>agents/*.yaml</code> khai <code>tools_required</code> bằng tên trừu tượng (<code>read_file</code>, <code>write_file</code>, <code>list_files</code>, <code>grep</code>, <code>bash</code>, <code>git_diff</code>) để tái dùng giữa các adapter, nhưng adapter claude-code in thẳng các tên này vào frontmatter <code>tools:</code> — thứ Claude Code dùng để giới hạn tool subagent được phép gọi. Không tên nào khớp tool thật (<code>Read</code>, <code>Write</code>, <code>Edit</code>, <code>Glob</code>, <code>Grep</code>, <code>Bash</code>) → cả 6 subagent sinh ra đều không hành động được khi gọi thật. Đã thêm <code>TOOL_MAP</code> dịch tên trừu tượng sang tên thật (tên lạ/tương lai giữ nguyên).</p>
+          <p><span class="rn-label">Vì sao.</span> Bundle self-contained (entry dưới) giúp copy được <code>.claude/</code>, nhưng copy vô nghĩa nếu subagent bên trong không dùng được tool nào. Đây là blocker nền tảng hơn gap "coder: chưa kiểm thử" mà Codex flag trong dogfood giả lập — ảnh hưởng cả 6 agent, không riêng <code>coder</code>, và dogfood giả lập (không gọi subagent thật) không thể phát hiện ra.</p>
+          <p><span class="rn-label">Tác động.</span> <code>pnpm sdlc build</code> sinh lại 6 file <code>.claude/agents/*.md</code> với tên tool đúng; 143/143 test pass (thêm 2 test mới), typecheck + lint sạch. <strong>Còn mở / chưa kiểm chứng:</strong> chạy lại dogfood <code>/planner</code> thật trong cùng session sau khi fix vẫn cho 0 tool call — có thể registry subagent của session đã load trước lúc rebuild nên chưa nhận thay đổi, hoặc có vấn đề thứ hai chưa liên quan đến tên tool. Cần session Claude Code mới để xác nhận fix có giải quyết được lỗi thật hay không.</p>
+        </div>
+
+        <div class="rn-entry">
+          <div class="rn-head">
+            <span class="rn-date">2026-06-16</span>
             <span class="rn-title">Self-contained Claude outputs (Pilot Readiness Task 1)</span>
             <span class="rn-tag feature">feature</span>
           </div>

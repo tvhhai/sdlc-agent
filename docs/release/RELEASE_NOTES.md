@@ -45,6 +45,14 @@ The actual product today is an **in-place renderer + canonical catalog** (run `p
 
 ## Changelog (newest first)
 
+### 2026-06-16 · Real dogfood reveals + fixes tool-name mismatch · `fix`
+
+**Done.** Ran a real dogfood: invoked the actual `planner` subagent through Claude Code's Agent tool (the same mechanism `/planner` uses), not a simulation. Result: 0 successful tool calls, no plan produced. Root cause: `agents/*.yaml` declares `tools_required` with abstract, tool-agnostic names (`read_file`, `write_file`, `list_files`, `grep`, `bash`, `git_diff`) for reuse across adapters, but the `claude-code` adapter passed them straight into the `tools:` frontmatter that Claude Code's subagent runtime uses to restrict available tools — none of those names match a real Claude Code tool (`Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`), so every one of the 6 generated subagents was unable to act when invoked for real. Added a `TOOL_MAP` in the claude-code adapter translating each abstract name to its real equivalent (unmapped/future names pass through unchanged).
+
+**Why.** The self-contained bundle (entry below) made `.claude/` copyable, but copying doesn't help if the subagents inside can't use any tools. This is a more fundamental blocker than the "coder: Not exercised" gap Codex's simulated dogfood flagged — it affected all 6 agents, not just `coder`, and a simulated run (no real subagent invocation) couldn't have caught it.
+
+**Impact.** `pnpm sdlc build` regenerates all 6 `.claude/agents/*.md` with real tool names; 143/143 tests pass (2 new tests added), typecheck + lint clean. **Open / not yet verified:** re-running the live `/planner` dogfood in the *same* session still showed 0 tool calls after the fix — the session's subagent registry may have been loaded before the rebuild and not picked up the change, or there is a second, unrelated issue. Needs a fresh Claude Code session to confirm the fix actually resolves the live failure; tracked as the next verification step.
+
 ### 2026-06-16 · Self-contained Claude outputs (Pilot Readiness Task 1) · `feature`
 
 **Done.** `ClaudeCodeAdapter` now bundles every referenced template + policy under `.claude/sdlc/templates/` and `.claude/sdlc/policies/`, and rewrites the references inside generated agent files from root `templates/…`/`policies/…` to `.claude/sdlc/…`. `.gitignore` tracks the new bundle. Added adapter tests (bundle emission, skip-when-absent, root-ref-free self-containment) and updated the integration/drift tests to scope agent-shaped assertions away from raw support files.
