@@ -73,6 +73,40 @@ describe("ClaudeCodeAdapter", () => {
 		expect(content).toContain("Use extended thinking.");
 	});
 
+	it("references the bundled support path, not the root policies/ dir", () => {
+		const { content } = adapter.render([mockAgent], mockCtx)[0];
+		expect(content).toContain("`.claude/sdlc/policies/security-checklist.md`");
+		expect(content).not.toContain("`policies/security-checklist.md`");
+	});
+
+	it("bundles referenced templates + policies under .claude/sdlc when present in context", () => {
+		const ctx: BuildContext = {
+			...mockCtx,
+			templates: new Map([["prd.md", "# PRD template body"]]),
+			policies: new Map([
+				["security-checklist.md", "# Security checklist body"],
+			]),
+		};
+		const agent = { ...mockAgent, output_template: "templates/prd.md" };
+		const outputs = adapter.render([agent], ctx);
+		const support = outputs.filter((o) => o.path.startsWith(".claude/sdlc/"));
+		expect(support.map((o) => o.path)).toEqual([
+			".claude/sdlc/templates/prd.md",
+			".claude/sdlc/policies/security-checklist.md",
+		]);
+		expect(support.find((o) => o.path.endsWith("prd.md"))!.content).toBe(
+			"# PRD template body",
+		);
+	});
+
+	it("skips support files absent from the build context (no dangling emit)", () => {
+		// mockCtx has empty maps — only the agent + command files should appear.
+		const outputs = adapter.render([mockAgent], mockCtx);
+		expect(outputs.filter((o) => o.path.startsWith(".claude/sdlc/"))).toEqual(
+			[],
+		);
+	});
+
 	it("matches snapshot", () => {
 		const outputs = adapter.render([mockAgent], mockCtx);
 		expect(outputs[0].content).toMatchSnapshot();

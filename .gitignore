@@ -66,7 +66,8 @@ Desktop.ini
 .stylelintcache
 .parcel-cache/
 
-# Claude Code — ignore local settings, keep generated outputs (agents + commands)
+# Claude Code — ignore local settings, keep generated outputs (agents, commands, support bundle)
 .claude/*
 !.claude/agents/
 !.claude/commands/
+!.claude/sdlc/
